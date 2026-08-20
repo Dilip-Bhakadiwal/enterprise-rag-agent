@@ -1,0 +1,47 @@
+# ── Environment & secrets ─────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+api.txt
+*api*.txt
+*key*.txt
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ──────────────────────────────────────────────────
+denv/
+venv/
+.venv/
+env/
+
+# ── Dataset (large binary files) ─────────────────────────────────────────
+Dataset/
+
+# ── Eval results ──────────────────────────────────────────────────────────
+eval/results.json
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── FastEmbed cache (baked into Docker, not in repo) ──────────────────────
+.fastembed_cache/

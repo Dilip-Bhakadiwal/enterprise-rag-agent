@@ -1,0 +1,167 @@
+[
+  {
+    "id": "q001",
+    "intent": "basic",
+    "question": "What are the default size limits for file uploads and total request size for the new multipart upload support on the OpenAI-compatible API endpoints?",
+    "ground_truth": "The default limits are 10 MiB per file (max_file_size) and 50 MiB total per request (max_total_request_size) for multipart uploads on the OpenAI-compatible endpoints.",
+    "expected_source_types": [
+      "['github']"
+    ],
+    "expected_doc_ids": "['dsid_ae068ee4aa9640159427cd941bef0238']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q002",
+    "intent": "basic",
+    "question": "What is the name of the new metric added so SRE can track when server-side streaming sessions get finalized due to hitting the time limit?",
+    "ground_truth": "The new metric is `stream.timebox_finalized` (with labels for route and model).",
+    "expected_source_types": [
+      "['github']"
+    ],
+    "expected_doc_ids": "['dsid_9550250a59e74f1bbd5612480b2e7100']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q003",
+    "intent": "basic",
+    "question": "What are the acceptance criteria for the project introducing an algorithm to generate interactive UI color states and a Kappa-style elevation scale for dense table and grid components?",
+    "ground_truth": "The acceptance criteria are: (1) deliver a stable design JSON token spec including the base palette, interactive derivative tokens (e.g., color.interactive.primary.hover), and elevation.kappa.0-6 with explicit shadow parameters; (2) land an implementation-ready tokens PR in the frontend repo, with DataGrid and Table consuming the new tokens behind a feature flag; (3) pass accessibility contrast checks for all interactive states (3:1 where applicable and 4.5:1 for primary actionable text); (4) add per-component visual regression snapshots/tolerances with no regressions beyond approved deltas; (5) update the Figma design kit with tokenized components and guidance notes; and (6) execute a rollout plan from internal canary on analytics dashboards to staged rollout and full migration with a fallback.",
+    "expected_source_types": [
+      "['linear']"
+    ],
+    "expected_doc_ids": "['dsid_3fd6af404fae48e6b8ea5a57875ef78f']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q004",
+    "intent": "basic",
+    "question": "In the meeting about onboarding a SaaS product to Google Cloud Marketplace, what did the GCP team recommend for handling delays where a new subscription entitlement is not immediately available during the customer onboarding flow?",
+    "ground_truth": "The GCP team said entitlement propagation delays can happen, so the onboarding UX should handle a \"pending\" state gracefully-avoid scary \"not entitled\" errors, tell the user the subscription is still syncing and may take a few minutes, and provide a clear retry/refresh experience (optionally showing when it was last checked) plus support instructions if it doesn't resolve.",
+    "expected_source_types": [
+      "['fireflies']"
+    ],
+    "expected_doc_ids": "['dsid_6c4c1c875e704f09b4d791d64d7bc7e5']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q005",
+    "intent": "basic",
+    "question": "What failover sequence and recovery targets did MedThink specify for handling an EU region outage, including any limits on how long traffic can shift to the US?",
+    "ground_truth": "MedThink's preferred failover hierarchy is EU primary → EU warm standby → US emergency failover. They set a target RPO of 15 minutes for active datasets and an RTO target of 30 minutes for critical APIs, and allow shifting to the US only during declared, pre-approved emergency windows capped at 4 hours.",
+    "expected_source_types": [
+      "['gmail']"
+    ],
+    "expected_doc_ids": "['dsid_8e838ab6a98f4cbcb672d41f210ff89c']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q006",
+    "intent": "basic",
+    "question": "In the draft spec about extending a routing policy engine for automated regional failover, what is the proposed priority order for evaluating different failure signals when deciding whether to shift traffic or fail over?",
+    "ground_truth": "The draft proposes this canonical v1 signal priority order: (1) authoritative Reachability DOWN → FAILOVER (unless no healthy fallback), (2) fast/severe 5xx error burn → FAILOVER or PARTIAL_SHIFT depending on blast radius and capacity, (3) tail latency burn → PARTIAL_SHIFT first, escalating to FAILOVER if corroborated and sustained, (4) capacity exhaustion/hard gate → HOLD plus load shed (avoid shifting into constrained regions), and (5) control plane degradation → HOLD to avoid rapid flips/oscillation.",
+    "expected_source_types": [
+      "['google_drive']"
+    ],
+    "expected_doc_ids": "['dsid_184be937d34a412ab5e61366d54d8ed6']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q007",
+    "intent": "basic",
+    "question": "In a rolling investigation of a model regression on policy-related prompts after a recent deploy, what was the average triage rubric score change between the older baseline build and the newer optimized build in the first comparison run?",
+    "ground_truth": "In the first comparison run, the baseline build averaged 2.7 while the newer optimized build averaged 1.9, a decrease of 0.8 rubric points.",
+    "expected_source_types": [
+      "['google_drive']"
+    ],
+    "expected_doc_ids": "['dsid_72ec4a9962ba43e88acd61abbba1052d']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q008",
+    "intent": "basic",
+    "question": "In the internal shiproom runner notes, what is the target time-to-recover threshold for a verified rollback in staging?",
+    "ground_truth": "The rollback plan is considered verified in staging if the time-to-recover is under 10 minutes.",
+    "expected_source_types": [
+      "['google_drive']"
+    ],
+    "expected_doc_ids": "['dsid_5fc2dba9f6ac4af2b49b4f546a4298d0']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q009",
+    "intent": "basic",
+    "question": "In the EdgePath evaluation email thread, what alternative Year 1 pricing package did Redwood propose instead of matching the competitor's 50 percent first-year discount and migration credit?",
+    "ground_truth": "Redwood said it wouldn't match the competitor's 50% blanket Year-1 discount and $60k migration credit, and instead proposed a 12-month committed prepay package with ~40% off list on prepay buckets plus a $50,000 one-time onboarding/migration credit tied to milestones, with an optional seat/license fee to cap variable spend and a 99.9% latency SLO for hosted US instances.",
+    "expected_source_types": [
+      "['gmail']"
+    ],
+    "expected_doc_ids": "['dsid_85deb10a652742baaf28af6149600001']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q010",
+    "intent": "basic",
+    "question": "How does the new alerting approach group model-serving requests by the stages they pass through to reduce noisy alerts and speed up root cause analysis?",
+    "ground_truth": "It adds a lightweight token_stage_cohort service that computes a deterministic \"cohort key\" for each invocation from stage-level signals (e.g., token counts per stage, KV-cache hit patterns, decode batch size) and keeps short-lived aggregates per cohort. An alert route-matrix generator then uses those cohort rollups to build a route × stage alert matrix that attributes SLO violations to the most likely pipeline stages and biases escalation to the top-k responsible stages, reducing per-route alert noise and speeding RCA.",
+    "expected_source_types": [
+      "['github']"
+    ],
+    "expected_doc_ids": "['dsid_c1a6a71323c04c1ba5445aadea340362']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q011",
+    "intent": "basic",
+    "question": "How long is the validity period for the telemetry driven runbook author certification from the operator training bootcamp?",
+    "ground_truth": "The \"Telemetry-Driven Runbook Author (Redwood)\" certification is valid for 18 months.",
+    "expected_source_types": [
+      "['confluence']"
+    ],
+    "expected_doc_ids": "['dsid_46a4cb87db414e769f2df86f01626948']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q012",
+    "intent": "basic",
+    "question": "What was identified as the root cause of the intermittent VPN connectivity blackholes and duplicate IP warnings for users on the corporate Wi-Fi in the SF2 building behind a specific edge switch?",
+    "ground_truth": "The root cause was a bug in edge-sw-7's switch firmware (version 1.2.3) that triggered incorrect proxy-ARP behavior under high multicast load, causing the switch to advertise ARP for VPN-assigned IPs and leading to duplicate IP conflicts and intermittent routing blackholes.",
+    "expected_source_types": [
+      "['jira']"
+    ],
+    "expected_doc_ids": "['dsid_59cb294da8964683bb165a3bb615df71']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q013",
+    "intent": "basic",
+    "question": "What is the recommended two-stage process for rotating the signing credentials used by GPU image build and promotion pipelines, including how to cut over safely and roll back if something goes wrong?",
+    "ground_truth": "The document recommends a two-phase credential rotation protocol. **Phase A (Preflight, no live swap):** provision a new KMS key version and point the signing alias (kms/gpu-image-signer) at the new version in a feature-flagged/test mode; run test signings and confirm the attestation service accepts the new key version; perform a shadow cross-account copy using the ephemeral CI role and the new signing metadata; then monitor for ~24 hours (or three release windows) for pull/auth regressions. **Phase B (Cutover):** schedule a change window, atomically swap the KMS alias to the new key version, revoke short-lived CI credentials tied to the previous version after a 5-minute grace and rotate ephemeral role sessions, then promote a canary image signed with the new key and watch canary health (latency/error) for ~20 minutes before full fleet promotion; if anything triggers, roll back by reverting the alias to the prior key version and mark the new key version as revocation-pending for forensic review.",
+    "expected_source_types": [
+      "['confluence']"
+    ],
+    "expected_doc_ids": "['dsid_f1b208f3637e4987aeab371242a5bea5']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q014",
+    "intent": "basic",
+    "question": "In the on-prem private upgrade deep dive with an air-gapped healthcare customer, what did they describe as their current rollback approach when an upgrade goes wrong?",
+    "ground_truth": "They said rollback is mostly manual: they try to restore etcd snapshots and PV/CSI snapshots where available (not consistent across clusters), and sometimes revert the whole node pool image-essentially \"restore from snapshot and hope.\"",
+    "expected_source_types": [
+      "['fireflies']"
+    ],
+    "expected_doc_ids": "['dsid_9ed01291d81947f49500df5fb28ab724']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  },
+  {
+    "id": "q015",
+    "intent": "basic",
+    "question": "What was the high-percentile latency concern reported after a smoke test of about 50 concurrent streaming chat sessions for Satellite Grove?",
+    "ground_truth": "After a smoke test with roughly 50 concurrent short streaming chats, they observed a p99 latency of about 250ms (with ~120ms median), which raised concern about tail-latency spikes.",
+    "expected_source_types": [
+      "['hubspot']"
+    ],
+    "expected_doc_ids": "['dsid_e75bbf328fe349d2bb39e29b1ed7c9d5']",
+    "notes": "Auto-generated from EnterpriseRAG-Bench dataset"
+  }
+]
