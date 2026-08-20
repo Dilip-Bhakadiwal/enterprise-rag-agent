@@ -21,6 +21,8 @@ import time
 from pathlib import Path
 from typing import Generator
 
+import httpx
+
 # Ensure CUDA and cuDNN DLL paths are loaded for GPU acceleration
 _cuda_bin = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin"
 _cudnn_bin = r"C:\Program Files\NVIDIA\CUDNN\v9.24\bin\12.9\x64"
@@ -121,12 +123,16 @@ def embed_and_upsert(
         f"(batch_size={batch_size}, dry_run={dry_run})"
     )
 
-    # ── Initialize FastEmbed model ────────────────────────────────────────
-    logger.info(f"Loading FastEmbed model: {settings.embedding_model} (GPU/CUDA)")
-    embedding_model = TextEmbedding(
-        model_name=settings.embedding_model,
-        providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
-    )
+    # ── Initialize Model / Provider ────────────────────────────────────────
+    embedding_model = None
+    if settings.embedding_provider == "fastembed":
+        logger.info(f"Loading FastEmbed model: {settings.embedding_model} (GPU/CUDA)")
+        embedding_model = TextEmbedding(
+            model_name=settings.embedding_model,
+            providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+        )
+    else:
+        logger.info(f"Using NVIDIA NIM Embeddings: {settings.embedding_model}")
 
     # ── Get Pinecone index ─────────────────────────────────────────────────
     if not dry_run:
@@ -147,14 +153,39 @@ def embed_and_upsert(
         )
 
         t_start = time.time()
-        # FastEmbed returns a generator — convert to list for this batch
-        embeddings = list(embedding_model.embed(texts, batch_size=batch_size))
+        
+        if settings.embedding_provider == "fastembed":
+            # FastEmbed returns a generator — convert to list for this batch
+            embeddings = list(embedding_model.embed(texts, batch_size=batch_size))
+            embeddings = [emb.tolist() for emb in embeddings]
+        else:
+            # NVIDIA API Call
+            response = httpx.post(
+                "https://integrate.api.nvidia.com/v1/embeddings",
+                headers={
+                    "Authorization": f"Bearer {settings.nvidia_api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "input": texts,
+                    "model": settings.embedding_model,
+                    "input_type": "passage",
+                    "truncate": "END"
+                },
+                timeout=60.0
+            )
+            response.raise_for_status()
+            data = response.json()["data"]
+            # Ensure order is maintained
+            data.sort(key=lambda x: x["index"])
+            embeddings = [d["embedding"] for d in data]
+
         t_embed = time.time()
 
         vectors = [
             {
                 "id": chunk["chunk_id"],
-                "values": emb.tolist(),
+                "values": emb,
                 "metadata": {
                     "doc_id": chunk["doc_id"],
                     "source_type": chunk["source_type"],

@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     )
 
     # ── Ingestion ──────────────────────────────────────────────────────────
+    embedding_provider: str = Field(default="nvidia", alias="EMBEDDING_PROVIDER")
+    nvidia_embedding_model: str = Field(default="nvidia/nv-embedqa-e5-v5", alias="NVIDIA_EMBEDDING_MODEL")
+
     chunk_size: int = Field(default=500, alias="CHUNK_SIZE")
     chunk_overlap: int = Field(default=50, alias="CHUNK_OVERLAP")
     upsert_batch_size: int = Field(default=100, alias="UPSERT_BATCH_SIZE")
@@ -78,12 +81,14 @@ class Settings(BaseSettings):
 
     @property
     def embedding_model(self) -> str:
-        """FastEmbed model name."""
+        """Embedding model name based on provider."""
+        if self.embedding_provider == "nvidia":
+            return self.nvidia_embedding_model
         return "BAAI/bge-large-en-v1.5"
 
     @property
     def embedding_dimension(self) -> int:
-        """Dimension of bge-large-en-v1.5 embeddings."""
+        """Dimension of embeddings (both bge-large and nv-embedqa-e5-v5 use 1024)."""
         return 1024
 
     @property

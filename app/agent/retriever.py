@@ -22,6 +22,8 @@ import re
 from collections import Counter
 from functools import lru_cache
 
+import httpx
+
 # Ensure CUDA and cuDNN DLL paths are loaded for GPU acceleration
 _cuda_bin = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin"
 _cudnn_bin = r"C:\Program Files\NVIDIA\CUDNN\v9.24\bin\12.9\x64"
@@ -62,7 +64,26 @@ def _get_pinecone_index():
 
 
 def _embed_query(query: str) -> list[float]:
-    """Embed the query text with the BGE query prefix."""
+    """Embed the query text based on the configured provider."""
+    if settings.embedding_provider == "nvidia":
+        logger.info(f"Embedding query via NVIDIA NIM: {settings.embedding_model}")
+        response = httpx.post(
+            "https://integrate.api.nvidia.com/v1/embeddings",
+            headers={
+                "Authorization": f"Bearer {settings.nvidia_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "input": query,
+                "model": settings.embedding_model,
+                "input_type": "query"
+            },
+            timeout=30.0
+        )
+        response.raise_for_status()
+        return response.json()["data"][0]["embedding"]
+    
+    # Fallback to local FastEmbed
     model = _get_embedding_model()
     prefixed = _QUERY_PREFIX + query
     embeddings = list(model.embed([prefixed]))
