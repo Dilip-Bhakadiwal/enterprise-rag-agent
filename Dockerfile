@@ -35,7 +35,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # CRITICAL: This prevents the ~1.3GB model download from happening at
 # container startup, which would cause HF Spaces to kill the container
 # during the health-check timeout window.
-RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-large-en-v1.5'); print('FastEmbed model cached successfully')"
+# (Commented out because we are using NVIDIA NIM API by default to save RAM/Disk)
+# RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-large-en-v1.5'); print('FastEmbed model cached successfully')"
 
 # ── Copy application code ─────────────────────────────────────────────────
 COPY app/ ./app/
