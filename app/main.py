@@ -28,7 +28,7 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -171,6 +171,38 @@ async def app_info():
 # Build it first with: cd react-frontend && npm run build
 _FRONTEND_DIR = Path(__file__).parent.parent / "react-frontend" / "dist"
 if _FRONTEND_DIR.exists():
+    # ── Dedicated routes for large binary assets (video/images) ─────────────
+    # FileResponse properly handles HTTP Range requests needed for video streaming.
+    # StaticFiles alone doesn't support range requests, causing video/audio to fail.
+    _VIDEO_FILE = _FRONTEND_DIR / "i_want_to_animted_this_video_b.mp4"
+    _LOGO_FILE  = _FRONTEND_DIR / "dilip_web_app_logo.png"
+    _RESUME_FILE = _FRONTEND_DIR / "Dilip_resume.pdf"
+
+    @app.get("/i_want_to_animted_this_video_b.mp4", include_in_schema=False)
+    async def serve_video(request: Request):
+        return FileResponse(
+            str(_VIDEO_FILE),
+            media_type="video/mp4",
+            headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=86400"},
+        )
+
+    @app.get("/dilip_web_app_logo.png", include_in_schema=False)
+    async def serve_logo():
+        return FileResponse(
+            str(_LOGO_FILE),
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    @app.get("/Dilip_resume.pdf", include_in_schema=False)
+    async def serve_resume():
+        return FileResponse(
+            str(_RESUME_FILE),
+            media_type="application/pdf",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    # ── Mount all other static files (JS, CSS, index.html) ─────────────────
     app.mount(
         "/",
         StaticFiles(directory=str(_FRONTEND_DIR), html=True),
