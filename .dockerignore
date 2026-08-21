@@ -5,8 +5,15 @@ __pycache__
 *.pyd
 .Python
 *.egg-info
-dist/
-build/
+
+# Don't ignore react-frontend/dist — it's needed by the Docker build stage
+# (the Dockerfile rebuilds it internally anyway)
+react-frontend/dist/
+react-frontend/node_modules/
+
+# Old frontend — replaced by react-frontend
+frontend/
+
 .env
 .env.*
 !.env.example
@@ -21,3 +28,5 @@ venv/
 Dataset/
 eval/results.json
 *.parquet
+demo/
+node_modules/

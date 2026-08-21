@@ -166,17 +166,19 @@ async def app_info():
 
 
 # ── Static frontend ────────────────────────────────────────────────────────
-# Mount AFTER API routes so the API takes precedence
-_FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+# Mount AFTER API routes so the API takes precedence.
+# Serves the built React app from react-frontend/dist/
+# Build it first with: cd react-frontend && npm run build
+_FRONTEND_DIR = Path(__file__).parent.parent / "react-frontend" / "dist"
 if _FRONTEND_DIR.exists():
     app.mount(
         "/",
         StaticFiles(directory=str(_FRONTEND_DIR), html=True),
         name="frontend",
     )
-    logger.info(f"Frontend mounted from: {_FRONTEND_DIR}")
+    logger.info(f"React frontend mounted from: {_FRONTEND_DIR}")
 else:
-    logger.warning(f"Frontend directory not found at {_FRONTEND_DIR} — serving API only")
+    logger.warning(f"React frontend build not found at {_FRONTEND_DIR} — run: cd react-frontend && npm run build")
 
 
 # ── Entry point ────────────────────────────────────────────────────────────
