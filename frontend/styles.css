@@ -501,24 +501,106 @@ body {
   border-color: rgba(99,102,241,0.3);
 }
 
-.message__bubble p { margin-bottom: 8px; }
-.message__bubble p:last-child { margin-bottom: 0; }
+.message__bubble p,
+.message__bubble .msg-p {
+  margin-bottom: 10px;
+  line-height: 1.68;
+}
+.message__bubble p:last-child,
+.message__bubble .msg-p:last-child {
+  margin-bottom: 0;
+}
+
+.message__bubble .msg-h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 14px 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.message__bubble .msg-h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--clr-primary-lt);
+  margin: 12px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.message__bubble .msg-h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c7d2fe;
+  margin: 10px 0 4px;
+}
+
+.message__bubble .msg-ul {
+  margin: 6px 0 12px 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.message__bubble .msg-li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+  color: var(--clr-text-1);
+}
+
+.message__bubble strong {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.citation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 6px;
+  padding: 1px 5px;
+  margin: 0 2px;
+  vertical-align: baseline;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.citation:hover {
+  background: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+  border-color: #818cf8;
+}
+
+.citation--doc {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .message__bubble code {
   font-family: var(--font-mono);
-  font-size: 13px;
-  background: rgba(0,0,0,0.3);
-  padding: 1px 5px;
+  font-size: 12.5px;
+  background: rgba(0,0,0,0.35);
+  padding: 2px 6px;
   border-radius: 4px;
-  color: var(--clr-accent);
+  color: #38bdf8;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .message__bubble pre {
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.5);
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-sm);
   padding: 12px;
   overflow-x: auto;
-  margin: 8px 0;
+  margin: 10px 0;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.5;

@@ -92,21 +92,73 @@ function showToast(message, type = 'info', durationMs = 3500) {
 
 /* ── Text formatting ─────────────────────────────────────────────────────── */
 function formatAnswerText(text) {
-  // Convert markdown-ish patterns to HTML
-  let html = escapeHtml(text)
-    // Bold **text**
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    // Italic *text*
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    // Inline code `code`
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    // doc_id citations [something]
-    .replace(/\[([^\]]+)\]/g, '<span class="citation">[<code>$1</code>]</span>')
-    // Line breaks
-    .replace(/\n\n+/g, '</p><p>')
-    .replace(/\n/g, '<br>');
+  if (!text) return '';
 
-  return `<p>${html}</p>`;
+  let html = escapeHtml(text);
+
+  // Markdown Headings (e.g. ### Heading)
+  html = html.replace(/^### (.*$)/gim, '<h4 class="msg-h4">$1</h4>');
+  html = html.replace(/^## (.*$)/gim, '<h3 class="msg-h3">$1</h3>');
+  html = html.replace(/^# (.*$)/gim, '<h2 class="msg-h2">$1</h2>');
+
+  // Bold **text**
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic *text*
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // Inline code `code`
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Unordered list items: - item or * item
+  html = html.replace(/^\s*[-*]\s+(.*$)/gim, '<li class="msg-li">$1</li>');
+
+  // Numbered citations [1], [2], [1][2], [1, 2]
+  html = html.replace(/\[(\d+(?:,\s*\d+)*)\]/g, '<span class="citation">[$1]</span>');
+  // Handle [doc_id=...] legacy citations if present
+  html = html.replace(/\[doc_id=([^\]]+)\]/g, '<span class="citation citation--doc">$1</span>');
+
+  // Convert line breaks and group paragraphs/lists
+  const lines = html.split('\n');
+  let result = '';
+  let inList = false;
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) {
+      if (inList) {
+        result += '</ul>';
+        inList = false;
+      }
+      continue;
+    }
+
+    if (line.startsWith('<li class="msg-li">')) {
+      if (!inList) {
+        result += '<ul class="msg-ul">';
+        inList = true;
+      }
+      result += line;
+    } else if (line.startsWith('<h2') || line.startsWith('<h3') || line.startsWith('<h4')) {
+      if (inList) {
+        result += '</ul>';
+        inList = false;
+      }
+      result += line;
+    } else {
+      if (inList) {
+        result += '</ul>';
+        inList = false;
+      }
+      result += `<p class="msg-p">${line}</p>`;
+    }
+  }
+
+  if (inList) {
+    result += '</ul>';
+  }
+
+  return `<div class="msg-content">${result}</div>`;
 }
 
 function escapeHtml(text) {
