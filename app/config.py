@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     chunk_size: int = Field(default=500, alias="CHUNK_SIZE")
     chunk_overlap: int = Field(default=50, alias="CHUNK_OVERLAP")
     upsert_batch_size: int = Field(default=100, alias="UPSERT_BATCH_SIZE")
-    max_docs: int = Field(default=1500, alias="MAX_DOCS")
+    max_docs: int = Field(default=20000, alias="MAX_DOCS")
 
     # ── App ────────────────────────────────────────────────────────────────
     app_port: int = Field(default=8000, alias="APP_PORT")

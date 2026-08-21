@@ -36,6 +36,9 @@ from loguru import logger
 from app.agent.router import classify_intent
 from app.agent.retriever import retrieve_chunks
 from app.agent.synthesizer import synthesize_answer
+from app.agent.grader import grade_documents
+from app.agent.rewriter import rewrite_query
+from app.agent.decomposer import decompose_query
 
 
 # ── State Schema ───────────────────────────────────────────────────────────
@@ -51,6 +54,8 @@ class AgentState(TypedDict):
     sources: list[dict]
     provider_used: str
     router_provider: str
+    retry_count: int
+    sub_queries: list[str]
 
 
 # ── Node Functions ─────────────────────────────────────────────────────────
@@ -72,22 +77,53 @@ def router_node(state: AgentState) -> AgentState:
     }
 
 
-def retriever_node(state: AgentState) -> AgentState:
+def decomposer_node(state: AgentState) -> AgentState:
     """
-    Node 2: Retrieve relevant chunks from Pinecone (with fallback).
+    Node 1.5: Decompose complex queries into multiple sub-queries.
     """
     query = state["query"]
-    source_filter = state.get("source_filter", [])
-    logger.info(
-        f"[Retriever] Query: {query[:60]}… | filter={source_filter}"
-    )
+    logger.info(f"[Decomposer] Analyzing query for multi-hop: {query[:80]}…")
+    
+    sub_queries = decompose_query(query)
+    logger.info(f"[Decomposer] Generated {len(sub_queries)} sub-queries: {sub_queries}")
+    
+    return {
+        **state,
+        "sub_queries": sub_queries,
+    }
 
-    chunks, used_fallback = retrieve_chunks(query, source_filter)
+
+def retriever_node(state: AgentState) -> AgentState:
+    """
+    Node 2: Retrieve relevant chunks from Pinecone (with fallback) for ALL sub-queries.
+    """
+    sub_queries = state.get("sub_queries", [state["query"]])
+    source_filter = state.get("source_filter", [])
+    
+    all_chunks = []
+    any_fallback = False
+    
+    for sq in sub_queries:
+        logger.info(f"[Retriever] Query: {sq[:60]}… | filter={source_filter}")
+        chunks, used_fallback = retrieve_chunks(sq, source_filter)
+        all_chunks.extend(chunks)
+        if used_fallback:
+            any_fallback = True
+            
+    # Deduplicate chunks immediately by doc_id to avoid the Grader doing extra work
+    seen_ids = set()
+    deduped_chunks = []
+    for c in all_chunks:
+        # Some chunks might just have 'id' instead of 'doc_id', fallback to hash of text
+        cid = c.get("doc_id", c.get("id", hash(c.get("text", ""))))
+        if cid not in seen_ids:
+            seen_ids.add(cid)
+            deduped_chunks.append(c)
 
     return {
         **state,
-        "retrieved_chunks": chunks,
-        "used_fallback": used_fallback,
+        "retrieved_chunks": deduped_chunks,
+        "used_fallback": any_fallback,
     }
 
 
@@ -133,6 +169,57 @@ def synthesizer_node(state: AgentState) -> AgentState:
     }
 
 
+def grader_node(state: AgentState) -> AgentState:
+    """
+    Node 2.5: Grade retrieved documents for relevance.
+    """
+    query = state["query"]
+    chunks = state.get("retrieved_chunks", [])
+    logger.info(f"[Grader] Grading {len(chunks)} chunks for relevance...")
+    
+    relevant_chunks = grade_documents(query, chunks)
+    logger.info(f"[Grader] {len(relevant_chunks)}/{len(chunks)} chunks deemed relevant.")
+    
+    return {
+        **state,
+        "retrieved_chunks": relevant_chunks,
+    }
+
+def rewriter_node(state: AgentState) -> AgentState:
+    """
+    Node: Rewrite query if retrieval failed (CRAG loop).
+    """
+    query = state["query"]
+    retry_count = state.get("retry_count", 0)
+    logger.info(f"[Rewriter] Rewriting query '{query}' (Retry {retry_count+1})")
+    
+    new_query = rewrite_query(query)
+    logger.info(f"[Rewriter] New query: '{new_query}'")
+    
+    return {
+        **state,
+        "query": new_query,
+        "sub_queries": [new_query],
+        "retry_count": retry_count + 1,
+    }
+
+def check_relevance(state: AgentState) -> str:
+    """
+    Conditional edge: check if we have relevant documents.
+    """
+    chunks = state.get("retrieved_chunks", [])
+    retry_count = state.get("retry_count", 0)
+    
+    if len(chunks) > 0:
+        return "synthesizer"
+    elif retry_count >= 1:
+        # Don't loop forever. Let the synthesizer naturally fail/refuse.
+        logger.warning("[CRAG] Max retries reached. Proceeding to synthesizer with empty context.")
+        return "synthesizer"
+    else:
+        return "rewriter"
+
+
 # ── Graph Construction ─────────────────────────────────────────────────────
 
 def build_graph() -> StateGraph:
@@ -146,13 +233,30 @@ def build_graph() -> StateGraph:
 
     # Add nodes
     graph.add_node("router", router_node)
+    graph.add_node("decomposer", decomposer_node)
     graph.add_node("retriever", retriever_node)
+    graph.add_node("grader", grader_node)
+    graph.add_node("rewriter", rewriter_node)
     graph.add_node("synthesizer", synthesizer_node)
 
-    # Wire edges: router → retriever → synthesizer → END
+    # Wire edges
     graph.set_entry_point("router")
-    graph.add_edge("router", "retriever")
-    graph.add_edge("retriever", "synthesizer")
+    graph.add_edge("router", "decomposer")
+    graph.add_edge("decomposer", "retriever")
+    graph.add_edge("retriever", "grader")
+    
+    # Conditional edge from grader
+    graph.add_conditional_edges(
+        "grader",
+        check_relevance,
+        {
+            "synthesizer": "synthesizer",
+            "rewriter": "rewriter"
+        }
+    )
+    
+    # Rewriter loops back to retriever
+    graph.add_edge("rewriter", "retriever")
     graph.add_edge("synthesizer", END)
 
     compiled = graph.compile()
@@ -193,6 +297,8 @@ def ask(query: str) -> dict:
         "sources": [],
         "provider_used": "",
         "router_provider": "",
+        "retry_count": 0,
+        "sub_queries": [],
     }
     result = graph.invoke(initial_state)
     return {
