@@ -11,7 +11,7 @@ export const HeroContent: React.FC<HeroContentProps> = ({
   onOpenRag,
 }) => {
   return (
-    <div className="relative z-20 flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 max-w-7xl mx-auto w-full text-left my-auto">
+    <div className="relative z-20 flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 w-full items-start text-left my-auto">
       
       {/* 1. Tagline: Crown icon + tracked uppercase text (animate-fade-up, 0s delay) */}
       <div className="animate-fade-up flex items-center gap-2 mb-6 lg:mb-8">
