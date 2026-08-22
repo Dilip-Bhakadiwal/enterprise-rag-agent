@@ -192,16 +192,16 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         aria-label="Close Assistant Window" 
       />
       
-      {/* Glassmorphic Centered Window Container */}
+      {/* Glassmorphic Centered Window Container with Ultra-Rounded Gemini Geometry */}
       <div
         className={`relative z-10 w-full ${
-          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-3xl"
+          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-[32px] sm:rounded-[36px]"
         } flex flex-col glass-panel-rag text-white shadow-2xl overflow-hidden transition-all duration-300 font-sans ${
-          isLoading ? "ring-1 ring-amber-400/40 shadow-amber-500/10" : ""
+          isLoading ? "ring-1 ring-[#FF9F1C]/50 shadow-[#FF9F1C]/15" : ""
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-gradient-to-r from-amber-500/[0.06] via-transparent to-transparent shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-7 py-3.5 sm:py-4 border-b border-white/10 bg-gradient-to-r from-[#FF9F1C]/[0.08] via-transparent to-transparent shrink-0">
           <div className="flex items-center gap-3">
             <img 
               src={dilipLogo} 
@@ -220,16 +220,16 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             {/* New Chat Button */}
             <button
               onClick={handleNewChat}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#FF9F1C]/40 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
               title="Start a new chat session"
             >
-              <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+              <PlusCircle className="w-3.5 h-3.5 text-[#FF9F1C]" />
               <span className="hidden sm:inline">New Chat</span>
             </button>
 
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 sm:p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title={isExpanded ? "Restore window size" : "Maximize to full screen"}
               aria-label="Maximize / Minimize"
             >
@@ -239,7 +239,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             <button
               id="rag-panel-close-btn"
               onClick={onClose}
-              className="p-2 sm:p-2.5 rounded-xl bg-white/[0.04] hover:bg-red-500/20 border border-white/10 hover:border-red-400/40 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-red-500/20 border border-white/10 hover:border-red-400/40 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Close Window"
               aria-label="Close"
             >
@@ -262,15 +262,15 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                   <img 
                     src={dilipLogo} 
                     alt="Agent" 
-                    className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0 mt-1" 
+                    className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 mt-1" 
                   />
                 )}
 
                 <div
-                  className={`max-w-[90%] sm:max-w-[84%] rounded-2xl p-4 sm:p-5 text-[13.5px] sm:text-[14px] leading-[1.75] font-normal ${
+                  className={`leading-[1.75] font-normal transition-all ${
                     msg.role === "user"
-                      ? "bg-amber-500/15 text-amber-50 border border-amber-400/30 shadow-md backdrop-blur-md"
-                      : "bg-[#0b101f]/90 text-slate-100 border border-white/10 shadow-lg backdrop-blur-md"
+                      ? "max-w-[85%] sm:max-w-[78%] rounded-[26px] rounded-br-[6px] sm:rounded-[30px] sm:rounded-br-[8px] px-5 py-3.5 sm:px-6 sm:py-4 text-[13.5px] sm:text-[14.5px] bg-[#FF9F1C]/20 text-amber-50 border border-[#FF9F1C]/35 shadow-lg backdrop-blur-xl"
+                      : "max-w-[92%] sm:max-w-[86%] rounded-[26px] rounded-tl-[6px] sm:rounded-[32px] sm:rounded-tl-[8px] p-5 sm:p-6 text-[13.5px] sm:text-[14px] bg-[#090e1a]/95 text-slate-100 border border-white/10 shadow-xl backdrop-blur-2xl"
                   }`}
                 >
                   {/* Clean Markdown Response Body */}
@@ -285,7 +285,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                           <h2 className="text-sm sm:text-base font-semibold text-amber-200/95 mt-3 mb-1.5 tracking-tight" {...props} />
                         ),
                         h3: ({ node, ...props }) => (
-                          <h3 className="text-[13.5px] sm:text-sm font-semibold text-amber-300/90 mt-2.5 mb-1" {...props} />
+                          <h3 className="text-[13.5px] sm:text-sm font-semibold text-[#FFD166] mt-2.5 mb-1" {...props} />
                         ),
                         p: ({ node, ...props }) => (
                           <p className="mb-2.5 last:mb-0 text-slate-200" {...props} />
@@ -303,10 +303,10 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                           <strong className="font-semibold text-white" {...props} />
                         ),
                         a: ({ node, ...props }) => (
-                          <a className="text-sky-400 hover:text-sky-300 underline font-medium break-all" target="_blank" rel="noopener noreferrer" {...props} />
+                          <a className="text-[#00B4D8] hover:text-[#00B4D8]/80 underline font-medium break-all" target="_blank" rel="noopener noreferrer" {...props} />
                         ),
                         code: ({ node, className, children, ...props }) => (
-                          <code className="px-1.5 py-0.5 rounded bg-black/50 text-amber-200 font-mono text-[11.5px] border border-white/10" {...props}>
+                          <code className="px-2 py-0.5 rounded-full bg-black/60 text-[#FFD166] font-mono text-[11.5px] border border-white/10" {...props}>
                             {children}
                           </code>
                         ),
@@ -316,12 +316,12 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     </ReactMarkdown>
                   </div>
 
-                  {/* Clean Grounded Citation Chips */}
+                  {/* Clean Grounded Citation Chips with Gemini Ultra-Rounded Pill Shape */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-white/[0.08]">
+                    <div className="mt-4 pt-3.5 border-t border-white/[0.08]">
                       <div className="text-xs font-medium text-slate-300 flex items-center justify-between gap-1.5 mb-2.5">
-                        <span className="flex items-center gap-1.5 font-semibold text-amber-300/90">
-                          <FileText className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="flex items-center gap-1.5 font-semibold text-[#FFD166]">
+                          <FileText className="w-3.5 h-3.5 text-[#FF9F1C]" />
                           Sources & Citations ({msg.citations.length})
                         </span>
                         <span className="text-[11px] text-slate-400 font-normal">
@@ -334,25 +334,25 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                           <button
                             key={cIdx}
                             onClick={() => handleOpenCitation(cit, msg.citations)}
-                            className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-amber-500/15 border border-white/10 hover:border-amber-400/40 text-xs text-slate-200 hover:text-white transition-all flex items-center gap-2 cursor-pointer active:scale-95 group text-left"
+                            className="px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-[#FF9F1C]/15 border border-white/10 hover:border-[#FF9F1C]/50 text-xs text-slate-200 hover:text-white transition-all flex items-center gap-2 cursor-pointer active:scale-95 group text-left shadow-sm"
                             title="Click to view full source text"
                           >
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 group-hover:scale-125 transition-transform shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF9F1C] group-hover:scale-125 transition-transform shrink-0" />
                             <span className="font-medium truncate max-w-[170px] sm:max-w-[220px]">
                               {formatCitationPillTitle(cit, cIdx)}
                             </span>
-                            <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-amber-300 shrink-0" />
+                            <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-[#FFD166] shrink-0" />
                           </button>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Dynamic Smart Follow-up Suggestions */}
+                  {/* Dynamic Smart Follow-up Suggestions with Gemini Pill Style */}
                   {msg.suggestions && msg.suggestions.length > 0 && (
                     <div className="mt-3.5 pt-3 border-t border-white/[0.08]">
                       <div className="text-[11.5px] font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <Sparkles className="w-3.5 h-3.5 text-[#FF9F1C]" />
                         Suggested Follow-ups
                       </div>
                       <div className="flex flex-col sm:flex-row flex-wrap gap-1.5">
@@ -360,9 +360,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                           <button
                             key={sIdx}
                             onClick={() => handleSendMessage(sug)}
-                            className="text-left px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-amber-400/30 text-xs text-slate-300 hover:text-white transition-all flex items-center gap-2 active:scale-[0.98] cursor-pointer"
+                            className="text-left px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 hover:border-[#FF9F1C]/40 text-xs text-slate-300 hover:text-white transition-all flex items-center gap-2 active:scale-[0.98] cursor-pointer shadow-sm"
                           >
-                            <CornerDownRight className="w-3 h-3 text-amber-400 shrink-0" />
+                            <CornerDownRight className="w-3 h-3 text-[#FF9F1C] shrink-0" />
                             <span>{sug}</span>
                           </button>
                         ))}
@@ -370,14 +370,13 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     </div>
                   )}
 
-                  {/* Interactive Action Toolbar (Copy, Thumbs Up/Down, Regenerate) */}
+                  {/* Interactive Action Toolbar */}
                   {msg.role === "assistant" && msg.id !== "welcome" && (
                     <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
                       <div className="flex items-center gap-1">
-                        {/* Copy Response */}
                         <button
                           onClick={() => handleCopyMessage(msg.id, msg.content)}
-                          className="p-1.5 rounded-lg hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded-full hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1.5 cursor-pointer"
                           title="Copy response to clipboard"
                         >
                           {copiedMessageId === msg.id ? (
@@ -393,10 +392,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                           )}
                         </button>
 
-                        {/* Regenerate */}
                         <button
                           onClick={handleRegenerate}
-                          className="p-1.5 rounded-lg hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded-full hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1.5 cursor-pointer"
                           title="Regenerate response"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
@@ -404,11 +402,10 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                         </button>
                       </div>
 
-                      {/* Feedback Thumbs */}
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleRateMessage(msg.id, "up")}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                             ratings[msg.id] === "up"
                               ? "bg-emerald-500/20 text-emerald-300"
                               : "hover:bg-white/10 text-slate-400 hover:text-slate-200"
@@ -419,7 +416,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                         </button>
                         <button
                           onClick={() => handleRateMessage(msg.id, "down")}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                             ratings[msg.id] === "down"
                               ? "bg-red-500/20 text-red-300"
                               : "hover:bg-white/10 text-slate-400 hover:text-slate-200"
@@ -437,8 +434,8 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 </div>
 
                 {msg.role === "user" && (
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-200 shrink-0 mt-1 shadow-sm">
-                    <User className="w-3.5 h-3.5" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FF9F1C]/25 border border-[#FF9F1C]/45 flex items-center justify-center text-amber-200 shrink-0 mt-1 shadow-sm">
+                    <User className="w-4 h-4" />
                   </div>
                 )}
               </div>
@@ -449,13 +446,13 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 <img 
                   src={dilipLogo} 
                   alt="Agent Loading" 
-                  className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0 animate-pulse" 
+                  className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 animate-pulse" 
                 />
-                <div className="bg-[#0b101f]/90 backdrop-blur-md rounded-2xl px-4 py-2.5 sm:px-4.5 sm:py-3 border border-white/10 flex items-center gap-3 text-xs text-slate-200 shadow-sm font-sans">
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div className="bg-[#090e1a]/95 backdrop-blur-xl rounded-full px-5 py-2.5 sm:px-6 sm:py-3 border border-white/10 flex items-center gap-3 text-xs text-slate-200 shadow-md font-sans">
+                  <div className="flex gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#FF9F1C] animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-[#E67E22] animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-[#FFD166] animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                   <span className="font-mono text-[11px] text-slate-300">{thinkingStep}</span>
                 </div>
