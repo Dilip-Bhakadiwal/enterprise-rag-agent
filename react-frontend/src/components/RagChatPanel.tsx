@@ -192,44 +192,44 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         aria-label="Close Assistant Window" 
       />
       
-      {/* Glassmorphic Centered Window Container with Ultra-Rounded Gemini Geometry */}
+      {/* Glassmorphic Centered Window Container with Vanguard Sharp Aesthetics */}
       <div
         className={`relative z-10 w-full ${
-          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-[32px] sm:rounded-[36px]"
-        } flex flex-col glass-panel-rag text-white shadow-2xl overflow-hidden transition-all duration-300 font-sans ${
+          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-md border border-white/10"
+        } flex flex-col bg-[#090d16]/95 backdrop-blur-2xl text-white shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 font-sans ${
           isLoading ? "ring-1 ring-[#FF9F1C]/50 shadow-[#FF9F1C]/15" : ""
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-7 py-3.5 sm:py-4 border-b border-white/10 bg-gradient-to-r from-[#FF9F1C]/[0.08] via-transparent to-transparent shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-7 py-4 sm:py-5 border-b border-white/10 bg-black/40 shrink-0">
           <div className="flex items-center gap-3">
             <img 
               src={dilipLogo} 
               alt="Logo" 
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0" 
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 border border-white/20 rounded-sm" 
             />
             <div>
-              <h2 className="font-semibold text-sm sm:text-base tracking-tight text-white">
+              <h2 className="font-podium text-xl sm:text-2xl tracking-wide uppercase text-white">
                 Enterprise RAG Assistant
               </h2>
             </div>
           </div>
 
           {/* Action Icons */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* New Chat Button */}
             <button
               onClick={handleNewChat}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#FF9F1C]/40 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-neutral-900 border border-white/20 hover:border-[#FF9F1C]/60 text-[10px] sm:text-xs font-inter tracking-widest uppercase text-white/90 hover:text-white transition-all cursor-pointer"
               title="Start a new chat session"
             >
-              <PlusCircle className="w-3.5 h-3.5 text-[#FF9F1C]" />
+              <PlusCircle className="w-3.5 h-3.5 text-[#FFD166]" />
               <span className="hidden sm:inline">New Chat</span>
             </button>
 
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2 sm:p-2.5 bg-black hover:bg-neutral-900 border border-white/20 hover:border-white/60 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title={isExpanded ? "Restore window size" : "Maximize to full screen"}
               aria-label="Maximize / Minimize"
             >
@@ -239,7 +239,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             <button
               id="rag-panel-close-btn"
               onClick={onClose}
-              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-red-500/20 border border-white/10 hover:border-red-400/40 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2 sm:p-2.5 bg-black hover:bg-red-900/30 border border-white/20 hover:border-red-500/50 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Close Window"
               aria-label="Close"
             >
@@ -250,51 +250,51 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
         {/* Chat Window Body */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-transparent">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 ios-scroll">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 ios-scroll">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 sm:gap-3.5 ${
+                className={`flex gap-3 sm:gap-4 ${
                   msg.role === "user" ? "justify-end" : "justify-start"
-                } animate-in fade-in duration-200`}
+                } animate-fade-up`}
               >
                 {msg.role === "assistant" && (
                   <img 
                     src={dilipLogo} 
                     alt="Agent" 
-                    className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 mt-1" 
+                    className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 mt-1 border border-white/20 rounded-sm" 
                   />
                 )}
 
                 <div
-                  className={`leading-[1.75] font-normal transition-all ${
+                  className={`leading-[1.75] font-inter transition-all ${
                     msg.role === "user"
-                      ? "max-w-[85%] sm:max-w-[78%] rounded-[26px] rounded-br-[6px] sm:rounded-[30px] sm:rounded-br-[8px] px-5 py-3.5 sm:px-6 sm:py-4 text-[13.5px] sm:text-[14.5px] bg-[#FF9F1C]/20 text-amber-50 border border-[#FF9F1C]/35 shadow-lg backdrop-blur-xl"
-                      : "max-w-[92%] sm:max-w-[86%] rounded-[26px] rounded-tl-[6px] sm:rounded-[32px] sm:rounded-tl-[8px] p-5 sm:p-6 text-[13.5px] sm:text-[14px] bg-[#090e1a]/95 text-slate-100 border border-white/10 shadow-xl backdrop-blur-2xl"
+                      ? "max-w-[85%] sm:max-w-[78%] rounded-sm px-5 py-4 text-sm bg-black/60 text-white border border-white/20 shadow-lg backdrop-blur-xl"
+                      : "max-w-[92%] sm:max-w-[86%] rounded-sm p-5 sm:p-6 text-sm bg-black/40 text-white/90 border border-white/10 shadow-xl backdrop-blur-2xl"
                   }`}
                 >
                   {/* Clean Markdown Response Body */}
-                  <div className="text-[13.5px] sm:text-[14px] leading-[1.8] text-slate-200 markdown-content select-text font-sans">
+                  <div className="text-sm leading-relaxed text-white/80 markdown-content select-text font-inter">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
                         h1: ({ node, ...props }) => (
-                          <h1 className="text-base sm:text-lg font-bold text-amber-100 mt-3.5 mb-2 border-b border-white/10 pb-1 tracking-tight" {...props} />
+                          <h1 className="text-base sm:text-lg font-podium tracking-wide text-white mt-4 mb-2 border-b border-white/10 pb-2 uppercase" {...props} />
                         ),
                         h2: ({ node, ...props }) => (
-                          <h2 className="text-sm sm:text-base font-semibold text-amber-200/95 mt-3 mb-1.5 tracking-tight" {...props} />
+                          <h2 className="text-sm sm:text-base font-inter font-bold text-white/90 mt-4 mb-2 tracking-tight" {...props} />
                         ),
                         h3: ({ node, ...props }) => (
-                          <h3 className="text-[13.5px] sm:text-sm font-semibold text-[#FFD166] mt-2.5 mb-1" {...props} />
+                          <h3 className="text-[13px] sm:text-sm font-inter font-semibold text-[#FFD166] mt-3 mb-1.5 uppercase tracking-wider" {...props} />
                         ),
                         p: ({ node, ...props }) => (
-                          <p className="mb-2.5 last:mb-0 text-slate-200" {...props} />
+                          <p className="mb-3 last:mb-0 text-white/80" {...props} />
                         ),
                         ul: ({ node, ...props }) => (
-                          <ul className="list-disc list-outside ml-4 mb-3 space-y-1.5 text-slate-200" {...props} />
+                          <ul className="list-disc list-outside ml-5 mb-4 space-y-2 text-white/80" {...props} />
                         ),
                         ol: ({ node, ...props }) => (
-                          <ol className="list-decimal list-outside ml-4 mb-3 space-y-1.5 text-slate-200" {...props} />
+                          <ol className="list-decimal list-outside ml-5 mb-4 space-y-2 text-white/80" {...props} />
                         ),
                         li: ({ node, ...props }) => (
                           <li className="leading-relaxed" {...props} />
@@ -316,29 +316,29 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     </ReactMarkdown>
                   </div>
 
-                  {/* Clean Grounded Citation Chips with Gemini Ultra-Rounded Pill Shape */}
+                  {/* Clean Grounded Citation Chips with Vanguard Style */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-4 pt-3.5 border-t border-white/[0.08]">
-                      <div className="text-xs font-medium text-slate-300 flex items-center justify-between gap-1.5 mb-2.5">
-                        <span className="flex items-center gap-1.5 font-semibold text-[#FFD166]">
+                    <div className="mt-5 pt-4 border-t border-white/10">
+                      <div className="font-inter text-[10px] tracking-widest uppercase text-white/50 flex items-center justify-between gap-2 mb-3">
+                        <span className="flex items-center gap-2 font-semibold text-[#FFD166]">
                           <FileText className="w-3.5 h-3.5 text-[#FF9F1C]" />
-                          Sources & Citations ({msg.citations.length})
+                          SOURCES & CITATIONS ({msg.citations.length})
                         </span>
-                        <span className="text-[11px] text-slate-400 font-normal">
-                          Click to inspect
+                        <span className="text-[9px] text-white/40">
+                          CLICK TO INSPECT
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2.5">
                         {msg.citations.map((cit, cIdx) => (
                           <button
                             key={cIdx}
                             onClick={() => handleOpenCitation(cit, msg.citations)}
-                            className="px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-[#FF9F1C]/15 border border-white/10 hover:border-[#FF9F1C]/50 text-xs text-slate-200 hover:text-white transition-all flex items-center gap-2 cursor-pointer active:scale-95 group text-left shadow-sm"
+                            className="px-4 py-2 rounded-sm bg-black/50 hover:bg-neutral-900 border border-white/20 hover:border-[#FF9F1C]/60 text-[10px] font-inter tracking-widest uppercase text-white/80 hover:text-white transition-all flex items-center gap-2.5 cursor-pointer active:scale-95 group text-left shadow-sm"
                             title="Click to view full source text"
                           >
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF9F1C] group-hover:scale-125 transition-transform shrink-0" />
-                            <span className="font-medium truncate max-w-[170px] sm:max-w-[220px]">
+                            <span className="w-1 h-1 bg-[#FF9F1C] group-hover:scale-150 transition-transform shrink-0" />
+                            <span className="truncate max-w-[170px] sm:max-w-[220px]">
                               {formatCitationPillTitle(cit, cIdx)}
                             </span>
                             <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-[#FFD166] shrink-0" />
@@ -348,21 +348,21 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     </div>
                   )}
 
-                  {/* Dynamic Smart Follow-up Suggestions with Gemini Pill Style */}
+                  {/* Dynamic Smart Follow-up Suggestions with Vanguard Style */}
                   {msg.suggestions && msg.suggestions.length > 0 && (
-                    <div className="mt-3.5 pt-3 border-t border-white/[0.08]">
-                      <div className="text-[11.5px] font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <div className="font-inter text-[10px] tracking-widest uppercase font-semibold text-white/50 flex items-center gap-2 mb-3">
                         <Sparkles className="w-3.5 h-3.5 text-[#FF9F1C]" />
-                        Suggested Follow-ups
+                        SUGGESTED FOLLOW-UPS
                       </div>
-                      <div className="flex flex-col sm:flex-row flex-wrap gap-1.5">
+                      <div className="flex flex-col sm:flex-row flex-wrap gap-2.5">
                         {msg.suggestions.map((sug, sIdx) => (
                           <button
                             key={sIdx}
                             onClick={() => handleSendMessage(sug)}
-                            className="text-left px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 hover:border-[#FF9F1C]/40 text-xs text-slate-300 hover:text-white transition-all flex items-center gap-2 active:scale-[0.98] cursor-pointer shadow-sm"
+                            className="text-left px-4 py-2.5 rounded-sm bg-black/40 hover:bg-neutral-900 border border-white/20 hover:border-[#FF9F1C]/60 text-[10px] font-inter tracking-widest uppercase text-white/80 hover:text-white transition-all flex items-center gap-2.5 active:scale-[0.98] cursor-pointer shadow-sm"
                           >
-                            <CornerDownRight className="w-3 h-3 text-[#FF9F1C] shrink-0" />
+                            <CornerDownRight className="w-3.5 h-3.5 text-[#FFD166] shrink-0" />
                             <span>{sug}</span>
                           </button>
                         ))}
@@ -372,58 +372,58 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
                   {/* Interactive Action Toolbar */}
                   {msg.role === "assistant" && msg.id !== "welcome" && (
-                    <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
-                      <div className="flex items-center gap-1">
+                    <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-inter tracking-widest uppercase text-white/40">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleCopyMessage(msg.id, msg.content)}
-                          className="px-2.5 py-1 rounded-full hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 rounded-sm hover:bg-white/10 hover:text-white/80 transition-colors flex items-center gap-2 cursor-pointer"
                           title="Copy response to clipboard"
                         >
                           {copiedMessageId === msg.id ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-[10.5px] text-emerald-300">Copied</span>
+                              <Check className="w-3 h-3 text-[#FFD166]" />
+                              <span className="text-[#FFD166]">COPIED</span>
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span className="text-[10.5px]">Copy</span>
+                              <Copy className="w-3 h-3" />
+                              <span>COPY</span>
                             </>
                           )}
                         </button>
 
                         <button
                           onClick={handleRegenerate}
-                          className="px-2.5 py-1 rounded-full hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 rounded-sm hover:bg-white/10 hover:text-white/80 transition-colors flex items-center gap-2 cursor-pointer"
                           title="Regenerate response"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span className="text-[10.5px]">Retry</span>
+                          <RotateCcw className="w-3 h-3" />
+                          <span>RETRY</span>
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleRateMessage(msg.id, "up")}
-                          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                          className={`p-2 rounded-sm transition-colors cursor-pointer border ${
                             ratings[msg.id] === "up"
-                              ? "bg-emerald-500/20 text-emerald-300"
-                              : "hover:bg-white/10 text-slate-400 hover:text-slate-200"
+                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                              : "border-transparent hover:bg-white/10 hover:border-white/20 text-white/40 hover:text-white/80"
                           }`}
                           title="Helpful response"
                         >
-                          <ThumbsUp className="w-3.5 h-3.5" />
+                          <ThumbsUp className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => handleRateMessage(msg.id, "down")}
-                          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                          className={`p-2 rounded-sm transition-colors cursor-pointer border ${
                             ratings[msg.id] === "down"
-                              ? "bg-red-500/20 text-red-300"
-                              : "hover:bg-white/10 text-slate-400 hover:text-slate-200"
+                              ? "bg-red-500/20 text-red-400 border-red-500/30"
+                              : "border-transparent hover:bg-white/10 hover:border-white/20 text-white/40 hover:text-white/80"
                           }`}
                           title="Unhelpful response"
                         >
-                          <ThumbsDown className="w-3.5 h-3.5" />
+                          <ThumbsDown className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
@@ -434,7 +434,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 </div>
 
                 {msg.role === "user" && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FF9F1C]/25 border border-[#FF9F1C]/45 flex items-center justify-center text-amber-200 shrink-0 mt-1 shadow-sm">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-sm bg-black border border-white/20 flex items-center justify-center text-[#FFD166] shrink-0 mt-1 shadow-sm">
                     <User className="w-4 h-4" />
                   </div>
                 )}
@@ -442,53 +442,53 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             ))}
 
             {isLoading && (
-              <div className="flex gap-3 sm:gap-3.5 justify-start animate-in fade-in duration-200">
+              <div className="flex gap-3 sm:gap-4 justify-start animate-fade-up">
                 <img 
                   src={dilipLogo} 
                   alt="Agent Loading" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 animate-pulse" 
+                  className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 animate-pulse border border-white/20 rounded-sm mt-1" 
                 />
-                <div className="bg-[#090e1a]/95 backdrop-blur-xl rounded-full px-5 py-2.5 sm:px-6 sm:py-3 border border-white/10 flex items-center gap-3 text-xs text-slate-200 shadow-md font-sans">
+                <div className="bg-black/40 backdrop-blur-xl rounded-sm px-5 py-3 sm:px-6 sm:py-4 border border-white/10 flex items-center gap-3 font-inter shadow-md">
                   <div className="flex gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#FF9F1C] animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-[#E67E22] animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-[#FFD166] animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF9F1C] animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E67E22] animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FFD166] animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
-                  <span className="font-mono text-[11px] text-slate-300">{thinkingStep}</span>
+                  <span className="text-[10px] tracking-widest uppercase text-white/50">{thinkingStep}</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Google Gemini Style Ultra-Rounded Pill Prompt Container with Embedded Action Icon */}
+          {/* Vanguard Style Sharp Input Container */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="p-3.5 sm:p-5 border-t border-white/10 bg-black/25 flex items-center font-sans"
+            className="p-4 sm:p-6 border-t border-white/10 bg-black/60 flex items-center font-inter"
           >
-            <div className="relative flex items-center w-full bg-white/[0.06] hover:bg-white/[0.08] focus-within:bg-white/[0.1] focus-within:ring-1 focus-within:ring-amber-400/40 border border-white/15 focus-within:border-amber-400/60 rounded-full transition-all shadow-lg backdrop-blur-md px-1.5 py-1">
+            <div className="relative flex items-center w-full bg-black/40 hover:bg-black/60 focus-within:bg-black/80 focus-within:ring-1 focus-within:ring-[#FF9F1C]/40 border border-white/20 focus-within:border-[#FF9F1C]/60 rounded-sm transition-all shadow-lg backdrop-blur-md px-2 py-1.5">
               <input
                 id="rag-chat-input"
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about Dilip's projects, IEEE research, or enterprise data..."
-                className="w-full bg-transparent border-0 pl-4 pr-12 py-2.5 sm:py-3 text-sm text-white placeholder-slate-400 focus:outline-none"
+                placeholder="ASK ABOUT DILIP'S PROJECTS OR ENTERPRISE DATA..."
+                className="w-full bg-transparent border-0 pl-4 pr-16 py-3 sm:py-3.5 text-xs sm:text-sm tracking-widest text-white placeholder-white/30 focus:outline-none uppercase font-inter"
                 disabled={isLoading}
               />
 
-              {/* Aesthetic Action Send Icon Embedded Inside Pill (No Harsh Outline) */}
+              {/* Aesthetic Action Send Icon */}
               <button
                 id="rag-chat-send-btn"
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
-                className={`absolute right-1.5 sm:right-2 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                className={`absolute right-2 w-10 h-10 sm:w-11 sm:h-11 rounded-sm flex items-center justify-center transition-all cursor-pointer ${
                   inputValue.trim()
-                    ? "bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-md shadow-amber-400/25 active:scale-95"
-                    : "text-slate-500 bg-transparent hover:text-slate-400 cursor-not-allowed opacity-35"
+                    ? "bg-[#FF9F1C] text-black hover:bg-[#FFD166] shadow-md shadow-[#FF9F1C]/25 active:scale-95"
+                    : "text-white/30 bg-white/5 hover:text-white/50 cursor-not-allowed"
                 }`}
                 aria-label="Send query"
               >
