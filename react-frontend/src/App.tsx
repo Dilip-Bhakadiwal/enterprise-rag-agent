@@ -36,7 +36,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative h-screen min-h-screen max-h-screen w-full flex flex-col justify-between overflow-hidden bg-[#080c14] text-white selection:bg-[#FF9F1C]/30 font-inter">
+    <div className="relative h-screen min-h-[100dvh] h-[100dvh] max-h-[100dvh] w-full flex flex-col justify-between overflow-hidden bg-[#080c14] text-white selection:bg-[#FF9F1C]/30 font-inter overscroll-none">
       
       {/* 1. Fullscreen Looping Background Video */}
       <HeroBackground onVideoLoaded={() => setIsVideoLoaded(true)} />

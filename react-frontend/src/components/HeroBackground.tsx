@@ -31,7 +31,16 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
     window.addEventListener("touchstart", handleFirstTouch, { passive: true });
     window.addEventListener("click", handleFirstTouch, { passive: true });
 
+    // Safety fallback: if video doesn't trigger onCanPlay within 2.5s (e.g. slow mobile data / battery saver), mount UI gracefully
+    const fallbackTimer = setTimeout(() => {
+      setIsLoaded((prev) => {
+        if (!prev) return true;
+        return prev;
+      });
+    }, 2500);
+
     return () => {
+      clearTimeout(fallbackTimer);
       window.removeEventListener("touchstart", handleFirstTouch);
       window.removeEventListener("click", handleFirstTouch);
     };

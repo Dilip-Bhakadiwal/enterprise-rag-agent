@@ -512,7 +512,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 bg-black/60 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 md:p-8 bg-black/65 backdrop-blur-md"
         >
           {/* Backdrop overlay */}
           <div 
@@ -531,35 +531,35 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               scale: { duration: 1.0, ease: [0.16, 1, 0.3, 1] },
               y: { duration: 1.0, ease: [0.16, 1, 0.3, 1] },
             }}
-            className="w-full max-w-5xl rounded-3xl gradient-bg p-[6px] shadow-custom relative flex flex-col h-[90vh] max-h-[92dvh] z-10" 
+            className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[4px] sm:p-[6px] shadow-custom relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10" 
             data-purpose="chat-container"
           >
             {/* Top Bar */}
-            <div className="flex items-center justify-between px-4 pt-3 pb-3 text-white" data-purpose="top-bar">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium tracking-wide">Enterprise RAG Assistant</span>
+            <div className="flex items-center justify-between px-3.5 sm:px-4 pt-3 pb-2.5 sm:pb-3 text-white" data-purpose="top-bar">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <span className="text-xs sm:text-sm font-medium tracking-wide">Enterprise RAG Assistant</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button 
                   onClick={handleNewChat}
-                  className="text-xs bg-white/20 hover:bg-white/30 px-3.5 py-1.5 rounded-full transition-colors font-medium flex items-center gap-2 cursor-pointer active:scale-95"
+                  className="text-[11px] sm:text-xs bg-white/20 hover:bg-white/30 px-3 sm:px-3.5 py-1.5 rounded-full transition-colors font-medium flex items-center gap-1.5 sm:gap-2 cursor-pointer active:scale-95 min-h-[36px]"
                 >
-                  <i className="ph ph-plus"></i>New Chat
+                  <i className="ph ph-plus text-xs sm:text-sm"></i>New Chat
                 </button>
                 <button 
                   onClick={onClose}
                   aria-label="Close" 
-                  className="p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
                 >
-                  <i className="ph ph-x text-lg"></i>
+                  <i className="ph ph-x text-lg sm:text-xl"></i>
                 </button>
               </div>
             </div>
 
             {/* Main Area */}
-            <div className="bg-white rounded-[22px] p-3 sm:p-4 flex flex-col w-full flex-1 overflow-hidden" data-purpose="main-area">
+            <div className="bg-white rounded-[18px] sm:rounded-[22px] p-2.5 sm:p-4 flex flex-col w-full flex-1 overflow-hidden" data-purpose="main-area">
               {/* Chat History */}
-              <div className="flex flex-col gap-4 overflow-y-auto flex-1 mb-3 px-1 sm:px-2 ios-scroll" data-purpose="chat-history">
+              <div className="flex flex-col gap-3.5 sm:gap-4 overflow-y-auto flex-1 mb-2 sm:mb-3 px-1 sm:px-2 ios-scroll overscroll-contain" data-purpose="chat-history">
                 {messages.map((msg) => (
                   <React.Fragment key={msg.id}>
                     {msg.role === "user" ? (
@@ -584,7 +584,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
                 {isLoading && (
                   <div className="flex flex-col items-start animate-fade-in">
-                    <div className="bg-gray-100 text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-xs flex items-center gap-3">
+                    <div className="bg-gray-100 text-gray-800 p-3.5 sm:p-4 rounded-2xl rounded-tl-none shadow-xs flex items-center gap-3">
                       <div className="flex gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-bounce" style={{ animationDelay: "0ms" }} />
                         <span className="w-2 h-2 rounded-full bg-[#F97316] animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -597,16 +597,16 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* 4. Perfectly Aligned Input Area & Send Button */}
+              {/* 4. Perfectly Aligned Input Area & Send Button (With iOS/Android safe area padding) */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   handleSendMessage();
                 }}
-                className="flex items-center gap-3 shrink-0 pt-3 pb-1 px-1 sm:px-2 border-t border-gray-200 bg-white"
+                className="flex items-center gap-2 sm:gap-3 shrink-0 pt-2 sm:pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-1 sm:px-2 border-t border-gray-200 bg-white"
                 data-purpose="input-area"
               >
-                <div className="relative flex items-center flex-1 bg-gray-50/90 hover:bg-gray-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#F97316]/30 border border-gray-200 focus-within:border-[#F97316] rounded-2xl transition-all shadow-inner px-3.5 py-1.5">
+                <div className="relative flex items-center flex-1 bg-gray-50/90 hover:bg-gray-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#F97316]/30 border border-gray-200 focus-within:border-[#F97316] rounded-xl sm:rounded-2xl transition-all shadow-inner px-3 sm:px-3.5 py-1 sm:py-1.5">
                   <textarea
                     id="rag-chat-input"
                     value={inputValue}
@@ -617,9 +617,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                         handleSendMessage();
                       }
                     }}
-                    className="w-full bg-transparent text-gray-800 placeholder-gray-400 text-sm sm:text-base resize-none border-none focus:ring-0 p-0 min-h-[38px] max-h-[120px] focus:outline-none leading-normal"
+                    className="w-full bg-transparent text-gray-800 placeholder-gray-400 text-base resize-none border-none focus:ring-0 p-0 min-h-[38px] max-h-[100px] sm:max-h-[120px] focus:outline-none leading-normal"
                     data-purpose="text-input"
-                    placeholder="Ask anything about Dilip's projects or enterprise RAG..."
+                    placeholder="Ask about Dilip's AI projects..."
                     rows={1}
                     disabled={isLoading}
                   />
@@ -629,9 +629,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                   type="submit"
                   disabled={isLoading || !inputValue.trim()}
                   aria-label="Send message"
-                  className="w-11 h-11 rounded-2xl bg-[#F97316] hover:bg-[#EA580C] flex items-center justify-center text-white transition-all shadow-md shadow-orange-300/40 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-[#F97316] hover:bg-[#EA580C] flex items-center justify-center text-white transition-all shadow-md shadow-orange-300/40 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0 min-w-[40px]"
                 >
-                  <i className="ph ph-arrow-up text-xl font-bold"></i>
+                  <i className="ph ph-arrow-up text-lg sm:text-xl font-bold"></i>
                 </button>
               </form>
             </div>
