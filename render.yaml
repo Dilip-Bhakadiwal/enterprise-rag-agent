@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: enterprise-rag-portfolio
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: enterprise-rag-demo
+      - key: PINECONE_CLOUD
+        value: aws
+      - key: PINECONE_REGION
+        value: us-east-1
+      - key: PRIMARY_MODEL
+        value: meta-llama/llama-3.3-70b-instruct
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: FALLBACK_MODEL
+        value: nvidia/llama-3.3-nemotron-super-49b-v1
+      - key: APP_PORT
+        value: 10000
+      - key: APP_HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: INFO
