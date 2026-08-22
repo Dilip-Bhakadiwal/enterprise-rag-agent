@@ -17,12 +17,17 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
-      // Proxy /ask → FastAPI backend (port 8000) to avoid CORS in local development
+
+      // ─── Proxy to FastAPI backend (avoids CORS in local dev) ──────────────
+      // Forwards /ask and /health from Vite dev server → FastAPI on port 8000
       proxy: {
         '/ask': {
           target: 'http://localhost:8000',
           changeOrigin: true,
-          rewrite: (path) => path,  // keep /ask as-is
+        },
+        '/health': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
         },
       },
     },

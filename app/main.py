@@ -28,7 +28,7 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -110,6 +110,24 @@ app.add_middleware(
 )
 
 
+# ── Rate Limiting (In-Memory Sliding Window) ──────────────────────────────
+_RATE_LIMIT_WINDOW = 60.0  # seconds
+_MAX_REQUESTS_PER_WINDOW = 25  # generous limit for real users, prevents bot spam
+_client_request_history: dict[str, list[float]] = {}
+
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """Returns True if request is allowed, False if rate limited."""
+    now = time.time()
+    history = _client_request_history.setdefault(client_ip, [])
+    # Remove timestamps older than window
+    _client_request_history[client_ip] = [t for t in history if now - t < _RATE_LIMIT_WINDOW]
+    if len(_client_request_history[client_ip]) >= _MAX_REQUESTS_PER_WINDOW:
+        return False
+    _client_request_history[client_ip].append(now)
+    return True
+
+
 # ── API Endpoints ──────────────────────────────────────────────────────────
 
 @app.get("/health", response_model=HealthResponse, tags=["system"])
@@ -119,25 +137,34 @@ async def health_check():
 
 
 @app.post("/ask", response_model=AskResponse, tags=["rag"])
-async def ask_question(request: AskRequest):
+async def ask_question(request: AskRequest, req: Request):
     """
     Run the RAG pipeline for the given question.
 
     Returns the answer, deduplicated source citations, intent classification,
     which LLM provider was used, and whether retrieval fallback was triggered.
     """
+    # Extract client IP
+    client_ip = req.client.host if req.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. Please wait a moment before sending more queries.",
+        )
+
     start = time.perf_counter()
     query = request.question.strip()
-    logger.info(f"POST /ask | question={query[:80]}…")
+    logger.info(f"POST /ask | client={client_ip} | question={query[:80]}…")
 
     try:
         result = agent_ask(query)
     except Exception as exc:
-        logger.error(f"Agent error: {exc!r}")
+        logger.exception(f"Agent error during question processing: {exc}")
         raise HTTPException(
             status_code=500,
-            detail=f"Agent error: {str(exc)}",
-        ) from exc
+            detail="The AI assistant is temporarily unable to process your request. Please try again in a moment.",
+        )
 
     elapsed_ms = (time.perf_counter() - start) * 1000
 
@@ -167,42 +194,15 @@ async def app_info():
 
 # ── Static frontend ────────────────────────────────────────────────────────
 # Mount AFTER API routes so the API takes precedence.
-# Serves the built React app from react-frontend/dist/
-# Build it first with: cd react-frontend && npm run build
+# Serves the built React app (+ all assets: video, images, PDF) from react-frontend/dist/
+#
+# Starlette's StaticFiles internally uses FileResponse with full HTTP Range
+# request support — this means video streaming and large file downloads work
+# correctly without any extra routes.
+#
+# Build the frontend first with: cd react-frontend && npm run build
 _FRONTEND_DIR = Path(__file__).parent.parent / "react-frontend" / "dist"
 if _FRONTEND_DIR.exists():
-    # ── Dedicated routes for large binary assets (video/images) ─────────────
-    # FileResponse properly handles HTTP Range requests needed for video streaming.
-    # StaticFiles alone doesn't support range requests, causing video/audio to fail.
-    _VIDEO_FILE = _FRONTEND_DIR / "i_want_to_animted_this_video_b.mp4"
-    _LOGO_FILE  = _FRONTEND_DIR / "dilip_web_app_logo.png"
-    _RESUME_FILE = _FRONTEND_DIR / "Dilip_resume.pdf"
-
-    @app.get("/i_want_to_animted_this_video_b.mp4", include_in_schema=False)
-    async def serve_video(request: Request):
-        return FileResponse(
-            str(_VIDEO_FILE),
-            media_type="video/mp4",
-            headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=86400"},
-        )
-
-    @app.get("/dilip_web_app_logo.png", include_in_schema=False)
-    async def serve_logo():
-        return FileResponse(
-            str(_LOGO_FILE),
-            media_type="image/png",
-            headers={"Cache-Control": "public, max-age=86400"},
-        )
-
-    @app.get("/Dilip_resume.pdf", include_in_schema=False)
-    async def serve_resume():
-        return FileResponse(
-            str(_RESUME_FILE),
-            media_type="application/pdf",
-            headers={"Cache-Control": "public, max-age=86400"},
-        )
-
-    # ── Mount all other static files (JS, CSS, index.html) ─────────────────
     app.mount(
         "/",
         StaticFiles(directory=str(_FRONTEND_DIR), html=True),

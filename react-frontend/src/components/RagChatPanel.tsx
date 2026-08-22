@@ -1,11 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Send, Sparkles, User, FileText, Maximize2, Minimize2, Loader2 } from "lucide-react";
-import { ChatMessage, KnowledgeDoc, Citation } from "../types";
-
-// Point to our real FastAPI backend.
-// In dev, Vite proxy forwards /api/ask → http://localhost:8000/ask
-// In production, set VITE_BACKEND_URL to your Render URL (e.g. https://your-app.onrender.com)
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+import { X, Send, User, FileText, Maximize2, Minimize2 } from "lucide-react";
+import { ChatMessage } from "../types";
+import { sendRagMessage } from "../services/api";
+import dilipLogo from "../assets/dilip_web_app_logo.png";
 
 interface RagChatPanelProps {
   isOpen: boolean;
@@ -57,13 +54,14 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! I am Dilip's Enterprise Rag Agent. Ask me anything about MarketPulse AI, Redwood Inference, LangGraph multi-agent pipelines, or Dilip's IEEE published research.",
+      content: "Hello! I am Dilip's Enterprise RAG Agent — powered by Pinecone vector search, NVIDIA Embeddings, and LangGraph. I can provide detailed information about Dilip Bhakadiwal's skills, flagship AI projects, credentials, and published research. Additionally, this system is engineered to query enterprise-scale knowledge bases benchmarked on onyx-dot-app/EnterpriseRAG-Bench (Confluence, GitHub, Jira, Slack, and Gmail).",
       timestamp: "Just now"
     }
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [thinkingStep, setThinkingStep] = useState("Synthesizing response...");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -77,69 +75,21 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // ─── Real FastAPI backend call ────────────────────────────────────────────
-  const [thinkingStep, setThinkingStep] = useState("");
-
-  const callRagBackend = async (userQuery: string) => {
-    // Show live agentic thinking steps while waiting for the backend
-    const steps = [
-      "Routing query...",
-      "Decomposing sub-queries...",
-      "Searching Pinecone...",
-      "Grading documents...",
-      "Synthesizing answer...",
-    ];
-    let stepIdx = 0;
-    setThinkingStep(steps[0]);
-    const stepInterval = setInterval(() => {
-      stepIdx = (stepIdx + 1) % steps.length;
-      setThinkingStep(steps[stepIdx]);
-    }, 700);
-
-    try {
-      const res = await fetch(`${BACKEND_URL}/ask`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userQuery }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Backend error: ${res.status} ${res.statusText}`);
-      }
-
-      const data = await res.json();
-
-      // Map backend sources → Citation pills
-      // Our FastAPI returns: { answer, sources: [{doc_id, source_type, timestamp, author}], intent, response_time_ms }
-      const citations: Citation[] = (data.sources || []).map((s: any, idx: number) => ({
-        id: s.doc_id || `src-${idx}`,
-        title: s.doc_id || `Source ${idx + 1}`,
-        category: s.source_type || "Document",
-        snippet: s.timestamp ? `${s.source_type} · ${s.timestamp}` : s.source_type || "",
-      }));
-
-      return {
-        responseText: data.answer || "No answer returned from the backend.",
-        citations,
-        meta: {
-          intent: data.intent,
-          response_time_ms: data.response_time_ms,
-          provider: data.provider_used,
-        },
-      };
-    } finally {
-      clearInterval(stepInterval);
-      setThinkingStep("");
-    }
-  };
+  // ─── Agentic thinking step animation ────────────────────────────────────
+  const THINKING_STEPS = [
+    "Routing query...",
+    "Decomposing sub-queries...",
+    "Searching Pinecone...",
+    "Grading documents...",
+    "Synthesizing answer...",
+  ];
 
   const handleSendMessage = async (textToSend?: string) => {
     const text = textToSend || inputValue;
     if (!text.trim() || isLoading) return;
 
-    const userMessageId = Date.now().toString();
     const userMsg: ChatMessage = {
-      id: userMessageId,
+      id: Date.now().toString(),
       role: "user",
       content: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -149,34 +99,38 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     if (!textToSend) setInputValue("");
     setIsLoading(true);
 
+    // Cycle through agentic thinking steps while waiting for backend
+    let stepIdx = 0;
+    setThinkingStep(THINKING_STEPS[0]);
+    const stepInterval = setInterval(() => {
+      stepIdx = (stepIdx + 1) % THINKING_STEPS.length;
+      setThinkingStep(THINKING_STEPS[stepIdx]);
+    }, 700);
+
     try {
-      const { responseText, citations, meta } = await callRagBackend(text.trim());
+      const { reply, citations } = await sendRagMessage(text.trim(), messages);
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: responseText,
+        content: reply,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        citations,
+        citations
       };
       setMessages((prev) => [...prev, botMsg]);
-      // Log performance metadata to console for debugging
-      if (meta) {
-        console.info(`[RAG] intent=${meta.intent} | provider=${meta.provider} | ${meta.response_time_ms}ms`);
-      }
     } catch (err: any) {
-      console.error("RAG backend error:", err);
-      // Show a friendly error bubble instead of crashing
+      // Show friendly error bubble — never crash the UI
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: `⚠️ Could not reach the backend. Please ensure the server is running.\n\nError: ${err?.message || "Unknown error"}`,
+          content: `⚠️ Could not reach the RAG backend.\n\nError: ${err?.message || "Unknown error"}\n\nMake sure the FastAPI server is running on port 8000.`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           citations: [],
         },
       ]);
     } finally {
+      clearInterval(stepInterval);
       setIsLoading(false);
     }
   };
@@ -202,7 +156,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-amber-500/20 bg-gradient-to-r from-amber-500/[0.08] via-orange-500/[0.05] to-transparent shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <img 
-              src="/dilip_web_app_logo.png" 
+              src={dilipLogo} 
               alt="Logo" 
               className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0" 
             />
@@ -248,7 +202,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               >
                 {msg.role === "assistant" && (
                   <img 
-                    src="/dilip_web_app_logo.png" 
+                    src={dilipLogo} 
                     alt="Agent" 
                     className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0 mt-0.5" 
                   />
@@ -296,7 +250,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             {isLoading && (
               <div className="flex gap-2.5 sm:gap-3.5 justify-start animate-in fade-in duration-200">
                 <img 
-                  src="/dilip_web_app_logo.png" 
+                  src={dilipLogo} 
                   alt="Agent Loading" 
                   className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0 animate-pulse" 
                 />
@@ -306,7 +260,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
-                  <span className="font-mono tracking-wide uppercase text-[11px]">{thinkingStep || "Thinking..."}</span>
+                  <span className="font-mono tracking-wide uppercase text-[11px]">{thinkingStep}</span>
                 </div>
               </div>
             )}

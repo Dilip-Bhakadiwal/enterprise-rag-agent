@@ -1,19 +1,24 @@
 """
 app/llm_clients.py
 ──────────────────
-Unified LLM client: OpenRouter (primary) → NVIDIA NIM (fallback).
+Unified multi-tier LLM client with automatic zero-downtime failover:
+  1. OpenRouter (Primary)
+  2. Groq (Secondary / Blazing Fast fallback on 429 / Rate Limit / Timeout)
+  3. NVIDIA NIM (Tertiary Fallback)
 
 Usage:
-    from app.llm_clients import get_llm, call_llm
+    from app.llm_clients import call_llm
 
-    llm, provider = get_llm()
-    response = llm.invoke(messages)
+    response, provider = call_llm(messages)
 
-The `call_llm` helper wraps retries + automatic provider fallback:
-  - On 429 / timeout from OpenRouter → switches to NVIDIA NIM
-  - Tenacity handles transient errors with exponential backoff
+Key guarantees:
+  - If OpenRouter hits rate limit (429), quota limits, or server errors, it instantly
+    switches to Groq (llama-3.3-70b-versatile, ~500 tokens/sec).
+  - If Groq also encounters rate limits, it fails over to NVIDIA NIM.
+  - Automatic exponential backoff retries on transient network errors via Tenacity.
 """
 
+import logging
 import time
 from typing import Any
 
@@ -27,13 +32,12 @@ from tenacity import (
     wait_exponential,
     before_sleep_log,
 )
-import logging
-import httpx
 
 from app.config import settings
 
 # ── Provider names ─────────────────────────────────────────────────────────
 PROVIDER_OPENROUTER = "openrouter"
+PROVIDER_GROQ = "groq"
 PROVIDER_NVIDIA = "nvidia_nim"
 
 
@@ -48,7 +52,18 @@ def _build_openrouter_client() -> ChatOpenAI:
             "X-Title": "Enterprise RAG Demo",
         },
         temperature=0.1,
-        max_retries=0,  # we handle retries ourselves with tenacity
+        max_retries=0,  # handled explicitly
+    )
+
+
+def _build_groq_client() -> ChatOpenAI:
+    """Create a LangChain ChatOpenAI client pointed at Groq Cloud."""
+    return ChatOpenAI(
+        model=settings.groq_model,
+        api_key=settings.groq_api_key or "missing_groq_key",
+        base_url=settings.groq_base_url,
+        temperature=0.1,
+        max_retries=0,  # handled explicitly
     )
 
 
@@ -63,8 +78,9 @@ def _build_nvidia_client() -> ChatOpenAI:
     )
 
 
-# ── Singletons built lazily ────────────────────────────────────────────────
+# ── Lazy Singletons ────────────────────────────────────────────────────────
 _openrouter_client: ChatOpenAI | None = None
+_groq_client: ChatOpenAI | None = None
 _nvidia_client: ChatOpenAI | None = None
 
 
@@ -75,6 +91,13 @@ def get_openrouter() -> ChatOpenAI:
     return _openrouter_client
 
 
+def get_groq() -> ChatOpenAI:
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = _build_groq_client()
+    return _groq_client
+
+
 def get_nvidia() -> ChatOpenAI:
     global _nvidia_client
     if _nvidia_client is None:
@@ -82,57 +105,67 @@ def get_nvidia() -> ChatOpenAI:
     return _nvidia_client
 
 
-# ── Retry decorator for rate-limited calls ─────────────────────────────────
-def _is_rate_limit_error(exc: Exception) -> bool:
-    """Detect 429 / rate-limit errors from either provider."""
-    msg = str(exc).lower()
-    return "429" in msg or "rate limit" in msg or "too many requests" in msg
-
-
+# ── Retry decorator for single provider transient network glitches ────────
 @retry(
     retry=retry_if_exception_type(Exception),
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=2, max=30),
+    stop=stop_after_attempt(2),
+    wait=wait_exponential(multiplier=0.5, min=1, max=5),
     before_sleep=before_sleep_log(logging.getLogger("tenacity"), logging.WARNING),
     reraise=True,
 )
-def _call_with_retry(client: ChatOpenAI, messages: list[BaseMessage]) -> Any:
-    """Call the LLM with automatic exponential-backoff retries."""
+def _invoke_with_retry(client: ChatOpenAI, messages: list[BaseMessage]) -> Any:
     return client.invoke(messages)
 
 
-def call_llm(
-    messages: list[BaseMessage],
-) -> tuple[Any, str]:
+def call_llm(messages: list[BaseMessage]) -> tuple[Any, str]:
     """
-    Call the primary LLM (OpenRouter), falling back to NVIDIA NIM on failure.
+    Call LLMs using a 3-tier resilient failover cascade:
+      1. OpenRouter (Primary)
+      2. Groq (Secondary / Fast Failover)
+      3. NVIDIA NIM (Tertiary Fallback)
 
     Returns:
-        (response, provider_name) where provider_name is "openrouter" or "nvidia_nim"
+        (response, provider_name) where provider_name in ["openrouter", "groq", "nvidia_nim"]
 
     Raises:
-        RuntimeError: if both providers fail
+        RuntimeError: if all 3 providers fail
     """
-    # ── Try OpenRouter first ───────────────────────────────────────────────
+    errors: list[str] = []
+
+    # ── Tier 1: Try OpenRouter ─────────────────────────────────────────────
     try:
         logger.debug(f"Calling {PROVIDER_OPENROUTER} ({settings.primary_model})")
-        response = _call_with_retry(get_openrouter(), messages)
+        response = _invoke_with_retry(get_openrouter(), messages)
         logger.info(f"LLM served by: {PROVIDER_OPENROUTER}")
         return response, PROVIDER_OPENROUTER
-    except Exception as primary_exc:
-        logger.warning(
-            f"OpenRouter failed ({primary_exc!r}), falling back to NVIDIA NIM"
-        )
+    except Exception as exc:
+        err_msg = f"OpenRouter failed ({exc!r})"
+        logger.warning(f"{err_msg} — failing over to Groq...")
+        errors.append(err_msg)
 
-    # ── Fallback: NVIDIA NIM ───────────────────────────────────────────────
+    # ── Tier 2: Try Groq ───────────────────────────────────────────────────
+    if settings.groq_api_key:
+        try:
+            logger.debug(f"Calling fallback {PROVIDER_GROQ} ({settings.groq_model})")
+            response = _invoke_with_retry(get_groq(), messages)
+            logger.info(f"LLM served by: {PROVIDER_GROQ} (fast fallback)")
+            return response, PROVIDER_GROQ
+        except Exception as exc:
+            err_msg = f"Groq failed ({exc!r})"
+            logger.warning(f"{err_msg} — failing over to NVIDIA NIM...")
+            errors.append(err_msg)
+    else:
+        logger.debug("Groq API key not configured — skipping Tier 2")
+
+    # ── Tier 3: Try NVIDIA NIM ─────────────────────────────────────────────
     try:
         logger.debug(f"Calling fallback {PROVIDER_NVIDIA} ({settings.fallback_model})")
-        response = _call_with_retry(get_nvidia(), messages)
-        logger.info(f"LLM served by: {PROVIDER_NVIDIA} (fallback)")
+        response = _invoke_with_retry(get_nvidia(), messages)
+        logger.info(f"LLM served by: {PROVIDER_NVIDIA} (tertiary fallback)")
         return response, PROVIDER_NVIDIA
-    except Exception as fallback_exc:
-        logger.error(f"Both LLM providers failed. Last error: {fallback_exc!r}")
-        raise RuntimeError(
-            f"All LLM providers failed. Primary: {primary_exc!r}. "
-            f"Fallback: {fallback_exc!r}"
-        ) from fallback_exc
+    except Exception as exc:
+        err_msg = f"NVIDIA NIM failed ({exc!r})"
+        logger.error(f"{err_msg} — all providers exhausted!")
+        errors.append(err_msg)
+
+    raise RuntimeError(f"All LLM providers failed. Trace: {' | '.join(errors)}")

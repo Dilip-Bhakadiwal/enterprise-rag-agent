@@ -21,11 +21,16 @@ class Settings(BaseSettings):
 
     # ── LLM Providers ──────────────────────────────────────────────────────
     openrouter_api_key: str = Field(..., alias="OPENROUTER_API_KEY")
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     nvidia_api_key: str = Field(..., alias="NVIDIA_API_KEY")
 
     primary_model: str = Field(
-        default="meta-llama/llama-3.3-70b-instruct:free",
+        default="meta-llama/llama-3.3-70b-instruct",
         alias="PRIMARY_MODEL",
+    )
+    groq_model: str = Field(
+        default="openai/gpt-oss-120b",
+        alias="GROQ_MODEL",
     )
     fallback_model: str = Field(
         default="nvidia/llama-3.3-nemotron-super-49b-v1",
@@ -34,6 +39,10 @@ class Settings(BaseSettings):
     primary_base_url: str = Field(
         default="https://openrouter.ai/api/v1",
         alias="PRIMARY_BASE_URL",
+    )
+    groq_base_url: str = Field(
+        default="https://api.groq.com/openai/v1",
+        alias="GROQ_BASE_URL",
     )
     fallback_base_url: str = Field(
         default="https://integrate.api.nvidia.com/v1",
