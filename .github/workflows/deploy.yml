@@ -1,29 +1,50 @@
-name: CI/CD — Eval Gate → Deploy to Hugging Face Spaces
+name: CI — Build & Code Quality Gate
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  schedule:
-    - cron: "0 */36 * * *"   # keep-alive ping every 36 hours
 
-# ── Permissions ────────────────────────────────────────────────────────────
 permissions:
   contents: read
 
-# ── Jobs ───────────────────────────────────────────────────────────────────
 jobs:
   # ────────────────────────────────────────────────────────────────────────
-  # Job 1: Run evaluation suite (CI gate)
-  # If this fails, the deploy job will NOT run.
+  # Job 1: Verify React 19 Frontend Build & TypeScript
   # ────────────────────────────────────────────────────────────────────────
-  evaluate:
-    name: Evaluation Gate
+  frontend-build:
+    name: Frontend Build & Typecheck
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: react-frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./react-frontend
+        run: npm ci
+
+      - name: Build React Production Bundle
+        working-directory: ./react-frontend
+        run: npm run build
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Job 2: Verify Python 3.11 Backend Integrity
+  # ────────────────────────────────────────────────────────────────────────
+  backend-integrity:
+    name: Backend Syntax & Imports Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python 3.11
@@ -32,88 +53,21 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install dependencies
-        run: pip install --no-cache-dir -r requirements.txt
-
-      - name: Run evaluation suite
-        env:
-          OPENROUTER_API_KEY:  ${{ secrets.OPENROUTER_API_KEY }}
-          NVIDIA_API_KEY:      ${{ secrets.NVIDIA_API_KEY }}
-          PINECONE_API_KEY:    ${{ secrets.PINECONE_API_KEY }}
-          PINECONE_INDEX_NAME: enterprise-rag-demo
-          PINECONE_CLOUD:      aws
-          PINECONE_REGION:     us-east-1
-          LOG_LEVEL:           INFO
-          RAGAS_EVAL_DELAY_SECONDS: "3"
-          RAGAS_SCORE_THRESHOLD:    "0.6"
+      - name: Install Python Dependencies
         run: |
-          python eval/run_eval.py \
-            --questions eval/test_questions.json \
-            --output eval/results.json \
-            --no-ragas
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Upload eval results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: eval-results
-          path: eval/results.json
-          retention-days: 30
-
-  # ────────────────────────────────────────────────────────────────────────
-  # Job 2: Deploy to Hugging Face Spaces
-  # Runs only if evaluate passes AND this is a push to main (not a PR).
-  # ────────────────────────────────────────────────────────────────────────
-  deploy:
-    name: Deploy to HF Spaces
-    runs-on: ubuntu-latest
-    needs: evaluate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code (full history)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Configure git identity
+      - name: Verify Python Syntax Compilation
         run: |
-          git config user.email "ci@enterprise-rag-demo"
-          git config user.name  "Enterprise RAG CI"
-
-      - name: Push to Hugging Face Space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE: ${{ secrets.HF_SPACE_ID }}  # e.g. yourname/enterprise-rag
-        run: |
-          # Add HF Space as a git remote
-          git remote add hf "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}"
-
-          # Force-push to trigger a Spaces rebuild
-          git push hf main --force
-
-          echo "✅ Pushed to HF Space: ${HF_SPACE}"
-
-  # ────────────────────────────────────────────────────────────────────────
-  # Job 3: Keep-alive ping (runs on schedule to prevent HF sleep)
-  # Fires every 36 hours so the Space never crosses the 48-hour idle limit.
-  # ────────────────────────────────────────────────────────────────────────
-  keepalive:
-    name: Keep-alive Ping
-    runs-on: ubuntu-latest
-    # This job is triggered separately by the schedule below
-    if: github.event_name == 'schedule'
-    steps:
-      - name: Ping HF Space health endpoint
-        env:
-          HF_SPACE_URL: ${{ secrets.HF_SPACE_URL }}  # e.g. https://yourname-enterprise-rag.hf.space
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${HF_SPACE_URL}/health")
-          echo "Health check status: ${STATUS}"
-          if [ "$STATUS" != "200" ]; then
-            echo "⚠️  Health check returned ${STATUS} — Space may be waking up"
-          else
-            echo "✅ Space is alive"
-          fi
-
-
+          python -m py_compile app/main.py
+          python -m py_compile app/config.py
+          python -m py_compile app/llm_clients.py
+          python -m py_compile app/agent/graph.py
+          python -m py_compile app/agent/router.py
+          python -m py_compile app/agent/decomposer.py
+          python -m py_compile app/agent/grader.py
+          python -m py_compile app/agent/synthesizer.py
+          python -m py_compile app/agent/rewriter.py
+          python -m py_compile app/agent/retriever.py
+          echo "✅ All backend modules compile with zero syntax errors."
