@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { 
   X, 
-  Send, 
+  ArrowUp,
   User, 
   FileText, 
   Maximize2, 
@@ -14,10 +14,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   RotateCcw,
-  Mic,
-  MicOff,
-  PlusCircle,
-  Paperclip
+  PlusCircle
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -59,57 +56,8 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
   const [activeCitationsList, setActiveCitationsList] = useState<Citation[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, "up" | "down">>({});
-  const [isListening, setIsListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
-
-  // Check Web Speech API support
-  useEffect(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setSpeechSupported(true);
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {
-          setInputValue((prev) => (prev ? `${prev} ${transcript}` : transcript));
-        }
-        setIsListening(false);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
-  }, []);
-
-  const toggleVoiceInput = () => {
-    if (!recognitionRef.current) return;
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch (err) {
-        console.warn("Speech recognition error:", err);
-      }
-    }
-  };
 
   useEffect(() => {
     if (initialPrompt && isOpen) {
@@ -244,7 +192,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         aria-label="Close Assistant Window" 
       />
       
-      {/* Glassmorphic Centered Window Container with Ethereal Thinking Glow */}
+      {/* Glassmorphic Centered Window Container */}
       <div
         className={`relative z-10 w-full ${
           isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-3xl"
@@ -260,12 +208,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               alt="Logo" 
               className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0" 
             />
-            <div className="flex items-center gap-2.5">
-              <h2 className="font-semibold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
-                <span>Enterprise RAG Assistant</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hidden sm:inline">
-                  Online
-                </span>
+            <div>
+              <h2 className="font-semibold text-sm sm:text-base tracking-tight text-white">
+                Enterprise RAG Assistant
               </h2>
             </div>
           </div>
@@ -519,54 +464,40 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Multimodal & Voice Enabled Input Bar */}
+          {/* Google Gemini Style Ultra-Rounded Pill Prompt Container with Embedded Action Icon */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="p-3 sm:p-4 border-t border-white/10 bg-black/25 flex items-center gap-2 font-sans"
+            className="p-3.5 sm:p-5 border-t border-white/10 bg-black/25 flex items-center font-sans"
           >
-            <div className="relative flex-1 flex items-center">
+            <div className="relative flex items-center w-full bg-white/[0.06] hover:bg-white/[0.08] focus-within:bg-white/[0.1] focus-within:ring-1 focus-within:ring-amber-400/40 border border-white/15 focus-within:border-amber-400/60 rounded-full transition-all shadow-lg backdrop-blur-md px-1.5 py-1">
               <input
                 id="rag-chat-input"
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={isListening ? "Listening to your voice..." : "Ask about Dilip's projects, IEEE research, or enterprise data..."}
-                className={`w-full bg-white/[0.05] border ${
-                  isListening ? "border-red-400/80 bg-red-950/20" : "border-white/15"
-                } rounded-2xl pl-4 pr-11 py-3 sm:py-3.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-amber-400/20 transition-all shadow-inner`}
+                placeholder="Ask about Dilip's projects, IEEE research, or enterprise data..."
+                className="w-full bg-transparent border-0 pl-4 pr-12 py-2.5 sm:py-3 text-sm text-white placeholder-slate-400 focus:outline-none"
                 disabled={isLoading}
               />
 
-              {/* Voice Dictation Button inside Input */}
-              {speechSupported && (
-                <button
-                  type="button"
-                  onClick={toggleVoiceInput}
-                  className={`absolute right-3 p-1.5 rounded-xl transition-all cursor-pointer ${
-                    isListening
-                      ? "bg-red-500 text-white animate-pulse"
-                      : "text-slate-400 hover:text-amber-300 hover:bg-white/10"
-                  }`}
-                  title={isListening ? "Stop listening" : "Click to speak (Voice Dictation)"}
-                >
-                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </button>
-              )}
+              {/* Aesthetic Action Send Icon Embedded Inside Pill (No Harsh Outline) */}
+              <button
+                id="rag-chat-send-btn"
+                type="submit"
+                disabled={isLoading || !inputValue.trim()}
+                className={`absolute right-1.5 sm:right-2 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                  inputValue.trim()
+                    ? "bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-md shadow-amber-400/25 active:scale-95"
+                    : "text-slate-500 bg-transparent hover:text-slate-400 cursor-not-allowed opacity-35"
+                }`}
+                aria-label="Send query"
+              >
+                <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+              </button>
             </div>
-
-            <button
-              id="rag-chat-send-btn"
-              type="submit"
-              disabled={isLoading || !inputValue.trim()}
-              className="px-4 sm:px-5 py-3 sm:py-3.5 min-h-[44px] rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-amber-500/10 active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              aria-label="Send message"
-            >
-              <span className="hidden sm:inline">Send</span>
-              <Send className="w-4 h-4" />
-            </button>
           </form>
         </div>
       </div>
