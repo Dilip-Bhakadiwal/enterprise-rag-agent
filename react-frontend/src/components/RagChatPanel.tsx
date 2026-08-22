@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Send, User, FileText, Maximize2, Minimize2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChatMessage } from "../types";
 import { sendRagMessage } from "../services/api";
 import dilipLogo from "../assets/dilip_web_app_logo.png";
@@ -215,7 +217,47 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                       : "bg-black/35 text-slate-100 border border-white/15 shadow-md backdrop-blur-md"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap font-gemini font-normal tracking-normal">{msg.content}</div>
+                  <div className="font-gemini text-[13px] sm:text-[14px] leading-[1.7] text-slate-100 markdown-content select-text">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ node, ...props }) => (
+                          <h1 className="text-sm sm:text-base font-bold text-amber-200 mt-2.5 mb-1.5 border-b border-amber-500/20 pb-0.5" {...props} />
+                        ),
+                        h2: ({ node, ...props }) => (
+                          <h2 className="text-xs sm:text-sm font-bold text-amber-200 mt-2.5 mb-1 border-b border-amber-500/20 pb-0.5" {...props} />
+                        ),
+                        h3: ({ node, ...props }) => (
+                          <h3 className="text-xs sm:text-[13.5px] font-semibold text-amber-300 mt-2.5 mb-1 flex items-center gap-1.5" {...props} />
+                        ),
+                        p: ({ node, ...props }) => (
+                          <p className="mb-2 last:mb-0" {...props} />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul className="list-disc list-outside ml-4 mb-2.5 space-y-1 text-slate-200" {...props} />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol className="list-decimal list-outside ml-4 mb-2.5 space-y-1 text-slate-200" {...props} />
+                        ),
+                        li: ({ node, ...props }) => (
+                          <li className="leading-relaxed" {...props} />
+                        ),
+                        strong: ({ node, ...props }) => (
+                          <strong className="font-semibold text-white bg-white/[0.06] px-1 py-0.2 rounded" {...props} />
+                        ),
+                        a: ({ node, ...props }) => (
+                          <a className="text-sky-400 hover:text-sky-300 underline font-medium break-all" target="_blank" rel="noopener noreferrer" {...props} />
+                        ),
+                        code: ({ node, className, children, ...props }) => (
+                          <code className="px-1.5 py-0.5 rounded bg-black/50 text-amber-200 font-mono text-[11px] sm:text-xs border border-white/10" {...props}>
+                            {children}
+                          </code>
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
 
                   {/* Citations Grounding Pill Box */}
                   {msg.citations && msg.citations.length > 0 && (
