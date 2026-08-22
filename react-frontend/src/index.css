@@ -28,7 +28,11 @@
     padding-right: env(safe-area-inset-right, 0px);
   }
 
-  button, a, input, select, textarea {
+  button,
+  a,
+  input,
+  select,
+  textarea {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
@@ -36,6 +40,7 @@
 
 /* Prevent iOS Safari 16px Auto-Zoom Glitch on Mobile Inputs */
 @media screen and (max-width: 768px) {
+
   input[type="text"],
   input[type="search"],
   input[type="email"],
@@ -79,8 +84,8 @@
   backdrop-filter: blur(28px) saturate(140%);
   -webkit-backdrop-filter: blur(28px) saturate(140%);
   border: 1px solid rgba(255, 159, 28, 0.3);
-  box-shadow: 
-    0 30px 70px -15px rgba(0, 0, 0, 0.85), 
+  box-shadow:
+    0 30px 70px -15px rgba(0, 0, 0, 0.85),
     0 0 45px rgba(255, 159, 28, 0.15),
     0 0 15px rgba(230, 126, 34, 0.1);
 }
@@ -99,6 +104,7 @@
   0% {
     stroke-dashoffset: 1000;
   }
+
   100% {
     stroke-dashoffset: 0;
   }
@@ -126,12 +132,17 @@
 
 /* Blinking Cursor */
 @keyframes cursorBlink {
-  0%, 45% {
+
+  0%,
+  45% {
     opacity: 1;
   }
-  50%, 95% {
+
+  50%,
+  95% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
