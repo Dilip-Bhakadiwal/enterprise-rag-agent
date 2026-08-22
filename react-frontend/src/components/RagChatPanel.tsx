@@ -8,7 +8,16 @@ import {
   Minimize2, 
   Sparkles, 
   ExternalLink, 
-  CornerDownRight 
+  CornerDownRight,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
+  Mic,
+  MicOff,
+  PlusCircle,
+  Paperclip
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,8 +57,59 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
   const [thinkingStep, setThinkingStep] = useState("Synthesizing response...");
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [activeCitationsList, setActiveCitationsList] = useState<Citation[]>([]);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, "up" | "down">>({});
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Check Web Speech API support
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInputValue((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.warn("Speech recognition error:", err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (initialPrompt && isOpen) {
@@ -122,12 +182,47 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     }
   };
 
+  const handleCopyMessage = (msgId: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedMessageId(msgId);
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
+
+  const handleRateMessage = (msgId: string, rating: "up" | "down") => {
+    setRatings((prev) => ({
+      ...prev,
+      [msgId]: prev[msgId] === rating ? (undefined as any) : rating,
+    }));
+  };
+
+  const handleRegenerate = () => {
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUserMessage) {
+      handleSendMessage(lastUserMessage.content);
+    }
+  };
+
+  const handleNewChat = () => {
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content: "New conversation started. Ask me anything about Dilip's credentials, IEEE research, or query enterprise datasets (Confluence, Jira, GitHub, Slack, Gmail).",
+        timestamp: "Just now",
+        suggestions: [
+          "What research has Dilip published with MoES funding?",
+          "How is MarketPulse AI's LangGraph multi-agent pipeline designed?",
+          "What is the recommended liability cap language in procurement SOPs?"
+        ]
+      }
+    ]);
+  };
+
   const handleOpenCitation = (citation: Citation, allInMsg?: Citation[]) => {
     setSelectedCitation(citation);
     setActiveCitationsList(allInMsg || [citation]);
   };
 
-  // Helper to format citation titles in a clean, human-readable way
   const formatCitationPillTitle = (cit: Citation, idx: number): string => {
     const rawId = cit.doc_id || cit.id || "";
     if (rawId.startsWith("portfolio_")) {
@@ -149,11 +244,13 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         aria-label="Close Assistant Window" 
       />
       
-      {/* Glassmorphic Centered Window */}
+      {/* Glassmorphic Centered Window Container with Ethereal Thinking Glow */}
       <div
         className={`relative z-10 w-full ${
-          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[700px] max-h-[92dvh] rounded-3xl"
-        } flex flex-col glass-panel-rag text-white shadow-2xl overflow-hidden transition-all duration-300 font-sans`}
+          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-3xl"
+        } flex flex-col glass-panel-rag text-white shadow-2xl overflow-hidden transition-all duration-300 font-sans ${
+          isLoading ? "ring-1 ring-amber-400/40 shadow-amber-500/10" : ""
+        }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-gradient-to-r from-amber-500/[0.06] via-transparent to-transparent shrink-0">
@@ -163,10 +260,10 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               alt="Logo" 
               className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0" 
             />
-            <div>
+            <div className="flex items-center gap-2.5">
               <h2 className="font-semibold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
                 <span>Enterprise RAG Assistant</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hidden sm:inline">
                   Online
                 </span>
               </h2>
@@ -175,6 +272,16 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
           {/* Action Icons */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* New Chat Button */}
+            <button
+              onClick={handleNewChat}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Start a new chat session"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">New Chat</span>
+            </button>
+
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-2 sm:p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
@@ -183,6 +290,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             >
               {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
+            
             <button
               id="rag-panel-close-btn"
               onClick={onClose}
@@ -317,6 +425,68 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     </div>
                   )}
 
+                  {/* Interactive Action Toolbar (Copy, Thumbs Up/Down, Regenerate) */}
+                  {msg.role === "assistant" && msg.id !== "welcome" && (
+                    <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+                      <div className="flex items-center gap-1">
+                        {/* Copy Response */}
+                        <button
+                          onClick={() => handleCopyMessage(msg.id, msg.content)}
+                          className="p-1.5 rounded-lg hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Copy response to clipboard"
+                        >
+                          {copiedMessageId === msg.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-[10.5px] text-emerald-300">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span className="text-[10.5px]">Copy</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Regenerate */}
+                        <button
+                          onClick={handleRegenerate}
+                          className="p-1.5 rounded-lg hover:bg-white/10 hover:text-slate-200 text-slate-400 transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Regenerate response"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span className="text-[10.5px]">Retry</span>
+                        </button>
+                      </div>
+
+                      {/* Feedback Thumbs */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleRateMessage(msg.id, "up")}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            ratings[msg.id] === "up"
+                              ? "bg-emerald-500/20 text-emerald-300"
+                              : "hover:bg-white/10 text-slate-400 hover:text-slate-200"
+                          }`}
+                          title="Helpful response"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleRateMessage(msg.id, "down")}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            ratings[msg.id] === "down"
+                              ? "bg-red-500/20 text-red-300"
+                              : "hover:bg-white/10 text-slate-400 hover:text-slate-200"
+                          }`}
+                          title="Unhelpful response"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Discrete Dev Telemetry Pill */}
                   <TelemetryBadge telemetry={msg.telemetry} />
                 </div>
@@ -349,7 +519,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Bar */}
+          {/* Multimodal & Voice Enabled Input Bar */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -357,16 +527,34 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             }}
             className="p-3 sm:p-4 border-t border-white/10 bg-black/25 flex items-center gap-2 font-sans"
           >
-            <div className="relative flex-1">
+            <div className="relative flex-1 flex items-center">
               <input
                 id="rag-chat-input"
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about Dilip's projects, IEEE research, or enterprise data..."
-                className="w-full bg-white/[0.05] border border-white/15 rounded-2xl px-4 py-3 sm:py-3.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-amber-400/20 transition-all shadow-inner"
+                placeholder={isListening ? "Listening to your voice..." : "Ask about Dilip's projects, IEEE research, or enterprise data..."}
+                className={`w-full bg-white/[0.05] border ${
+                  isListening ? "border-red-400/80 bg-red-950/20" : "border-white/15"
+                } rounded-2xl pl-4 pr-11 py-3 sm:py-3.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-amber-400/20 transition-all shadow-inner`}
                 disabled={isLoading}
               />
+
+              {/* Voice Dictation Button inside Input */}
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={toggleVoiceInput}
+                  className={`absolute right-3 p-1.5 rounded-xl transition-all cursor-pointer ${
+                    isListening
+                      ? "bg-red-500 text-white animate-pulse"
+                      : "text-slate-400 hover:text-amber-300 hover:bg-white/10"
+                  }`}
+                  title={isListening ? "Stop listening" : "Click to speak (Voice Dictation)"}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              )}
             </div>
 
             <button
@@ -383,7 +571,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         </div>
       </div>
 
-      {/* Slide-out Interactive Citation Inspector Drawer with Smooth Motion Animation */}
+      {/* Slide-out Interactive Citation Inspector Drawer */}
       <CitationDrawer
         citation={selectedCitation}
         onClose={() => setSelectedCitation(null)}
