@@ -52,8 +52,25 @@ class AskRequest(BaseModel):
 class SourceItem(BaseModel):
     doc_id: str
     source_type: str
-    timestamp: str
-    author: str
+    timestamp: str = ""
+    author: str = ""
+    chunk_text: str = ""
+    score: float | None = None
+
+
+class TelemetryItem(BaseModel):
+    total_time_ms: float
+    router_ms: float = 0.0
+    decomposer_ms: float = 0.0
+    retriever_ms: float = 0.0
+    grader_ms: float = 0.0
+    synthesizer_ms: float = 0.0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    estimated_cost_usd: float = 0.0
+    active_provider: str = "openrouter"
+    failover_status: str = "healthy"
 
 
 class AskResponse(BaseModel):
@@ -63,6 +80,8 @@ class AskResponse(BaseModel):
     provider_used: str
     used_fallback: bool
     response_time_ms: float
+    suggestions: list[str] = []
+    telemetry: TelemetryItem | None = None
 
 
 class HealthResponse(BaseModel):
@@ -175,6 +194,8 @@ async def ask_question(request: AskRequest, req: Request):
         provider_used=result["provider_used"],
         used_fallback=result["used_fallback"],
         response_time_ms=round(elapsed_ms, 2),
+        suggestions=result.get("suggestions", []),
+        telemetry=TelemetryItem(**result["telemetry"]) if result.get("telemetry") else None,
     )
 
 

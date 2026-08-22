@@ -1,4 +1,4 @@
-import { ChatMessage, Citation, KnowledgeDoc } from "../types";
+import { ChatMessage, Citation, KnowledgeDoc, Telemetry } from "../types";
 
 /**
  * Backend API Client — Enterprise RAG Integration
@@ -26,6 +26,8 @@ export interface RagChatRequest {
 export interface RagChatResponse {
   reply: string;
   citations: Citation[];
+  suggestions?: string[];
+  telemetry?: Telemetry;
   meta?: {
     intent?: string;
     response_time_ms?: number;
@@ -62,7 +64,7 @@ export async function sendRagMessage(
 
     const data = await response.json();
 
-    // Format citations for clean, human-friendly presentation
+    // Format citations with full chunk text and metadata for the inspector
     const citations: Citation[] = (data.sources || []).map(
       (s: any, idx: number) => {
         const rawId = s.doc_id || `src-${idx + 1}`;
@@ -79,8 +81,14 @@ export async function sendRagMessage(
 
         return {
           id: rawId,
+          doc_id: rawId,
           title: cleanTitle,
           category,
+          source_type: s.source_type || "Document",
+          author: s.author || "System / Enterprise",
+          timestamp: s.timestamp || "Official Release",
+          chunk_text: s.chunk_text || "",
+          score: s.score,
           snippet: [s.author, s.timestamp, s.source_type]
             .filter(Boolean)
             .join(" · ") || category,
@@ -98,6 +106,8 @@ export async function sendRagMessage(
     return {
       reply: data.answer || "No answer returned from the backend.",
       citations,
+      suggestions: data.suggestions || [],
+      telemetry: data.telemetry,
       meta: {
         intent: data.intent,
         response_time_ms: data.response_time_ms,

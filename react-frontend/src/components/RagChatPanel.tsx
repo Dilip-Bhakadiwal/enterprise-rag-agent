@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Send, User, FileText, Maximize2, Minimize2 } from "lucide-react";
+import { X, Send, User, FileText, Maximize2, Minimize2, Sparkles, ExternalLink, Activity } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChatMessage } from "../types";
+import { ChatMessage, Citation, KnowledgeDoc } from "../types";
 import { sendRagMessage } from "../services/api";
+import { CitationDrawer } from "./CitationDrawer";
+import { TelemetryBadge } from "./TelemetryBadge";
 import dilipLogo from "../assets/dilip_web_app_logo.png";
 
 interface RagChatPanelProps {
@@ -11,41 +13,6 @@ interface RagChatPanelProps {
   onClose: () => void;
   initialPrompt?: string;
 }
-
-const DEFAULT_KNOWLEDGE_DOCS: KnowledgeDoc[] = [
-  {
-    id: "doc-profile",
-    title: "Dilip Bhakadiwal Profile & Education",
-    category: "Biography & Credentials",
-    summary: "M.Tech in Artificial Intelligence from Defence Institute of Advanced Technology (DIAT), Pune.",
-    content: "Dilip Bhakadiwal is an AI & Backend Engineer holding a Master of Technology (M.Tech) in Artificial Intelligence from the Defence Institute of Advanced Technology (DIAT, DRDO). His expertise centers on Agentic LLM Architectures (LangGraph, Autogen), Low-Latency Async APIs (FastAPI, Redis, WebSockets), Enterprise RAG Search (Pinecone, Qdrant, BM25, Cross-Encoders), and Production Machine Learning (PyTorch, Spatio-Temporal Modeling).",
-    tags: ["DIAT", "MTech", "AI Engineer", "Backend", "FastAPI"]
-  },
-  {
-    id: "doc-marketpulse",
-    title: "MarketPulse AI — Real-Time Agentic Financial Terminal",
-    category: "Featured Projects",
-    summary: "Stateful LangGraph multi-agent financial engine running on async FastAPI WebSockets.",
-    content: "MarketPulse AI is an agentic financial terminal that ingests live market depth and price tickers. It routes analysis through specialized worker agents (Technical Indicators, Valuation, News Sentiment) coordinated via LangGraph state charts with deterministic fallback routes. The pipeline executes end-to-end in under 200ms with strict Pydantic v2 validation.",
-    tags: ["MarketPulse AI", "LangGraph", "FastAPI", "WebSockets", "Finance"]
-  },
-  {
-    id: "doc-redwood",
-    title: "Redwood Inference — Enterprise RAG & Hybrid Retrieval",
-    category: "Featured Projects",
-    summary: "Two-stage hybrid dense-sparse vector pipeline with Cross-Encoder reranking.",
-    content: "Redwood Inference is an enterprise retrieval-augmented generation engine engineered for high-throughput semantic queries. Combines OpenAI text-embedding-3-large vectors in Pinecone with lexical BM25 token indices. Utilizes a secondary Cross-Encoder reranker to minimize hallucination rates by 64% and achieves p95 latencies under 180ms on AWS ECS Fargate.",
-    tags: ["Redwood Inference", "RAG", "Pinecone", "Cross-Encoder", "AWS Fargate"]
-  },
-  {
-    id: "doc-research",
-    title: "Geophysical Deep Learning Research (MoES Funded)",
-    category: "Research & Publications",
-    summary: "Published deep learning meteorological research in IEEE Xplore and ICASA.",
-    content: "Funded by the Ministry of Earth Sciences (MoES), Government of India, Dilip formulated spatio-temporal deep neural networks (CNN-LSTM hybrids) for high-dimensional atmospheric time-series data. The research is peer-reviewed and indexed in IEEE Xplore digital library and presented at the International Conference on Applied Sciences and Automation (ICASA).",
-    tags: ["IEEE Xplore", "MoES", "ICASA", "PyTorch", "Atmospheric AI"]
-  }
-];
 
 export const RagChatPanel: React.FC<RagChatPanelProps> = ({
   isOpen,
@@ -57,13 +24,20 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
       id: "welcome",
       role: "assistant",
       content: "Hello! I am Dilip's Enterprise RAG Agent — powered by Pinecone vector search, NVIDIA Embeddings, and LangGraph. I can provide detailed information about Dilip Bhakadiwal's skills, flagship AI projects, credentials, and published research. Additionally, this system is engineered to query enterprise-scale knowledge bases benchmarked on onyx-dot-app/EnterpriseRAG-Bench (Confluence, GitHub, Jira, Slack, and Gmail).",
-      timestamp: "Just now"
+      timestamp: "Just now",
+      suggestions: [
+        "What research has Dilip published with MoES funding?",
+        "How is MarketPulse AI's LangGraph multi-agent pipeline designed?",
+        "What is the recommended liability cap language in procurement SOPs?"
+      ]
     }
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("Synthesizing response...");
+  const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
+  const [activeCitationsList, setActiveCitationsList] = useState<Citation[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -79,11 +53,12 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
   // ─── Agentic thinking step animation ────────────────────────────────────
   const THINKING_STEPS = [
-    "Routing query...",
-    "Decomposing sub-queries...",
-    "Searching Pinecone...",
-    "Grading documents...",
-    "Synthesizing answer...",
+    "Routing intent & source filter...",
+    "Decomposing multi-hop sub-queries...",
+    "Embedding query (NVIDIA NIM 1024-dim)...",
+    "Querying Pinecone Vector Index...",
+    "Grading retrieved documents...",
+    "Synthesizing answer with Llama 3.3...",
   ];
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -107,26 +82,27 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     const stepInterval = setInterval(() => {
       stepIdx = (stepIdx + 1) % THINKING_STEPS.length;
       setThinkingStep(THINKING_STEPS[stepIdx]);
-    }, 700);
+    }, 600);
 
     try {
-      const { reply, citations } = await sendRagMessage(text.trim(), messages);
+      const { reply, citations, suggestions, telemetry } = await sendRagMessage(text.trim(), messages);
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: reply,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        citations
+        citations,
+        suggestions,
+        telemetry,
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch (err: any) {
-      // Show friendly error bubble — never crash the UI
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: `⚠️ Could not reach the RAG backend.\n\nError: ${err?.message || "Unknown error"}\n\nMake sure the FastAPI server is running on port 8000.`,
+          content: `⚠️ Could not reach the RAG backend.\n\nError: ${err?.message || "Unknown error"}\n\nMake sure the FastAPI server is running.`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           citations: [],
         },
@@ -137,24 +113,29 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     }
   };
 
+  const handleOpenCitation = (citation: Citation, allInMsg?: Citation[]) => {
+    setSelectedCitation(citation);
+    setActiveCitationsList(allInMsg || [citation]);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center ${isExpanded ? "p-0" : "p-2 sm:p-6 md:p-8"} bg-transparent transition-all duration-300`}>
-      {/* Backdrop clickable overlay with no darkening or blurring */}
+      {/* Backdrop clickable overlay */}
       <div 
         className="absolute inset-0 cursor-pointer" 
         onClick={onClose} 
         aria-label="Close Assistant Window" 
       />
       
-      {/* Glassmorphic Centered Window Container with 75% background visibility & orange-yellow gradient accents */}
+      {/* Glassmorphic Centered Window Container */}
       <div
         className={`relative z-10 w-full ${
-          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[680px] max-h-[92dvh] rounded-3xl"
+          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[700px] max-h-[92dvh] rounded-3xl"
         } flex flex-col glass-panel-rag text-white shadow-2xl overflow-hidden transition-all duration-300 animate-in zoom-in-95 font-gemini`}
       >
-        {/* Header with Enterprise Rag Agent Name and Window Controls in Orange-Yellow Gradient */}
+        {/* Header with Enterprise Rag Agent Name and Window Controls */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-amber-500/20 bg-gradient-to-r from-amber-500/[0.08] via-orange-500/[0.05] to-transparent shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <img 
@@ -191,7 +172,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
           </div>
         </div>
 
-        {/* Chat Window Body (Transparent 75% visibility) */}
+        {/* Chat Window Body */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-transparent">
           {/* Chat message list with iOS momentum scroll */}
           <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-5 ios-scroll">
@@ -211,12 +192,13 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 )}
 
                 <div
-                  className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-3.5 sm:p-4.5 text-[13px] sm:text-[14px] leading-[1.65] font-normal ${
+                  className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 text-[13px] sm:text-[14px] leading-[1.65] font-normal ${
                     msg.role === "user"
                       ? "bg-amber-950/40 text-amber-50 border border-amber-400/35 shadow-md backdrop-blur-md"
-                      : "bg-black/35 text-slate-100 border border-white/15 shadow-md backdrop-blur-md"
+                      : "bg-black/40 text-slate-100 border border-white/15 shadow-md backdrop-blur-md"
                   }`}
                 >
+                  {/* Rich Markdown Response Body */}
                   <div className="font-gemini text-[13px] sm:text-[14px] leading-[1.7] text-slate-100 markdown-content select-text">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -259,26 +241,55 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                     </ReactMarkdown>
                   </div>
 
-                  {/* Citations Grounding Pill Box */}
+                  {/* Interactive Citations Grounding Pill Box (Click to Inspect) */}
                   {msg.citations && msg.citations.length > 0 && (
                     <div className="mt-3.5 pt-3 border-t border-amber-500/20">
-                      <div className="text-[11px] font-medium text-amber-300 flex items-center gap-1.5 mb-2">
-                        <FileText className="w-3 h-3 text-amber-400" /> Grounded Citations ({msg.citations.length}):
+                      <div className="text-[11px] font-medium text-amber-300 flex items-center justify-between gap-1.5 mb-2">
+                        <span className="flex items-center gap-1">
+                          <FileText className="w-3 h-3 text-amber-400" /> Grounded Citations ({msg.citations.length}):
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">Click to inspect chunk</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {msg.citations.map((cit, cIdx) => (
-                          <div
+                          <button
                             key={cIdx}
-                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/25 text-[11px] text-amber-100 transition-all flex items-center gap-1.5"
-                            title={cit.snippet}
+                            onClick={() => handleOpenCitation(cit, msg.citations)}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 border border-amber-400/25 hover:border-amber-400/50 text-[11px] text-amber-100 transition-all flex items-center gap-1.5 group cursor-pointer active:scale-95 text-left"
+                            title="Click to view full source text & metadata"
                           >
-                            <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 shrink-0" />
-                            <span className="font-medium truncate max-w-[170px] sm:max-w-[210px]">{cit.title}</span>
-                          </div>
+                            <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 shrink-0 group-hover:scale-125 transition-transform" />
+                            <span className="font-medium truncate max-w-[150px] sm:max-w-[200px]">{cit.title}</span>
+                            <ExternalLink className="w-2.5 h-2.5 text-amber-400/70 group-hover:text-amber-300 shrink-0" />
+                          </button>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Dynamic Smart Follow-up Suggestions */}
+                  {msg.suggestions && msg.suggestions.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-white/10">
+                      <div className="text-[11px] font-semibold text-amber-300 flex items-center gap-1 mb-1.5">
+                        <Sparkles className="w-3 h-3 text-amber-400" /> Suggested Follow-ups:
+                      </div>
+                      <div className="flex flex-col sm:flex-row flex-wrap gap-1.5">
+                        {msg.suggestions.map((sug, sIdx) => (
+                          <button
+                            key={sIdx}
+                            onClick={() => handleSendMessage(sug)}
+                            className="text-left px-3 py-1.5 rounded-xl bg-amber-500/[0.08] hover:bg-amber-500/20 border border-amber-400/20 hover:border-amber-400/40 text-[11.5px] sm:text-[12px] text-amber-100 hover:text-white transition-all flex items-center gap-1.5 active:scale-[0.98] cursor-pointer"
+                          >
+                            <span className="text-amber-400 font-bold">↳</span>
+                            <span>{sug}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dev Telemetry & FinOps Waterfall */}
+                  <TelemetryBadge telemetry={msg.telemetry} />
                 </div>
 
                 {msg.role === "user" && (
@@ -309,7 +320,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Bar Styled with Orange-Yellow Accent & 16px mobile font to prevent iOS Safari auto-zoom */}
+          {/* Input Bar */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -323,7 +334,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about Dilip's projects or research..."
+                placeholder="Ask about Dilip's research, projects, or enterprise datasets..."
                 className="w-full bg-white/[0.07] border border-white/20 rounded-2xl px-4 py-3 sm:py-3.5 text-base sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400/70 focus:bg-white/[0.12] focus:ring-1 focus:ring-amber-400/30 transition-all shadow-inner font-gemini"
                 disabled={isLoading}
               />
@@ -342,6 +353,14 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
           </form>
         </div>
       </div>
+
+      {/* Slide-out Interactive Citation Inspector Drawer */}
+      <CitationDrawer
+        citation={selectedCitation}
+        onClose={() => setSelectedCitation(null)}
+        allCitations={activeCitationsList}
+        onSelectCitation={(cit) => setSelectedCitation(cit)}
+      />
     </div>
   );
 };

@@ -12,6 +12,27 @@ export interface Citation {
   title: string;
   category: string;
   snippet: string;
+  chunk_text?: string;
+  author?: string;
+  timestamp?: string;
+  score?: number | null;
+  source_type?: string;
+  doc_id?: string;
+}
+
+export interface Telemetry {
+  total_time_ms: number;
+  router_ms: number;
+  decomposer_ms: number;
+  retriever_ms: number;
+  grader_ms: number;
+  synthesizer_ms: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd: number;
+  active_provider: string;
+  failover_status: string;
 }
 
 export interface ChatMessage {
@@ -20,6 +41,8 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   citations?: Citation[];
+  suggestions?: string[];
+  telemetry?: Telemetry;
   isStreaming?: boolean;
 }
 
