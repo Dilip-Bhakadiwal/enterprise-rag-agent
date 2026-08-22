@@ -40,7 +40,12 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
   const handleVideoLoaded = () => {
     if (!isLoaded) {
       setIsLoaded(true);
-      if (onVideoLoaded) onVideoLoaded();
+    }
+  };
+
+  const handleAnimationComplete = () => {
+    if (isLoaded && onVideoLoaded) {
+      onVideoLoaded();
     }
   };
 
@@ -49,6 +54,7 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
       initial={{ opacity: 0 }}
       animate={{ opacity: isLoaded ? 1 : 0 }}
       transition={{ duration: 2.0, ease: "easeInOut" }}
+      onAnimationComplete={handleAnimationComplete}
       className="fixed inset-0 overflow-hidden pointer-events-none select-none z-0"
     >
       {/* Background Animated Video Layer */}
