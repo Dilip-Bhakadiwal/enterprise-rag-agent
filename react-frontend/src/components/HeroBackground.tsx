@@ -1,8 +1,13 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion } from "motion/react";
 
-export const HeroBackground: React.FC = () => {
+interface HeroBackgroundProps {
+  onVideoLoaded?: () => void;
+}
+
+export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const playVideo = () => {
@@ -32,16 +37,25 @@ export const HeroBackground: React.FC = () => {
     };
   }, []);
 
+  const handleVideoLoaded = () => {
+    if (!isLoaded) {
+      setIsLoaded(true);
+      if (onVideoLoaded) onVideoLoaded();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: isLoaded ? 1 : 0 }}
       transition={{ duration: 2.0, ease: "easeInOut" }}
       className="fixed inset-0 overflow-hidden pointer-events-none select-none z-0"
     >
       {/* Background Animated Video Layer */}
       <video
         ref={videoRef}
+        onLoadedData={handleVideoLoaded}
+        onCanPlay={handleVideoLoaded}
         autoPlay
         loop
         muted
