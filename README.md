@@ -9,26 +9,27 @@
 
 ```mermaid
 flowchart TD
-    U([User Query]) --> R[Router Node\nIntent Classification]
-    R --> D[Decomposer Node\nMulti-Hop Query Planning]
-    D --> RET[Retriever Node\nPinecone Vector Search]
-    RET --> G[Document Grader\nRelevance Validation]
-    G -->|Relevant Chunks| S[Synthesizer Node\nStrict Context Boundary Isolation]
-    G -->|Low Relevance / Missing| REW[Query Rewriter] --> RET
+    U(["User Query"]) --> R["Router Node<br/>Intent Classification"]
+    R --> D["Decomposer Node<br/>Multi-Hop Query Planning"]
+    D --> RET["Retriever Node<br/>Pinecone Vector Search"]
+    RET --> G["Document Grader<br/>Relevance Validation"]
+    G -->|Relevant Chunks| S["Synthesizer Node<br/>Strict Context Isolation"]
+    G -->|Low Relevance / Missing| REW["Query Rewriter"] --> RET
 
-    subgraph LLM Cascade [3-Tier Resilient LLM Cascade]
-        OR[OpenRouter\nLlama 3.3 70B] -->|Failover 429/Timeout| GQ[Groq Cloud\nGPT-OSS 120B @ 108ms]
-        GQ -->|Failover Quota| NV[NVIDIA NIM\nNemotron 49B]
+    subgraph LLMCascade ["3-Tier Resilient LLM Cascade"]
+        OR["OpenRouter (Llama 3.3 70B)"] -->|Failover 429/Timeout| GQ["Groq Cloud (GPT-OSS 120B @ 108ms)"]
+        GQ -->|Failover Quota| NV["NVIDIA NIM (Nemotron 49B)"]
     end
 
-    subgraph Vector Storage [Pinecone Serverless Index]
-        V1[(Enterprise Dataset Chunks\n61,568 vectors)]
-        V2[(Portfolio & Bio Chunks\n7 vectors)]
+    subgraph VectorStorage ["Pinecone Serverless Index"]
+        V1[("Enterprise Dataset Chunks<br/>61,568 vectors")]
+        V2[("Portfolio Knowledge Chunks<br/>7 vectors")]
     end
 
-    RET <--> Vector Storage
-    S <--> LLM Cascade
-    S --> OUT([Executive Markdown Answer + Citations])
+    RET -.-> V1
+    RET -.-> V2
+    S -.-> OR
+    S --> OUT(["Executive Markdown Answer + Citations"])
 ```
 
 ---
