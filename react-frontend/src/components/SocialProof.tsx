@@ -12,12 +12,12 @@ export const SocialProof: React.FC = () => {
         paddingBottom: "max(1.5rem, calc(1rem + env(safe-area-inset-bottom, 0px)))"
       }}
     >
-      {/* Logos Strip with interactive hover effects matching reference image */}
+      {/* Logos Strip with interactive warm ambient hover effects */}
       <div className="flex flex-wrap items-center justify-center gap-5 xs:gap-7 sm:gap-10 md:gap-14 lg:gap-16">
         
         {/* IEEE Xplore */}
-        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-white transition-all duration-300 cursor-default select-none">
-          <div className="w-5 h-5 rounded bg-white/10 border border-white/20 flex items-center justify-center text-white font-mono text-[10px] font-bold group-hover:scale-105 group-hover:bg-white/20 transition-all">
+        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-[#FFD166] transition-all duration-300 cursor-default select-none">
+          <div className="w-5 h-5 rounded bg-white/10 border border-white/20 flex items-center justify-center text-white font-mono text-[10px] font-bold group-hover:scale-105 group-hover:border-[#FF9F1C]/60 group-hover:text-[#FFD166] transition-all">
             IE
           </div>
           <span className="font-display font-bold tracking-tight text-base sm:text-lg">
@@ -26,15 +26,15 @@ export const SocialProof: React.FC = () => {
         </div>
 
         {/* ICASA Research */}
-        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-white transition-all duration-300 cursor-default select-none">
+        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-[#FFD166] transition-all duration-300 cursor-default select-none">
           <span className="font-display font-extrabold text-base sm:text-lg tracking-tight">
-            ICASA<span className="text-slate-400 group-hover:text-white/80 font-normal ml-1 text-sm">(MoES)</span>
+            ICASA<span className="text-slate-400 group-hover:text-amber-200/90 font-normal ml-1 text-sm">(MoES)</span>
           </span>
         </div>
 
         {/* LangGraph */}
-        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-white transition-all duration-300 cursor-default select-none">
-          <svg className="w-4 h-4 text-slate-300 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-[#FFD166] transition-all duration-300 cursor-default select-none">
+          <svg className="w-4 h-4 text-slate-300 group-hover:text-[#FF9F1C] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 3v6m0 6v6M3 12h6m6 0h6" />
           </svg>
@@ -44,17 +44,17 @@ export const SocialProof: React.FC = () => {
         </div>
 
         {/* FastAPI */}
-        <div className="group flex items-center gap-1.5 text-slate-300/80 hover:text-white transition-all duration-300 cursor-default select-none">
-          <span className="text-slate-300 group-hover:text-white text-base">⚡</span>
+        <div className="group flex items-center gap-1.5 text-slate-300/80 hover:text-[#FFD166] transition-all duration-300 cursor-default select-none">
+          <span className="text-[#FF9F1C] group-hover:scale-125 transition-transform text-base">⚡</span>
           <span className="font-display font-extrabold text-base sm:text-lg tracking-tight">
             FastAPI
           </span>
         </div>
 
         {/* Pinecone */}
-        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-white transition-all duration-300 cursor-default select-none">
-          <div className="w-3.5 h-3.5 bg-slate-300 group-hover:bg-white transform rotate-45 flex items-center justify-center transition-colors">
-            <div className="w-1.5 h-1.5 bg-[#0b101b]" />
+        <div className="group flex items-center gap-2 text-slate-300/80 hover:text-[#FFD166] transition-all duration-300 cursor-default select-none">
+          <div className="w-3.5 h-3.5 bg-slate-300 group-hover:bg-[#FF9F1C] transform rotate-45 flex items-center justify-center transition-colors">
+            <div className="w-1.5 h-1.5 bg-[#080c14]" />
           </div>
           <span className="font-sans font-bold text-base sm:text-lg tracking-tight">
             Pinecone

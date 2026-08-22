@@ -79,7 +79,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
             {/* Open in New Window (Direct PDF) */}
             <button
               onClick={handleOpenNewWindow}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[38px] rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg bg-[#FF9F1C] hover:bg-[#E67E22] text-slate-950 font-bold text-xs shadow-md shadow-[#FF9F1C]/20 transition-all cursor-pointer"
               title="Open Official PDF in New Window"
             >
               <ExternalLink className="w-3.5 h-3.5" />
