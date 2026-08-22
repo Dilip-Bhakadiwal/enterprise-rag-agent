@@ -246,3 +246,40 @@
   animation: scale-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
+
+/* Chat Interface Custom Styles from HTML Template */
+.gradient-bg {
+  background: linear-gradient(90deg, #EA580C 0%, #F97316 50%, #FBBF24 100%);
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.shadow-custom {
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-pop-in {
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transform-origin: bottom right;
+}
+
+@keyframes fadeInWord {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.word-animate {
+  opacity: 0;
+  display: inline-block;
+  animation: fadeInWord 0.3s ease forwards;
+}

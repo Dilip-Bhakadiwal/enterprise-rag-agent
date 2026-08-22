@@ -1,28 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { 
-  X, 
-  ArrowUp,
-  User, 
-  FileText, 
-  Maximize2, 
-  Minimize2, 
-  Sparkles, 
-  ExternalLink, 
-  CornerDownRight,
   Copy,
   Check,
   ThumbsUp,
   ThumbsDown,
   RotateCcw,
-  PlusCircle
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatMessage, Citation } from "../types";
 import { sendRagMessage } from "../services/api";
 import { CitationDrawer } from "./CitationDrawer";
-import { TelemetryBadge } from "./TelemetryBadge";
-import dilipLogo from "../assets/dilip_web_app_logo.png";
 
 interface RagChatPanelProps {
   isOpen: boolean;
@@ -42,6 +30,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
       content: "Hello! I am Dilip's Enterprise RAG Agent — powered by Pinecone vector search, NVIDIA Embeddings, and LangGraph.\n\nI can provide detailed information about Dilip Bhakadiwal's skills, flagship AI projects, credentials, and published research. Additionally, this system is engineered to query enterprise-scale knowledge bases benchmarked on onyx-dot-app/EnterpriseRAG-Bench (Confluence, GitHub, Jira, Slack, and Gmail).",
       timestamp: "Just now",
       suggestions: [
+        "How do I optimize my React application for performance?",
         "What research has Dilip published with MoES funding?",
         "How is MarketPulse AI's LangGraph multi-agent pipeline designed?",
         "What is the recommended liability cap language in procurement SOPs?"
@@ -50,7 +39,6 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("Synthesizing response...");
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [activeCitationsList, setActiveCitationsList] = useState<Citation[]>([]);
@@ -158,6 +146,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         content: "New conversation started. Ask me anything about Dilip's credentials, IEEE research, or query enterprise datasets (Confluence, Jira, GitHub, Slack, Gmail).",
         timestamp: "Just now",
         suggestions: [
+          "How do I optimize my React application for performance?",
           "What research has Dilip published with MoES funding?",
           "How is MarketPulse AI's LangGraph multi-agent pipeline designed?",
           "What is the recommended liability cap language in procurement SOPs?"
@@ -175,16 +164,16 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     const rawId = cit.doc_id || cit.id || "";
     if (rawId.startsWith("portfolio_")) {
       const topic = rawId.replace("portfolio_", "").replace(/_/g, " ");
-      return `Dilip · ${topic.charAt(0).toUpperCase() + topic.slice(1)}`;
+      return `Dilip • ${topic.charAt(0).toUpperCase() + topic.slice(1)}`;
     }
-    const cat = (cit.category || cit.source_type || "Doc").toUpperCase();
-    return `${cat} · Doc [${idx + 1}]`;
+    const cat = (cit.category || cit.source_type || "CONFLUENCE").toUpperCase();
+    return `${cat} • Doc [${idx + 1}]`;
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center ${isExpanded ? "p-0" : "p-2 sm:p-6 md:p-8"} bg-transparent transition-all duration-300`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/60 backdrop-blur-sm transition-all duration-300">
       {/* Backdrop overlay */}
       <div 
         className="absolute inset-0 cursor-pointer" 
@@ -192,308 +181,312 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         aria-label="Close Assistant Window" 
       />
       
-      {/* Glassmorphic Centered Window Container with Vanguard Sharp Aesthetics */}
-      <div
-        className={`relative z-10 w-full ${
-          isExpanded ? "w-screen h-screen max-w-none max-h-none rounded-none border-0" : "max-w-3xl h-[88dvh] sm:h-[720px] max-h-[92dvh] rounded-md border border-white/10"
-        } flex flex-col bg-[#090d16]/95 backdrop-blur-2xl text-white shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 font-sans ${
-          isLoading ? "ring-1 ring-[#FF9F1C]/50 shadow-[#FF9F1C]/15" : ""
-        }`}
+      {/* BEGIN: ChatContainer */}
+      <main 
+        className="w-full max-w-5xl rounded-3xl gradient-bg p-[6px] shadow-custom relative flex flex-col h-[90vh] z-10" 
+        data-purpose="chat-container"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/40 shrink-0">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-3 text-white" data-purpose="top-bar">
           <div className="flex items-center gap-4">
-            <span className="font-podium text-lg sm:text-xl tracking-wide uppercase text-white">Enterprise RAG Assistant</span>
+            <span className="text-sm font-medium">Enterprise RAG Assistant</span>
           </div>
           <div className="flex items-center gap-4">
-            <button
+            <button 
               onClick={handleNewChat}
-              className="text-xs bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 rounded-sm transition-colors font-inter tracking-widest uppercase flex items-center gap-2 cursor-pointer shadow-sm text-white"
+              className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors font-medium flex items-center gap-2 cursor-pointer"
             >
-              <PlusCircle className="w-3.5 h-3.5 text-[#FFD166]" />
-              New Chat
+              <i className="ph ph-plus"></i>New Chat
             </button>
-            <button
+            <button 
               onClick={onClose}
-              className="text-white/60 hover:text-white transition-colors cursor-pointer p-2 hover:bg-white/5 rounded-sm"
-              aria-label="Close"
+              aria-label="Close" 
+              className="text-white/80 hover:text-white transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <i className="ph ph-x text-lg"></i>
             </button>
           </div>
         </div>
 
-        {/* Chat Window Body */}
-        <div className="flex flex-col w-full flex-1 overflow-hidden bg-transparent">
-          <div className="flex flex-col gap-5 overflow-y-auto flex-1 mb-4 p-4 sm:p-6 ios-scroll">
+        {/* Main Area */}
+        <div className="bg-white rounded-[22px] p-4 flex flex-col w-full flex-1 overflow-hidden" data-purpose="main-area">
+          {/* Chat History */}
+          <div className="flex flex-col gap-4 overflow-y-auto flex-1 mb-4 px-2 ios-scroll" data-purpose="chat-history">
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${
-                  msg.role === "user" ? "items-end" : "items-start"
-                } animate-fade-up`}
-              >
-                <div
-                  className={`${
-                    msg.role === "user"
-                      ? "bg-[#FF9F1C] text-black p-4 rounded-sm max-w-[85%] shadow-sm"
-                      : "bg-black/60 text-white/90 p-5 sm:p-6 rounded-sm w-full md:max-w-[90%] border border-white/20 shadow-[0_0_30px_rgba(255,159,28,0.1)] backdrop-blur-xl"
-                  }`}
-                >
-                  {/* Clean Markdown Response Body */}
-                  <div className={`text-sm sm:text-base leading-relaxed ${msg.role === 'user' ? 'text-black font-medium' : 'text-white/80'} markdown-content select-text font-inter`}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({ node, ...props }) => (
-                          <h1 className="text-base sm:text-lg font-podium tracking-wide text-white mt-4 mb-2 border-b border-white/10 pb-2 uppercase" {...props} />
-                        ),
-                        h2: ({ node, ...props }) => (
-                          <h2 className="text-sm sm:text-base font-inter font-bold text-white/90 mt-4 mb-2 tracking-tight" {...props} />
-                        ),
-                        h3: ({ node, ...props }) => (
-                          <h3 className="text-[13px] sm:text-sm font-inter font-semibold text-[#FFD166] mt-3 mb-1.5 uppercase tracking-wider" {...props} />
-                        ),
-                        p: ({ node, ...props }) => (
-                          <p className="mb-3 last:mb-0 text-white/80" {...props} />
-                        ),
-                        ul: ({ node, ...props }) => (
-                          <ul className="list-disc list-outside ml-5 mb-4 space-y-2 text-white/80" {...props} />
-                        ),
-                        ol: ({ node, ...props }) => (
-                          <ol className="list-decimal list-outside ml-5 mb-4 space-y-2 text-white/80" {...props} />
-                        ),
-                        li: ({ node, ...props }) => (
-                          <li className="leading-relaxed" {...props} />
-                        ),
-                        strong: ({ node, ...props }) => (
-                          <strong className="font-semibold text-white" {...props} />
-                        ),
-                        a: ({ node, ...props }) => (
-                          <a className="text-[#00B4D8] hover:text-[#00B4D8]/80 underline font-medium break-all" target="_blank" rel="noopener noreferrer" {...props} />
-                        ),
-                        code: ({ node, className, children, ...props }) => (
-                          <code className="px-2 py-0.5 rounded-full bg-black/60 text-[#FFD166] font-mono text-[11.5px] border border-white/10" {...props}>
-                            {children}
-                          </code>
-                        ),
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
+              <React.Fragment key={msg.id}>
+                {msg.role === "user" ? (
+                  /* User Message */
+                  <div className="flex flex-col items-end">
+                    <div className="bg-[#F97316] text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm animate-pop-in">
+                      <p className="text-sm sm:text-base">{msg.content}</p>
+                    </div>
                   </div>
+                ) : (
+                  /* AI Response */
+                  <div className="flex flex-col items-start">
+                    <div className="bg-gray-100 text-gray-800 p-4 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm w-full md:max-w-[90%]">
+                      {/* Markdown text */}
+                      <div className="text-sm sm:text-base text-gray-800 markdown-content font-sans">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({ node, ...props }) => (
+                              <h1 className="text-base sm:text-lg font-bold text-gray-900 mt-3 mb-2" {...props} />
+                            ),
+                            h2: ({ node, ...props }) => (
+                              <h2 className="text-sm sm:text-base font-semibold text-gray-800 mt-2.5 mb-1.5" {...props} />
+                            ),
+                            h3: ({ node, ...props }) => (
+                              <h3 className="text-xs sm:text-sm font-semibold text-gray-800 mt-2 mb-1" {...props} />
+                            ),
+                            p: ({ node, ...props }) => (
+                              <p className="mb-2 last:mb-0 text-gray-700 leading-relaxed" {...props} />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul className="list-disc pl-5 space-y-1 mb-2 text-gray-600" {...props} />
+                            ),
+                            ol: ({ node, ...props }) => (
+                              <ol className="list-decimal pl-5 space-y-1 mb-2 text-gray-600" {...props} />
+                            ),
+                            li: ({ node, ...props }) => (
+                              <li className="text-gray-600 leading-relaxed" {...props} />
+                            ),
+                            strong: ({ node, ...props }) => (
+                              <strong className="text-gray-900 font-semibold" {...props} />
+                            ),
+                            a: ({ node, ...props }) => (
+                              <a className="text-[#F97316] hover:underline font-medium break-all" target="_blank" rel="noopener noreferrer" {...props} />
+                            ),
+                            code: ({ node, className, children, ...props }) => (
+                              <code className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-800 font-mono text-xs" {...props}>
+                                {children}
+                              </code>
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
 
-                  {/* Technical Details Summary (Using suggestions or telemetry as proxy if available, else static) */}
-                  {msg.role === "assistant" && msg.id !== "welcome" && (
-                    <div className="space-y-6 mt-6 pt-6 border-t border-white/10">
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Token Economics */}
-                        <div className="bg-black/40 rounded-sm p-4 border border-white/20">
-                          <h4 className="text-[10px] font-inter tracking-widest uppercase font-semibold text-white/60 flex items-center gap-2 mb-3">
-                            <FileText className="w-3.5 h-3.5 text-[#FF9F1C]" /> Token Economics
-                          </h4>
-                          <div className="flex justify-between items-center text-xs mb-1">
-                            <span className="text-white/50">Prompt / Output:</span>
-                            <span className="font-medium text-white/90">966 / 384</span>
+                      <div className="space-y-6 mt-4">
+                        {/* Sources & Citations */}
+                        {msg.citations && msg.citations.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                              <i className="ph ph-file-text text-[#F97316]"></i> Sources &amp; Citations ({msg.citations.length})
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {msg.citations.map((cit, cIdx) => (
+                                <button
+                                  key={cIdx}
+                                  onClick={() => handleOpenCitation(cit, msg.citations)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-medium text-gray-800 hover:bg-orange-100 transition-colors cursor-pointer"
+                                >
+                                  <span className="w-2 h-2 rounded-full bg-gray-800"></span>
+                                  {formatCitationPillTitle(cit, cIdx)}
+                                  <i className="ph ph-arrow-up-right"></i>
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-white/50">Estimated Cost:</span>
-                            <span className="font-bold text-[#FFD166]">$0.000162</span>
+                        )}
+
+                        {/* LangGraph Node Execution Waterfall */}
+                        {msg.id !== "welcome" && (
+                          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                <i className="ph ph-clock text-[#F97316]"></i> LangGraph Node Execution Waterfall
+                              </h4>
+                              <span className="text-xs font-bold text-gray-500">
+                                {msg.telemetry?.latency_ms ? (msg.telemetry.latency_ms / 1000).toFixed(2) + "s" : "0.42s"}
+                              </span>
+                            </div>
+                            {/* Progress Bar */}
+                            <div className="w-full h-2 rounded-full bg-gray-200 mb-4 flex overflow-hidden">
+                              <div className="bg-blue-500 h-full" style={{ width: "10.4%" }}></div>
+                              <div className="bg-indigo-500 h-full" style={{ width: "2.7%" }}></div>
+                              <div className="bg-yellow-500 h-full" style={{ width: "10.2%" }}></div>
+                              <div className="bg-emerald-500 h-full" style={{ width: "76.7%" }}></div>
+                            </div>
+                            {/* Legend */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Router: {msg.telemetry?.node_timings?.router || "45ms"}</div>
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> Decomposer: {msg.telemetry?.node_timings?.decomposer || "28ms"}</div>
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Pinecone: {msg.telemetry?.node_timings?.retrieval || "112ms"}</div>
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> LLM Synth: {msg.telemetry?.node_timings?.synthesis || "180ms"}</div>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
-                        {/* Failover Ladder */}
-                        <div className="bg-black/40 rounded-sm p-4 border border-white/20">
-                          <h4 className="text-[10px] font-inter tracking-widest uppercase font-semibold text-white/60 flex items-center gap-2 mb-3">
-                            <Sparkles className="w-3.5 h-3.5 text-[#FF9F1C]" /> 3-Tier Failover
-                          </h4>
-                          <ul className="text-[10px] font-inter tracking-widest uppercase space-y-2 text-white/70">
-                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#FFD166]"></span> 1. OpenRouter (Primary)</li>
-                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#FF9F1C]"></span> 2. Groq Cloud (108ms)</li>
-                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-cyan-500"></span> 3. NVIDIA NIM (Fallback)</li>
-                          </ul>
-                        </div>
+                        {/* Token Economics & 3-Tier Failover Ladder */}
+                        {msg.id !== "welcome" && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Token Economics */}
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                <i className="ph ph-currency-dollar text-[#F97316]"></i> Token Economics
+                              </h4>
+                              <div className="flex justify-between items-center text-xs mb-1">
+                                <span className="text-gray-500">Prompt / Output:</span>
+                                <span className="font-medium text-gray-700">
+                                  {msg.telemetry?.prompt_tokens || 966} / {msg.telemetry?.completion_tokens || 384}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="text-gray-500">Estimated Cost:</span>
+                                <span className="font-bold text-emerald-600">
+                                  ${msg.telemetry?.cost_usd ? msg.telemetry.cost_usd.toFixed(6) : "0.000162"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Failover Ladder */}
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                <i className="ph ph-ladder text-[#F97316]"></i> 3-Tier Failover Ladder
+                              </h4>
+                              <ul className="text-xs space-y-1.5 text-gray-600">
+                                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 1. OpenRouter (Primary)</li>
+                                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> 2. Groq Cloud (108ms)</li>
+                                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 3. NVIDIA NIM (Fallback)</li>
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Suggested Follow-ups */}
+                        {msg.suggestions && msg.suggestions.length > 0 && (
+                          <div className="space-y-2 pt-2 border-t border-gray-200">
+                            <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                              <i className="ph ph-sparkle text-[#F97316]"></i> Suggested Follow-ups
+                            </h4>
+                            <div className="flex flex-col gap-2">
+                              {msg.suggestions.map((sug, sIdx) => (
+                                <button
+                                  key={sIdx}
+                                  onClick={() => handleSendMessage(sug)}
+                                  className="text-left flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-colors text-xs text-gray-700 cursor-pointer"
+                                >
+                                  <i className="ph ph-arrow-bend-down-right text-orange-500 mt-0.5"></i>
+                                  <span>{sug}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quick Toolbar (Copy, Regenerate, Feedback) */}
+                        {msg.id !== "welcome" && (
+                          <div className="pt-2 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleCopyMessage(msg.id, msg.content)}
+                                className="px-2.5 py-1 rounded hover:bg-gray-200 transition-colors flex items-center gap-1.5 cursor-pointer text-gray-600"
+                                title="Copy response"
+                              >
+                                {copiedMessageId === msg.id ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span className="text-emerald-700">Copied</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={handleRegenerate}
+                                className="px-2.5 py-1 rounded hover:bg-gray-200 transition-colors flex items-center gap-1.5 cursor-pointer text-gray-600"
+                                title="Regenerate response"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Retry</span>
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleRateMessage(msg.id, "up")}
+                                className={`p-1.5 rounded transition-colors cursor-pointer ${
+                                  ratings[msg.id] === "up" ? "bg-emerald-100 text-emerald-700" : "hover:bg-gray-200 text-gray-500"
+                                }`}
+                                title="Helpful"
+                              >
+                                <ThumbsUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleRateMessage(msg.id, "down")}
+                                className={`p-1.5 rounded transition-colors cursor-pointer ${
+                                  ratings[msg.id] === "down" ? "bg-red-100 text-red-700" : "hover:bg-gray-200 text-gray-500"
+                                }`}
+                                title="Unhelpful"
+                              >
+                                <ThumbsDown className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-
-                  {/* Clean Grounded Citation Chips with Vanguard Style */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-6 pt-5 border-t border-white/10 space-y-3">
-                      <h4 className="text-[10px] font-inter tracking-widest uppercase font-semibold text-white/60 flex items-center gap-2">
-                        <FileText className="w-3.5 h-3.5 text-[#FF9F1C]" />
-                        SOURCES & CITATIONS ({msg.citations.length})
-                      </h4>
-
-                      <div className="flex flex-wrap gap-2.5">
-                        {msg.citations.map((cit, cIdx) => (
-                          <button
-                            key={cIdx}
-                            onClick={() => handleOpenCitation(cit, msg.citations)}
-                            className="px-4 py-2 rounded-sm bg-[#FF9F1C]/10 border border-[#FF9F1C]/30 text-[10px] font-inter tracking-widest uppercase text-white/90 hover:bg-[#FF9F1C]/20 transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-                            title="Click to view full source text"
-                          >
-                            <span className="w-1.5 h-1.5 bg-[#FF9F1C] shrink-0" />
-                            <span className="truncate max-w-[170px] sm:max-w-[220px]">
-                              {formatCitationPillTitle(cit, cIdx)}
-                            </span>
-                            <ExternalLink className="w-3 h-3 text-[#FFD166] shrink-0" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dynamic Smart Follow-up Suggestions with Vanguard Style */}
-                  {msg.suggestions && msg.suggestions.length > 0 && (
-                    <div className="space-y-3 mt-6 pt-5 border-t border-white/10">
-                      <h4 className="text-[10px] font-inter tracking-widest uppercase font-semibold text-white/60 flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-[#FF9F1C]" />
-                        SUGGESTED FOLLOW-UPS
-                      </h4>
-                      <div className="flex flex-col gap-2.5">
-                        {msg.suggestions.map((sug, sIdx) => (
-                          <button
-                            key={sIdx}
-                            onClick={() => handleSendMessage(sug)}
-                            className="text-left flex items-start gap-3 p-3 sm:p-4 rounded-sm border border-white/20 bg-black/40 hover:border-[#FF9F1C]/60 hover:bg-black/60 transition-colors text-xs sm:text-sm font-inter text-white/90 shadow-sm"
-                          >
-                            <CornerDownRight className="w-4 h-4 text-[#FF9F1C] mt-0.5 shrink-0" />
-                            <span>{sug}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Interactive Action Toolbar */}
-                  {msg.role === "assistant" && msg.id !== "welcome" && (
-                    <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-inter tracking-widest uppercase text-white/40">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleCopyMessage(msg.id, msg.content)}
-                          className="px-3 py-1.5 rounded-sm hover:bg-white/10 hover:text-white/80 transition-colors flex items-center gap-2 cursor-pointer"
-                          title="Copy response to clipboard"
-                        >
-                          {copiedMessageId === msg.id ? (
-                            <>
-                              <Check className="w-3 h-3 text-[#FFD166]" />
-                              <span className="text-[#FFD166]">COPIED</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>COPY</span>
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          onClick={handleRegenerate}
-                          className="px-3 py-1.5 rounded-sm hover:bg-white/10 hover:text-white/80 transition-colors flex items-center gap-2 cursor-pointer"
-                          title="Regenerate response"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>RETRY</span>
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleRateMessage(msg.id, "up")}
-                          className={`p-2 rounded-sm transition-colors cursor-pointer border ${
-                            ratings[msg.id] === "up"
-                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                              : "border-transparent hover:bg-white/10 hover:border-white/20 text-white/40 hover:text-white/80"
-                          }`}
-                          title="Helpful response"
-                        >
-                          <ThumbsUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => handleRateMessage(msg.id, "down")}
-                          className={`p-2 rounded-sm transition-colors cursor-pointer border ${
-                            ratings[msg.id] === "down"
-                              ? "bg-red-500/20 text-red-400 border-red-500/30"
-                              : "border-transparent hover:bg-white/10 hover:border-white/20 text-white/40 hover:text-white/80"
-                          }`}
-                          title="Unhelpful response"
-                        >
-                          <ThumbsDown className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Discrete Dev Telemetry Pill */}
-                  <TelemetryBadge telemetry={msg.telemetry} />
-                </div>
-              </div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
 
             {isLoading && (
-              <div className="flex flex-col items-start animate-fade-up">
-                <div className="bg-black/60 text-white/90 p-5 sm:p-6 rounded-sm w-full md:max-w-[90%] border border-white/20 shadow-md backdrop-blur-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#FF9F1C] animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-2 h-2 rounded-full bg-[#E67E22] animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-2 h-2 rounded-full bg-[#FFD166] animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </div>
-                    <span className="text-[10px] tracking-widest uppercase font-inter text-white/50">{thinkingStep}</span>
+              <div className="flex flex-col items-start">
+                <div className="bg-gray-100 text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-[#F97316] animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-[#FBBF24] animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
+                  <span className="text-xs font-medium text-gray-600">{thinkingStep}</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area matching template */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="flex flex-col gap-4 shrink-0 pt-4 pb-2 px-4 sm:px-6 border-t border-white/10 bg-black/60"
-          >
+          {/* Input Area */}
+          <div className="flex flex-col gap-4 shrink-0 pt-2 border-t border-gray-100" data-purpose="input-area">
             {/* Text Input */}
             <textarea
               id="rag-chat-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
                 }
               }}
-              className="w-full bg-transparent text-white placeholder-white/30 text-base sm:text-lg resize-none border-none focus:ring-0 p-0 sm:px-2 min-h-[44px] font-inter focus:outline-none uppercase"
-              placeholder="ASK ANYTHING..."
+              className="w-full bg-transparent text-gray-800 placeholder-gray-400 text-base sm:text-lg resize-none border-none focus:ring-0 p-0 sm:px-2 min-h-[44px] focus:outline-none"
+              data-purpose="text-input"
+              placeholder="Ask anything"
               rows={1}
               disabled={isLoading}
             />
             {/* Bottom Controls */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-3" data-purpose="bottom-controls">
               <div className="flex items-center gap-2 ml-auto">
                 <button
                   id="rag-chat-send-btn"
-                  type="submit"
+                  onClick={() => handleSendMessage()}
                   disabled={isLoading || !inputValue.trim()}
-                  className={`w-10 h-10 rounded-sm flex items-center justify-center transition-all shadow-[0_0_20px_rgba(255,159,28,0.2)] ${
-                    inputValue.trim()
-                      ? "bg-[#FF9F1C] hover:bg-[#E67E22] text-black cursor-pointer active:scale-95"
-                      : "bg-white/10 text-white/30 cursor-not-allowed"
-                  }`}
                   aria-label="Send message"
+                  className="w-10 h-10 rounded-full bg-[#F97316] hover:bg-[#EA580C] flex items-center justify-center text-white transition-colors shadow-md shadow-orange-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <ArrowUp className="w-5 h-5 stroke-[2.5]" />
+                  <i className="ph ph-arrow-up text-lg font-bold"></i>
                 </button>
               </div>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      </main>
+      {/* END: ChatContainer */}
 
       {/* Slide-out Interactive Citation Inspector Drawer */}
       <CitationDrawer
