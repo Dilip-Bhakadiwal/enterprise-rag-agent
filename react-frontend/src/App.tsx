@@ -96,13 +96,13 @@ export default function App() {
             <button
               onClick={() => handleOpenRag()}
               aria-label="Open Enterprise Copilot"
-              className="fixed bottom-5 right-5 z-40 group flex items-center gap-2.5 px-4 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-[#F97316] to-[#FBBF24] text-black font-bold text-xs sm:text-sm shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/30 backdrop-blur-sm select-none"
+              className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 sm:bottom-6 sm:right-6 z-40 group flex items-center gap-2 sm:gap-2.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full bg-gradient-to-r from-[#F97316] to-[#FBBF24] text-black font-bold text-xs sm:text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40 backdrop-blur-md select-none"
             >
-              <div className="w-6 h-6 rounded-md bg-black text-white text-xs font-bold italic flex items-center justify-center shadow-xs">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-black text-white text-[10px] sm:text-xs font-bold italic flex items-center justify-center shadow-xs">
                 N
               </div>
-              <span className="font-semibold tracking-tight font-inter">Ask Copilot</span>
-              <span className="w-2 h-2 rounded-full bg-black/70 animate-pulse"></span>
+              <span className="font-semibold tracking-tight font-inter text-xs sm:text-sm">Ask Copilot</span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-black/70 animate-pulse"></span>
             </button>
           )}
         </>
