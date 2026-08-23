@@ -21,15 +21,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center">
         <button
           onClick={onOpenResume}
-          className="group flex items-center gap-3 text-white cursor-pointer select-none text-left"
+          className="group flex items-center gap-2.5 text-white cursor-pointer select-none text-left"
           title="Dilip Bhakadiwal"
         >
           <img
             src={dilipLogo}
             alt="Logo"
-            className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-lg border border-white/20 shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0"
+            className="w-6 h-6 sm:w-7 sm:h-7 object-contain rounded-md border border-white/20 shadow-sm group-hover:scale-105 transition-transform duration-300 shrink-0"
           />
-          <span className="font-podium text-2xl sm:text-3xl font-bold uppercase tracking-wider text-white group-hover:text-[#FFD166] transition-colors whitespace-nowrap">
+          <span className="font-podium text-lg sm:text-xl font-bold uppercase tracking-wider text-white group-hover:text-[#FFD166] transition-colors whitespace-nowrap">
             DILIP BHAKADIWAL
           </span>
         </button>

@@ -23,6 +23,10 @@ from app.llm_clients import call_llm
 
 # ── Source authority ranking (higher = more authoritative) ─────────────────
 SOURCE_AUTHORITY: dict[str, int] = {
+    "neo4j_graph": 10,
+    "product_catalog": 9,
+    "market_report": 9,
+    "store_directory": 8,
     "confluence": 10,
     "notion": 9,
     "google_drive": 8,

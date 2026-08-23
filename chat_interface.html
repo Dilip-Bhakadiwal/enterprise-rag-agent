@@ -1,0 +1,202 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Chat Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-styles">
+    body {
+      background-color: #E6EAE5; /* Match the subtle background color from image */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(90deg, #EA580C 0%, #F97316 50%, #FBBF24 100%);
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .shadow-custom {
+      box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      70% { transform: scale(1.05); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      transform-origin: bottom right;
+      opacity: 0;
+    }
+
+    @keyframes fadeInWord {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .word-animate {
+      opacity: 0;
+      display: inline-block;
+      animation: fadeInWord 0.3s ease forwards;
+    }
+  </style>
+<!-- Phosphor Icons for precise iconography -->
+<script src="https://unpkg.com/@phosphor-icons/web"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css" rel="stylesheet" type="text/css"><link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css" rel="stylesheet" type="text/css">
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 sm:p-8">
+<!-- BEGIN: ChatContainer -->
+<main class="w-full max-w-5xl rounded-3xl gradient-bg p-[6px] shadow-custom relative flex flex-col h-[90vh]" data-purpose="chat-container">
+<!-- Top Bar -->
+<div class="flex items-center justify-between px-4 pt-3 pb-3 text-white" data-purpose="top-bar"><div class="flex items-center gap-4"><span class="text-sm font-medium">Enterprise RAG Assistant</span></div><div class="flex items-center gap-4"><button class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors font-medium flex items-center gap-2"><i class="ph ph-plus"></i>New Chat</button><button aria-label="Close" class="text-white/80 hover:text-white transition-colors"><i class="ph ph-x text-lg"></i></button></div></div>
+<div class="bg-white rounded-[22px] p-4 flex flex-col w-full flex-1 overflow-hidden" data-purpose="main-area">
+<!-- Chat History -->
+<div class="flex flex-col gap-4 overflow-y-auto flex-1 mb-4 px-2" data-purpose="chat-history">
+<!-- User Message 1 -->
+<div class="flex flex-col items-end">
+<div class="bg-[#F97316] text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm animate-pop-in" style="animation-delay: 0s;">
+<p class="text-sm sm:text-base">How do I optimize my React application for performance?</p>
+</div>
+</div>
+<!-- AI Response 1 -->
+<div class="flex flex-col items-start">
+<div class="bg-gray-100 text-gray-800 p-4 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm">
+<p class="text-sm sm:text-base ai-response-text"><span class="word-animate">To&nbsp;</span><span class="word-animate">optimize&nbsp;</span><span class="word-animate">React&nbsp;</span><span class="word-animate">performance,&nbsp;</span><span class="word-animate">you&nbsp;</span><span class="word-animate">should&nbsp;</span><span class="word-animate">consider&nbsp;</span><span class="word-animate">using&nbsp;</span><span class="word-animate">React.memo&nbsp;</span><span class="word-animate">for&nbsp;</span><span class="word-animate">component&nbsp;</span><span class="word-animate">memoization,&nbsp;</span><span class="word-animate">useMemo&nbsp;</span><span class="word-animate">and&nbsp;</span><span class="word-animate">useCallback&nbsp;</span><span class="word-animate">for&nbsp;</span><span class="word-animate">expensive&nbsp;</span><span class="word-animate">calculations/callbacks,&nbsp;</span><span class="word-animate">and&nbsp;</span><span class="word-animate">implementing&nbsp;</span><span class="word-animate">code-splitting&nbsp;</span><span class="word-animate">with&nbsp;</span><span class="word-animate">React.lazy.&nbsp;</span></p>
+</div>
+</div>
+<!-- User Message 2 -->
+<div class="flex flex-col items-end">
+<div class="bg-[#F97316] text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm animate-pop-in" style="animation-delay: 1.5s;">
+<p class="text-sm sm:text-base">What is the best way to handle state in large apps?</p>
+</div>
+</div>
+<!-- AI Response 2 -->
+<div class="flex flex-col items-start">
+<div class="bg-gray-100 text-gray-800 p-4 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm w-full md:max-w-[90%]">
+<p class="text-sm sm:text-base ai-response-text mb-4"><span class="word-animate">Here&nbsp;</span><span class="word-animate">is&nbsp;</span><span class="word-animate">a&nbsp;</span><span class="word-animate">summary&nbsp;</span><span class="word-animate">of&nbsp;</span><span class="word-animate">the&nbsp;</span><span class="word-animate">Technical&nbsp;</span><span class="word-animate">Details&nbsp;</span><span class="word-animate">and&nbsp;</span><span class="word-animate">Open&nbsp;</span><span class="word-animate">Questions&nbsp;</span><span class="word-animate">regarding&nbsp;</span><span class="word-animate">the&nbsp;</span><span class="word-animate">enterprise&nbsp;</span><span class="word-animate">architecture.&nbsp;</span></p>
+<div class="space-y-6 mt-4">
+<!-- Technical Details Summary -->
+<div class="space-y-2">
+<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-list-dashes text-[#F97316]"></i> Technical Details and Open Questions</h4>
+<ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
+<li class=""><strong class="text-gray-800">Pipeline descriptors</strong> may need to allow for conditional branches (if-else) for future versions.</li>
+<li class="">The <strong class="text-gray-800">economic model</strong> for charging per-pipeline orchestration is still to be determined.</li>
+<li class=""><strong class="text-gray-800">Owner and contacts</strong> for the project include Aisha Kaur (product lead), Daniel Meyer (eng lead), Priya Raman (eng lead), and Jorge Alvarez (SRE/Oncall).</li>
+</ul>
+</div>
+<!-- Sources & Citations -->
+<div class="space-y-2">
+<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-file-text text-[#F97316]"></i> Sources &amp; Citations (3)</h4>
+<div class="flex flex-wrap gap-2">
+<a class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-medium text-gray-800 hover:bg-orange-100 transition-colors" href="#"><span class="w-2 h-2 rounded-full bg-gray-800"></span> CONFLUENCE • Doc [1] <i class="ph ph-arrow-up-right"></i></a>
+<a class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-medium text-gray-800 hover:bg-orange-100 transition-colors" href="#"><span class="w-2 h-2 rounded-full bg-gray-800"></span> CONFLUENCE • Doc [2] <i class="ph ph-arrow-up-right"></i></a>
+<a class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-medium text-gray-800 hover:bg-orange-100 transition-colors" href="#"><span class="w-2 h-2 rounded-full bg-gray-800"></span> CONFLUENCE • Doc [3] <i class="ph ph-arrow-up-right"></i></a>
+</div>
+</div>
+<!-- LangGraph Node Execution Waterfall -->
+<div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+<div class="flex justify-between items-center mb-3">
+<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-clock text-[#F97316]"></i> LangGraph Node Execution Waterfall</h4>
+<span class="text-xs font-bold text-gray-500">50.75s</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-2 rounded-full bg-gray-200 mb-4 flex overflow-hidden">
+<div class="bg-blue-500 h-full" style="width: 10.4%"></div> <!-- Router: 5.28s -->
+<div class="bg-indigo-500 h-full" style="width: 2.7%"></div> <!-- Decomposer: 1.35s -->
+<div class="bg-yellow-500 h-full" style="width: 10.2%"></div> <!-- Pinecone: 5.16s -->
+<div class="bg-emerald-500 h-full" style="width: 76.7%"></div> <!-- LLM Synth: 38.96s -->
+</div>
+<!-- Legend -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Router: 5.28s</div>
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Decomposer: 1.35s</div>
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> Pinecone: 5.16s</div>
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> LLM Synth: 38.96s</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Token Economics -->
+<div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3"><i class="ph ph-currency-dollar text-[#F97316]"></i> Token Economics</h4>
+<div class="flex justify-between items-center text-xs mb-1">
+<span class="text-gray-500">Prompt / Output:</span>
+<span class="font-medium text-gray-700">966 / 384</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-gray-500">Estimated Cost:</span>
+<span class="font-bold text-emerald-600">$0.000162</span>
+</div>
+</div>
+<!-- Failover Ladder -->
+<div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3"><i class="ph ph-ladder text-[#F97316]"></i> 3-Tier Failover Ladder</h4>
+<ul class="text-xs space-y-1.5 text-gray-600">
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 1. OpenRouter (Primary)</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> 2. Groq Cloud (108ms)</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 3. NVIDIA NIM (Fallback)</li>
+</ul>
+</div>
+</div>
+<!-- Suggested Follow-ups -->
+<div class="space-y-2 pt-2 border-t border-gray-200">
+<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-sparkle text-[#F97316]"></i> Suggested Follow-ups</h4>
+<div class="flex flex-col gap-2">
+<button class="text-left flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-colors text-xs text-gray-700">
+<i class="ph ph-arrow-bend-down-right text-orange-500 mt-0.5"></i>
+                How does MarketPulse AI handle real-time WebSocket ticker feeds?
+            </button>
+<button class="text-left flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-colors text-xs text-gray-700">
+<i class="ph ph-arrow-bend-down-right text-orange-500 mt-0.5"></i>
+                What SQL security guardrails are built into MarketPulse AI?
+            </button>
+<button class="text-left flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-colors text-xs text-gray-700">
+<i class="ph ph-arrow-bend-down-right text-orange-500 mt-0.5"></i>
+                Tell me about the Redwood Inference Enterprise RAG architecture.
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="flex flex-col gap-4 shrink-0 pt-2 border-t border-gray-100" data-purpose="input-area">
+<!-- Text Input -->
+<textarea class="w-full bg-transparent text-gray-800 placeholder-gray-400 text-base sm:text-lg resize-none border-none focus:ring-0 p-0 sm:px-2 min-h-[44px]" data-purpose="text-input" placeholder="Ask anything" rows="1"></textarea>
+<!-- Bottom Controls -->
+<div class="flex items-center justify-between flex-wrap gap-3" data-purpose="bottom-controls">
+<!-- Left Controls (Plus & Search) -->
+<!-- Right Controls (Model Selector & Send) -->
+<div class="flex items-center gap-2 ml-auto">
+<button aria-label="Send message" class="w-10 h-10 rounded-full bg-[#F97316] hover:bg-[#EA580C] flex items-center justify-center text-white transition-colors shadow-md shadow-orange-200">
+<i class="ph ph-arrow-up text-lg font-bold"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: ChatContainer -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.ai-response-text').forEach((el, elIndex) => {
+      const words = el.textContent.trim().split(/\s+/);
+      el.innerHTML = '';
+      // Stagger responses to follow user messages
+      const baseDelay = (elIndex === 0 ? 500 : 2000); 
+      words.forEach((word, index) => {
+        const span = document.createElement('span');
+        span.className = 'word-animate';
+        span.style.animationDelay = `${baseDelay + index * 40}ms`;
+        span.innerHTML = word + '&nbsp;';
+        el.appendChild(span);
+      });
+    });
+  });
+</script>
+
+
+</body></html>

@@ -25,6 +25,8 @@ env/
 
 # ── Dataset (large binary files) ─────────────────────────────────────────
 Dataset/
+sales dataset/
+*.zip
 
 # ── Eval results ──────────────────────────────────────────────────────────
 eval/results.json

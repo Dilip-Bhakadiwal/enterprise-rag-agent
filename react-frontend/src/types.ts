@@ -18,21 +18,44 @@ export interface Citation {
   score?: number | null;
   source_type?: string;
   doc_id?: string;
+  is_graph?: boolean;
+  entity_type?: string;
+  cypher_preview?: string;
+}
+
+export interface PIIGuardrailTelemetry {
+  is_masked: boolean;
+  total_masked_count: number;
+  entities: Array<{ type: string; count: number; placeholder: string }>;
 }
 
 export interface Telemetry {
   total_time_ms: number;
-  router_ms: number;
-  decomposer_ms: number;
-  retriever_ms: number;
-  grader_ms: number;
-  synthesizer_ms: number;
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-  estimated_cost_usd: number;
-  active_provider: string;
-  failover_status: string;
+  router_ms?: number;
+  decomposer_ms?: number;
+  retriever_ms?: number;
+  grader_ms?: number;
+  synthesizer_ms?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  estimated_cost_usd?: number;
+  active_provider?: string;
+  failover_status?: string;
+  graph_nodes?: number;
+  graph_relationships?: number;
+  knowledge_graph_status?: string;
+  graph_hops?: number;
+  node_timings?: {
+    router?: string;
+    decomposer?: string;
+    retrieval?: string;
+    graph_hop?: string;
+    synthesis?: string;
+  };
+  latency_ms?: number;
+  cost_usd?: number;
+  pii_guardrail?: PIIGuardrailTelemetry;
 }
 
 export interface ChatMessage {

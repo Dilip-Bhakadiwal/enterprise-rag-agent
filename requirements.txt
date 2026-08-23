@@ -13,8 +13,9 @@ openai==1.54.4            # used by langchain-openai under the hood
 fastembed==0.4.1
 onnxruntime-gpu==1.20.0    # 1.29 has DLL issues on Python 3.12 Windows
 
-# ── Vector Database ──────────────────────────────────────────────────────────
+# ── Vector & Graph Database ──────────────────────────────────────────────────
 pinecone[grpc]==5.3.1     # gRPC client for fast batch upserts
+neo4j>=5.18.0             # Neo4j AuraDB Graph driver
 
 # ── Data Processing ──────────────────────────────────────────────────────────
 pyarrow==17.0.0

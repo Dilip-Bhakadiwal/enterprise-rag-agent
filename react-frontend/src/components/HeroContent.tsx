@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowUpRight, Award, Crown } from "lucide-react";
+import { fetchLiveHeroStats, HeroStats } from "../services/api";
 
 interface HeroContentProps {
   onOpenProjects: () => void;
@@ -10,6 +11,36 @@ export const HeroContent: React.FC<HeroContentProps> = ({
   onOpenProjects,
   onOpenRag,
 }) => {
+  const [stats, setStats] = useState<HeroStats>({
+    vectors_indexed: "61.5K+",
+    agentic_latency_ms: 180,
+    latency_display: "<200ms",
+    failover_tier: "3-Tier",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchLiveHeroStats().then((data) => {
+      if (isMounted && data) {
+        setStats(data);
+      }
+    });
+
+    // Refresh every 15 minutes in background
+    const interval = setInterval(() => {
+      fetchLiveHeroStats().then((data) => {
+        if (isMounted && data) {
+          setStats(data);
+        }
+      });
+    }, 15 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <div className="relative z-20 flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 w-full items-start text-left my-auto">
       
@@ -68,39 +99,50 @@ export const HeroContent: React.FC<HeroContentProps> = ({
         </div>
       </div>
 
-      {/* 5. Stats Row: 4 stats (animate-fade-up-delay-4, 0.8s delay) */}
-      <div className="animate-fade-up-delay-4 mt-8 sm:mt-10 lg:mt-14 flex flex-wrap gap-6 sm:gap-10 lg:gap-16">
-        {/* Stat 1 */}
+      {/* 5. Stats Row: 5 dynamic stats with Knowledge Graph */}
+      <div className="animate-fade-up-delay-4 mt-8 sm:mt-10 lg:mt-14 flex flex-wrap gap-6 sm:gap-10 lg:gap-14">
+        {/* Stat 1: Neo4j Knowledge Graph */}
         <div className="flex flex-col text-left">
-          <span className="font-inter text-white text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-            61.5K+
+          <span className="font-inter text-emerald-400 text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+            {stats.graph_nodes || 286}
           </span>
-          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
-            Vectors Indexed (Pinecone)
+          <span className="text-white/60 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Graph Nodes (Neo4j Aura)
           </span>
         </div>
 
-        {/* Stat 2 */}
+        {/* Stat 2: Pinecone Vectors */}
         <div className="flex flex-col text-left">
           <span className="font-inter text-white text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-            &lt;200ms
+            {stats.vectors_indexed}
+          </span>
+          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
+            Vectors (Pinecone)
+          </span>
+        </div>
+
+        {/* Stat 3: Agentic Latency */}
+        <div className="flex flex-col text-left">
+          <span className="font-inter text-white text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+            {stats.latency_display}
           </span>
           <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
             Agentic Latency
           </span>
         </div>
 
-        {/* Stat 3 */}
+        {/* Stat 4: Failover Ladder */}
         <div className="flex flex-col text-left">
           <span className="font-inter text-white text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-            3-Tier
+            {stats.failover_tier || "3-Tier"}
           </span>
           <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
             Failover (Groq / OpenRouter)
           </span>
         </div>
 
-        {/* Stat 4 */}
+        {/* Stat 5: Research */}
         <div className="flex flex-col text-left">
           <span className="font-inter text-white text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             IEEE

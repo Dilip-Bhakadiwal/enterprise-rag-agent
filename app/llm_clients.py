@@ -52,7 +52,9 @@ def _build_openrouter_client() -> ChatOpenAI:
             "X-Title": "Enterprise RAG Demo",
         },
         temperature=0.1,
-        max_retries=0,  # handled explicitly
+        timeout=6.0,
+        request_timeout=6.0,
+        max_retries=0,
     )
 
 
@@ -63,7 +65,9 @@ def _build_groq_client() -> ChatOpenAI:
         api_key=settings.groq_api_key or "missing_groq_key",
         base_url=settings.groq_base_url,
         temperature=0.1,
-        max_retries=0,  # handled explicitly
+        timeout=6.0,
+        request_timeout=6.0,
+        max_retries=0,
     )
 
 
@@ -74,6 +78,8 @@ def _build_nvidia_client() -> ChatOpenAI:
         api_key=settings.nvidia_api_key,
         base_url=settings.fallback_base_url,
         temperature=0.1,
+        timeout=6.0,
+        request_timeout=6.0,
         max_retries=0,
     )
 
@@ -105,14 +111,7 @@ def get_nvidia() -> ChatOpenAI:
     return _nvidia_client
 
 
-# ── Retry decorator for single provider transient network glitches ────────
-@retry(
-    retry=retry_if_exception_type(Exception),
-    stop=stop_after_attempt(2),
-    wait=wait_exponential(multiplier=0.5, min=1, max=5),
-    before_sleep=before_sleep_log(logging.getLogger("tenacity"), logging.WARNING),
-    reraise=True,
-)
+# ── Fast single-attempt invocation per tier (fail over immediately on glitch)
 def _invoke_with_retry(client: ChatOpenAI, messages: list[BaseMessage]) -> Any:
     return client.invoke(messages)
 

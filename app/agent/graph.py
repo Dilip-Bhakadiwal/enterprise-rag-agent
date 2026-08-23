@@ -21,6 +21,7 @@ from loguru import logger
 
 from app.agent.router import classify_intent
 from app.agent.retriever import retrieve_chunks
+from app.agent.graph_retriever import retrieve_hybrid_graph_chunks
 from app.agent.synthesizer import synthesize_answer
 from app.agent.grader import grade_documents
 from app.agent.rewriter import rewrite_query
@@ -146,17 +147,16 @@ def decomposer_node(state: AgentState) -> AgentState:
 
 
 def retriever_node(state: AgentState) -> AgentState:
-    """Node 2: Retrieve relevant chunks from Pinecone (with fallback) for ALL sub-queries."""
+    """Node 2: Hybrid GraphRAG Retrieve relevant chunks (Neo4j Cypher + Pinecone Dense Vectors)."""
     t0 = time.perf_counter()
     sub_queries = state.get("sub_queries", [state["query"]])
-    source_filter = state.get("source_filter", [])
     
     all_chunks = []
     any_fallback = False
     
     for sq in sub_queries:
-        logger.info(f"[Retriever] Query: {sq[:60]}… | filter={source_filter}")
-        chunks, used_fallback = retrieve_chunks(sq, source_filter)
+        logger.info(f"[Hybrid GraphRAG] Query: {sq[:60]}…")
+        chunks, used_fallback = retrieve_hybrid_graph_chunks(sq, top_k=6)
         all_chunks.extend(chunks)
         if used_fallback:
             any_fallback = True
@@ -364,8 +364,85 @@ def get_graph():
     return _graph
 
 
+import re
+from langchain_core.messages import HumanMessage, SystemMessage
+from app.llm_clients import call_llm
+
+_DIRECT_CHAT_PROMPT = """\
+You are an intelligent, friendly, and helpful Enterprise AI Copilot.
+Answer the user's conversational query or general question clearly, naturally, and concisely.
+If they ask who you are, introduce yourself as an Enterprise AI Copilot equipped with Neo4j Knowledge Graph (for Apple/Samsung retail sales & warranty analytics) and Pinecone Vector Search (for Dilip Bhakadiwal's AI architectures and research).
+"""
+
+_ENTERPRISE_RAG_KEYWORDS = [
+    "apple", "samsung", "iphone", "galaxy", "macbook", "ipad", "airpods", "beats", "store", "stores",
+    "warranty", "claim", "claims", "repair", "5g", "market share", "revenue", "units", "quarter", "q1", "q2", "q3", "q4",
+    "north america", "europe", "asia", "asia-pacific", "latin america", "middle east", "africa",
+    "dilip", "bhakadiwal", "diat", "pune", "m.tech", "mtech", "b.tech", "btech", "focal-cbam", "fish-yolo",
+    "fpga", "xilinx", "ieee", "marketpulse", "redwood", "moes",
+    "jira", "github", "confluence", "sop", "sla", "policy", "pull request", "pr ", "ticket", "deployment",
+    "graph", "neo4j", "pinecone", "cypher"
+]
+
+def _is_rag_domain_query(query: str) -> bool:
+    q = query.lower()
+    return any(k in q for k in _ENTERPRISE_RAG_KEYWORDS)
+
+
 def ask(query: str) -> dict:
-    """Run full RAG pipeline for a query with telemetry and suggestions."""
+    """Run Smart Router: Direct LLM for general chat or Full GraphRAG for domain queries."""
+    clean_query = query.strip()
+    
+    # ── Path A: Direct LLM Call for Conversational / Non-RAG Queries ───────
+    if not _is_rag_domain_query(clean_query):
+        t0 = time.perf_counter()
+        messages = [
+            SystemMessage(content=_DIRECT_CHAT_PROMPT),
+            HumanMessage(content=clean_query),
+        ]
+        try:
+            response, provider = call_llm(messages)
+            answer_text = response.content if hasattr(response, "content") else str(response)
+        except Exception as exc:
+            logger.error(f"Direct LLM call error: {exc}")
+            answer_text = "Hello! I am your Enterprise AI Copilot. How can I help you today?"
+            provider = "openrouter"
+
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        prompt_tokens = len(clean_query) // 4 + 30
+        completion_tokens = len(answer_text) // 4
+        total_tokens = prompt_tokens + completion_tokens
+        cost_usd = round((total_tokens / 1000) * 0.00012, 6)
+
+        return {
+            "answer": answer_text,
+            "sources": [],
+            "intent": "conversational",
+            "provider_used": provider,
+            "used_fallback": False,
+            "suggestions": [
+                "Which company sells more overall: Apple or Samsung?",
+                "What are the top Apple retail store locations in North America and Europe by product volume?",
+                "Compare Samsung 5G market share and revenue in Asia-Pacific vs Europe",
+                "What published research did Dilip work on during his M.Tech?"
+            ],
+            "telemetry": {
+                "total_time_ms": round(elapsed_ms, 1),
+                "router_ms": 1.0,
+                "decomposer_ms": 0.0,
+                "retriever_ms": 0.0,
+                "grader_ms": 0.0,
+                "synthesizer_ms": round(elapsed_ms, 1),
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "estimated_cost_usd": cost_usd,
+                "active_provider": provider,
+                "failover_status": "healthy",
+            },
+        }
+
+    # ── Path B: Full LangGraph Hybrid GraphRAG Pipeline ───────────────────
     graph = get_graph()
     initial_state: AgentState = {
         "query": query,

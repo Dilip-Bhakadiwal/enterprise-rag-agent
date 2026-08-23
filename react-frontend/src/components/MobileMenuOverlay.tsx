@@ -32,13 +32,13 @@ export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({
     >
       {/* Header row matches navbar: brand name on left, X close icon on right */}
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <img
             src={dilipLogo}
             alt="Logo"
-            className="w-8 h-8 object-contain rounded-lg border border-white/20"
+            className="w-6 h-6 object-contain rounded-md border border-white/20"
           />
-          <span className="font-podium text-2xl sm:text-3xl font-bold uppercase tracking-wider text-white">
+          <span className="font-podium text-lg sm:text-xl font-bold uppercase tracking-wider text-white">
             DILIP BHAKADIWAL
           </span>
         </div>

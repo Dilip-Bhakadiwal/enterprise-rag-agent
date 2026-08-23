@@ -63,6 +63,9 @@ def _get_pinecone_index():
     return pc.Index(settings.pinecone_index_name)
 
 
+get_pinecone_index = _get_pinecone_index
+
+
 def _embed_query(query: str) -> list[float]:
     """Embed the query text based on the configured provider."""
     if settings.embedding_provider == "nvidia":
@@ -190,7 +193,7 @@ def retrieve_chunks(
     candidates = []
     for match in matches:
         metadata = match.metadata or {}
-        chunk_text = metadata.get("chunk_text", "")
+        chunk_text = metadata.get("chunk_text") or metadata.get("text", "")
         bm25 = _bm25_lite_score(query_tokens, chunk_text)
         # Weighted combination: 80% semantic, 20% keyword
         combined_score = 0.8 * float(match.score) + 0.2 * min(bm25, 1.0)
