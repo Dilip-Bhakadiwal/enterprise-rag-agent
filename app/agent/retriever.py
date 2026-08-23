@@ -41,6 +41,7 @@ from loguru import logger
 from pinecone import Pinecone
 
 from app.config import settings
+from app.cache import get_cached_embedding, set_cached_embedding
 
 # ── BGE query prefix ───────────────────────────────────────────────────────
 _QUERY_PREFIX = "query: "
@@ -67,9 +68,36 @@ get_pinecone_index = _get_pinecone_index
 
 
 def _embed_query(query: str) -> list[float]:
-    """Embed the query text based on the configured provider."""
+    """Embed a single query text based on the configured provider."""
+    return _embed_queries([query])[0]
+
+
+def _embed_queries(queries: list[str]) -> list[list[float]]:
+    """Embed multiple query texts with Upstash Redis vector caching and NVIDIA NIM batching."""
+    if not queries:
+        return []
+
+    results: list[list[float] | None] = [None] * len(queries)
+    missing_indices: list[int] = []
+    missing_queries: list[str] = []
+
+    # 1. Check Upstash Redis Cache for each query
+    for idx, q in enumerate(queries):
+        cached = get_cached_embedding(q)
+        if cached:
+            results[idx] = cached
+        else:
+            missing_indices.append(idx)
+            missing_queries.append(q)
+
+    # 2. If all were cached, return immediately!
+    if not missing_queries:
+        logger.debug(f"⚡ [Upstash Redis] All {len(queries)} embeddings served from cache!")
+        return [r for r in results if r is not None]
+
+    # 3. Compute missing embeddings
     if settings.embedding_provider == "nvidia":
-        logger.info(f"Embedding query via NVIDIA NIM: {settings.embedding_model}")
+        logger.info(f"Embedding batch of {len(missing_queries)} queries via NVIDIA NIM: {settings.embedding_model}")
         response = httpx.post(
             "https://integrate.api.nvidia.com/v1/embeddings",
             headers={
@@ -77,20 +105,28 @@ def _embed_query(query: str) -> list[float]:
                 "Content-Type": "application/json"
             },
             json={
-                "input": query,
+                "input": missing_queries if len(missing_queries) > 1 else missing_queries[0],
                 "model": settings.embedding_model,
                 "input_type": "query"
             },
             timeout=30.0
         )
         response.raise_for_status()
-        return response.json()["data"][0]["embedding"]
-    
-    # Fallback to local FastEmbed
-    model = _get_embedding_model()
-    prefixed = _QUERY_PREFIX + query
-    embeddings = list(model.embed([prefixed]))
-    return embeddings[0].tolist()
+        data = response.json().get("data", [])
+        new_embeddings = [item["embedding"] for item in data]
+    else:
+        # Fallback to local FastEmbed
+        model = _get_embedding_model()
+        prefixed = [_QUERY_PREFIX + q for q in missing_queries]
+        embeddings = list(model.embed(prefixed))
+        new_embeddings = [e.tolist() for e in embeddings]
+
+    # 4. Cache new embeddings in Upstash Redis and fill results array
+    for orig_idx, q_text, emb in zip(missing_indices, missing_queries, new_embeddings):
+        results[orig_idx] = emb
+        set_cached_embedding(q_text, emb, ttl_seconds=86400)
+
+    return [r for r in results if r is not None]
 
 
 def _tokenize_for_bm25(text: str) -> list[str]:

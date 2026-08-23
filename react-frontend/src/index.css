@@ -261,7 +261,8 @@
 
 /* Chat Interface Custom Styles from HTML Template */
 .gradient-bg {
-  background: linear-gradient(90deg, #EA580C 0%, #F97316 50%, #FBBF24 100%);
+  background: #000000;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(38, 38, 38, 1) 100%);
 }
 
 .glass-effect {

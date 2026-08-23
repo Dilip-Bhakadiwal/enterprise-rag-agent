@@ -15,6 +15,7 @@ Features:
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import TypedDict, Any
 from langgraph.graph import StateGraph, END
 from loguru import logger
@@ -26,6 +27,7 @@ from app.agent.synthesizer import synthesize_answer
 from app.agent.grader import grade_documents
 from app.agent.rewriter import rewrite_query
 from app.agent.decomposer import decompose_query
+from app.cache import get_cached_rag_response, set_cached_rag_response
 
 
 # ── State Schema ───────────────────────────────────────────────────────────
@@ -147,19 +149,28 @@ def decomposer_node(state: AgentState) -> AgentState:
 
 
 def retriever_node(state: AgentState) -> AgentState:
-    """Node 2: Hybrid GraphRAG Retrieve relevant chunks (Neo4j Cypher + Pinecone Dense Vectors)."""
+    """Node 2: Hybrid GraphRAG Retrieve relevant chunks (Neo4j Cypher + Pinecone Dense Vectors) in parallel."""
     t0 = time.perf_counter()
     sub_queries = state.get("sub_queries", [state["query"]])
     
     all_chunks = []
     any_fallback = False
     
-    for sq in sub_queries:
-        logger.info(f"[Hybrid GraphRAG] Query: {sq[:60]}…")
-        chunks, used_fallback = retrieve_hybrid_graph_chunks(sq, top_k=6)
+    if len(sub_queries) == 1:
+        logger.info(f"[Hybrid GraphRAG] Query: {sub_queries[0][:60]}…")
+        chunks, used_fallback = retrieve_hybrid_graph_chunks(sub_queries[0], top_k=6)
         all_chunks.extend(chunks)
         if used_fallback:
             any_fallback = True
+    else:
+        logger.info(f"[Hybrid GraphRAG] Executing {len(sub_queries)} sub-queries in parallel batch...")
+        with ThreadPoolExecutor(max_workers=min(4, len(sub_queries))) as executor:
+            future_results = list(executor.map(lambda sq: retrieve_hybrid_graph_chunks(sq, top_k=6), sub_queries))
+        
+        for chunks, used_fallback in future_results:
+            all_chunks.extend(chunks)
+            if used_fallback:
+                any_fallback = True
             
     # Deduplicate chunks immediately by doc_id
     seen_ids = set()
@@ -390,9 +401,15 @@ def _is_rag_domain_query(query: str) -> bool:
 
 
 def ask(query: str) -> dict:
-    """Run Smart Router: Direct LLM for general chat or Full GraphRAG for domain queries."""
+    """Run Smart Router: Instant Upstash Redis Cache -> Direct LLM -> Full Hybrid GraphRAG."""
     clean_query = query.strip()
     
+    # ── Level 0: Check Upstash Serverless Redis Cache (~5ms Hit) ──────────
+    cached_response = get_cached_rag_response(clean_query)
+    if cached_response:
+        logger.info(f"⚡ [Cache] Returning instant Upstash Redis response for \"{clean_query[:50]}...\"")
+        return cached_response
+
     # ── Path A: Direct LLM Call for Conversational / Non-RAG Queries ───────
     if not _is_rag_domain_query(clean_query):
         t0 = time.perf_counter()
@@ -406,7 +423,7 @@ def ask(query: str) -> dict:
         except Exception as exc:
             logger.error(f"Direct LLM call error: {exc}")
             answer_text = "Hello! I am your Enterprise AI Copilot. How can I help you today?"
-            provider = "openrouter"
+            provider = "groq"
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
         prompt_tokens = len(clean_query) // 4 + 30
@@ -414,7 +431,7 @@ def ask(query: str) -> dict:
         total_tokens = prompt_tokens + completion_tokens
         cost_usd = round((total_tokens / 1000) * 0.00012, 6)
 
-        return {
+        result_payload = {
             "answer": answer_text,
             "sources": [],
             "intent": "conversational",
@@ -441,6 +458,8 @@ def ask(query: str) -> dict:
                 "failover_status": "healthy",
             },
         }
+        set_cached_rag_response(clean_query, result_payload, ttl_seconds=3600)
+        return result_payload
 
     # ── Path B: Full LangGraph Hybrid GraphRAG Pipeline ───────────────────
     graph = get_graph()
@@ -461,7 +480,7 @@ def ask(query: str) -> dict:
         "telemetry": {},
     }
     result = graph.invoke(initial_state)
-    return {
+    result_payload = {
         "answer": result["answer"],
         "sources": result["sources"],
         "intent": result["intent"],
@@ -470,3 +489,5 @@ def ask(query: str) -> dict:
         "suggestions": result.get("suggestions", []),
         "telemetry": result.get("telemetry", {}),
     }
+    set_cached_rag_response(clean_query, result_payload, ttl_seconds=3600)
+    return result_payload

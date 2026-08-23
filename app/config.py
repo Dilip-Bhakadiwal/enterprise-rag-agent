@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     neo4j_username: str = Field(default="neo4j", alias="NEO4J_USERNAME")
     neo4j_password: str = Field(default="", alias="NEO4J_PASSWORD")
 
+    # ── Serverless Cache (Upstash Redis) ───────────────────────────────────
+    upstash_redis_rest_url: str = Field(default="", alias="UPSTASH_REDIS_REST_URL")
+    upstash_redis_rest_token: str = Field(default="", alias="UPSTASH_REDIS_REST_TOKEN")
+
     # ── Dataset ────────────────────────────────────────────────────────────
     dataset_docs_path: str = Field(
         default="Dataset/documents/test.parquet", alias="DATASET_DOCS_PATH"

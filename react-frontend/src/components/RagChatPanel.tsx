@@ -761,42 +761,43 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: 10 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[3px] shadow-custom relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10"
+                className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10 border border-white/20 overflow-hidden"
                 data-purpose="chat-container-fullscreen"
               >
                 {/* Fullscreen Top Bar */}
-                <div className="flex items-center justify-between px-3 sm:px-4.5 h-8 sm:h-9 text-white shrink-0" data-purpose="top-bar">
+                <div className="flex items-center justify-between px-3 sm:px-4.5 h-10 text-white shrink-0 bg-black/40 backdrop-blur-sm" data-purpose="top-bar">
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded bg-black text-white text-[10px] font-bold italic flex items-center justify-center border border-white/20">
+                    <div className="w-6 h-6 rounded-md bg-black text-white text-xs font-bold italic flex items-center justify-center border border-white/20 shadow-xs">
                       N
                     </div>
                     <span className="text-xs sm:text-[13px] font-semibold tracking-wider font-inter leading-none">
                       Enterprise RAG Assistant
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-1 sm:gap-1.5">
                     <button
                       onClick={handleNewChat}
-                      className="text-[10px] sm:text-xs bg-white/20 hover:bg-white/30 px-2.5 sm:px-3 py-1 rounded-full transition-colors font-medium flex items-center gap-1.5 cursor-pointer active:scale-95 leading-none"
+                      title="New Chat"
+                      className="p-1.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white transition-colors font-medium flex items-center gap-1.5 cursor-pointer active:scale-95 text-xs"
                     >
-                      <Plus className="w-3 h-3" />
-                      <span>New Chat</span>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">New Chat</span>
                     </button>
                     {/* Dock / Minimize to Widget Button */}
                     <button
                       onClick={() => setIsMaximized(false)}
                       title="Collapse to Right-Side Copilot Widget"
-                      className="p-1 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+                      className="p-1.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
                     >
-                      <Minimize2 className="w-4 h-4" />
+                      <Minimize2 className="w-3.5 h-3.5" />
                     </button>
                     {/* Close Button */}
                     <button
                       onClick={onClose}
                       aria-label="Close"
-                      className="p-1 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+                      className="p-1.5 rounded-lg hover:bg-white/20 text-white/90 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -812,7 +813,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 24 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 w-[92vw] sm:w-[410px] md:w-[430px] h-[540px] sm:h-[600px] max-h-[88dvh] rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl flex flex-col overflow-hidden border border-white/20"
+              className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 w-[92vw] sm:w-[410px] md:w-[430px] h-[540px] sm:h-[600px] max-h-[88dvh] rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 flex flex-col overflow-hidden border border-white/20"
               data-purpose="chat-copilot-widget"
             >
               {/* Widget Top Bar */}

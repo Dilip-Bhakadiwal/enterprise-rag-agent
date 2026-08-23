@@ -17,11 +17,14 @@ dist/
 build/
 .eggs/
 
-# ── Virtual environments ──────────────────────────────────────────────────
+# ── Virtual environments & packages ───────────────────────────────────────
 denv/
 venv/
 .venv/
 env/
+node_modules/
+react-frontend/node_modules/
+react-frontend/dist/
 
 # ── Dataset (large binary files) ─────────────────────────────────────────
 Dataset/
