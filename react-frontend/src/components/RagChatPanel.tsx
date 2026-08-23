@@ -535,14 +535,16 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             data-purpose="chat-container"
           >
             {/* Thinner Top Bar */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2 text-white" data-purpose="top-bar">
+            <div className="flex items-center justify-between px-3 sm:px-4.5 h-8 sm:h-9 text-white shrink-0" data-purpose="top-bar">
               <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-semibold tracking-wider font-inter">Enterprise RAG Assistant</span>
+                <span className="text-xs sm:text-[13px] font-semibold tracking-wider font-inter leading-none -translate-y-[1.5px]">
+                  Enterprise RAG Assistant
+                </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button 
                   onClick={handleNewChat}
-                  className="text-[10px] sm:text-xs bg-white/20 hover:bg-white/30 px-2.5 sm:px-3 py-1 rounded-full transition-colors font-medium flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  className="text-[10px] sm:text-xs bg-white/20 hover:bg-white/30 px-2.5 sm:px-3 py-1 rounded-full transition-colors font-medium flex items-center gap-1.5 cursor-pointer active:scale-95 leading-none"
                 >
                   <i className="ph ph-plus text-xs"></i>
                   <span>New Chat</span>
@@ -604,10 +606,10 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                   e.preventDefault();
                   handleSendMessage();
                 }}
-                className="flex items-center gap-2 sm:gap-3 shrink-0 pt-2 sm:pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-1 sm:px-2 border-t border-gray-200 bg-white"
+                className="flex items-center gap-2 sm:gap-3 shrink-0 pt-2 sm:pt-2.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-1 sm:px-2 border-t border-gray-200 bg-white"
                 data-purpose="input-area"
               >
-                <div className="relative flex items-center flex-1 bg-gray-50/90 hover:bg-gray-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#F97316]/30 border border-gray-200 focus-within:border-[#F97316] rounded-xl sm:rounded-2xl transition-all shadow-inner px-3 sm:px-3.5 py-1 sm:py-1.5">
+                <div className="relative flex items-center flex-1 bg-gray-50/90 hover:bg-gray-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#F97316]/30 border border-gray-200 focus-within:border-[#F97316] rounded-xl sm:rounded-2xl transition-all shadow-inner px-3 sm:px-3.5 min-h-[42px] sm:min-h-[44px]">
                   <textarea
                     id="rag-chat-input"
                     value={inputValue}
@@ -618,7 +620,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                         handleSendMessage();
                       }
                     }}
-                    className="w-full bg-transparent text-gray-800 placeholder-gray-400 text-base resize-none border-none focus:ring-0 p-0 min-h-[38px] max-h-[100px] sm:max-h-[120px] focus:outline-none leading-normal"
+                    className="w-full bg-transparent text-gray-800 placeholder-gray-400 text-sm sm:text-base resize-none border-none focus:ring-0 p-0 pt-2.5 pb-2 min-h-[38px] max-h-[100px] sm:max-h-[120px] focus:outline-none leading-[20px]"
                     data-purpose="text-input"
                     placeholder="Ask about Dilip's AI projects..."
                     rows={1}
