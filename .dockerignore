@@ -26,6 +26,9 @@ denv/
 venv/
 .venv/
 Dataset/
+sales dataset/
+scripts/
+tests/
 eval/results.json
 *.parquet
 demo/
