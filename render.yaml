@@ -21,6 +21,16 @@ services:
         value: aws
       - key: PINECONE_REGION
         value: us-east-1
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USERNAME
+        sync: false
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
       - key: PRIMARY_MODEL
         value: meta-llama/llama-3.3-70b-instruct
       - key: GROQ_MODEL
