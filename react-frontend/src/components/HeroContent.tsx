@@ -99,55 +99,55 @@ export const HeroContent: React.FC<HeroContentProps> = ({
         </div>
       </div>
 
-      {/* 5. Stats Row: Clean 2-column grid on mobile, flex on desktop */}
-      <div className="animate-fade-up-delay-4 mt-6 sm:mt-10 lg:mt-14 grid grid-cols-2 sm:grid-cols-3 lg:flex gap-x-4 sm:gap-x-8 lg:gap-14 gap-y-4 sm:gap-y-6 w-full max-w-4xl">
+      {/* 5. Stats Row: Clean 2-column grid on mobile, flex-nowrap on desktop */}
+      <div className="animate-fade-up-delay-4 mt-6 sm:mt-10 lg:mt-14 grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row lg:items-start gap-x-4 sm:gap-x-8 lg:gap-10 xl:gap-14 gap-y-4 sm:gap-y-6 w-full">
         {/* Stat 1: Neo4j Knowledge Graph */}
-        <div className="flex flex-col text-left">
-          <span className="font-inter text-emerald-400 text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
+        <div className="flex flex-col text-left shrink-0">
+          <span className="font-inter text-emerald-400 text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
             {stats.graph_nodes || 286}
           </span>
-          <span className="text-white/60 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 flex items-center gap-1">
+          <span className="text-white/60 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 flex items-center gap-1 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             Graph Nodes (Neo4j)
           </span>
         </div>
 
         {/* Stat 2: Pinecone Vectors */}
-        <div className="flex flex-col text-left">
-          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
+        <div className="flex flex-col text-left shrink-0">
+          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
             {stats.vectors_indexed}
           </span>
-          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
+          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 whitespace-nowrap">
             Vectors (Pinecone)
           </span>
         </div>
 
         {/* Stat 3: Agentic Latency */}
-        <div className="flex flex-col text-left">
-          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
+        <div className="flex flex-col text-left shrink-0">
+          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
             {stats.latency_display}
           </span>
-          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
+          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 whitespace-nowrap">
             Agentic Latency
           </span>
         </div>
 
         {/* Stat 4: Failover Ladder */}
-        <div className="flex flex-col text-left">
-          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
+        <div className="flex flex-col text-left shrink-0">
+          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
             {stats.failover_tier || "3-Tier"}
           </span>
-          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
-            Failover (Groq)
+          <span className="text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 whitespace-nowrap">
+            Failover (Groq / OpenRouter)
           </span>
         </div>
 
         {/* Stat 5: Research */}
-        <div className="flex flex-col text-left col-span-2 sm:col-span-1 pt-1 sm:pt-0 border-t border-white/10 sm:border-t-0">
-          <span className="font-inter text-[#FFD166] sm:text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
+        <div className="flex flex-col text-left col-span-2 sm:col-span-1 pt-1 sm:pt-0 border-t border-white/10 sm:border-t-0 shrink-0">
+          <span className="font-inter text-[#FFD166] sm:text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
             IEEE
           </span>
-          <span className="text-white/60 sm:text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1">
+          <span className="text-white/60 sm:text-white/50 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 whitespace-nowrap">
             Published Research (MoES)
           </span>
         </div>
