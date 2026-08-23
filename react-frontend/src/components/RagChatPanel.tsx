@@ -531,27 +531,28 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               scale: { duration: 1.0, ease: [0.16, 1, 0.3, 1] },
               y: { duration: 1.0, ease: [0.16, 1, 0.3, 1] },
             }}
-            className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[4px] sm:p-[6px] shadow-custom relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10" 
+            className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[3px] shadow-custom relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10" 
             data-purpose="chat-container"
           >
-            {/* Top Bar */}
-            <div className="flex items-center justify-between px-3.5 sm:px-4 pt-3 pb-2.5 sm:pb-3 text-white" data-purpose="top-bar">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <span className="text-xs sm:text-sm font-medium tracking-wide">Enterprise RAG Assistant</span>
+            {/* Thinner Top Bar */}
+            <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2 text-white" data-purpose="top-bar">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-semibold tracking-wider font-inter">Enterprise RAG Assistant</span>
               </div>
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={handleNewChat}
-                  className="text-[11px] sm:text-xs bg-white/20 hover:bg-white/30 px-3 sm:px-3.5 py-1.5 rounded-full transition-colors font-medium flex items-center gap-1.5 sm:gap-2 cursor-pointer active:scale-95 min-h-[36px]"
+                  className="text-[10px] sm:text-xs bg-white/20 hover:bg-white/30 px-2.5 sm:px-3 py-1 rounded-full transition-colors font-medium flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  <i className="ph ph-plus text-xs sm:text-sm"></i>New Chat
+                  <i className="ph ph-plus text-xs"></i>
+                  <span>New Chat</span>
                 </button>
                 <button 
                   onClick={onClose}
                   aria-label="Close" 
-                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+                  className="p-1 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
                 >
-                  <i className="ph ph-x text-lg sm:text-xl"></i>
+                  <i className="ph ph-x text-base sm:text-lg"></i>
                 </button>
               </div>
             </div>
