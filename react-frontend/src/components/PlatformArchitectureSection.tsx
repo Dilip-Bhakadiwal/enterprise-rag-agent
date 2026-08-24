@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef } from "react";
+import { motion } from "motion/react";
 import { Network, Database, Cpu, XCircle, CheckCircle2 } from "lucide-react";
 
 interface EngineCardProps {
@@ -7,13 +8,18 @@ interface EngineCardProps {
   name: string;
   label: string;
   icon: React.ReactNode;
+  index: number;
 }
 
-function EngineCard({ id, engineNum, name, label, icon }: EngineCardProps) {
+function EngineCard({ id, engineNum, name, label, icon, index }: EngineCardProps) {
   return (
-    <div
+    <motion.div
       id={id}
-      className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-8 flex flex-col items-center text-center group hover:border-[#2a2a2a] transition-colors"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.6, delay: index * 0.15, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-8 flex flex-col items-center text-center group hover:border-[#2a2a2a] transition-all duration-300 w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center rounded-2xl md:rounded-none"
     >
       {/* Corner Ticks */}
       <span className="absolute -top-[1px] -left-[1px] w-2.5 h-2.5 border-t border-l border-zinc-500/80 pointer-events-none" />
@@ -21,8 +27,8 @@ function EngineCard({ id, engineNum, name, label, icon }: EngineCardProps) {
       <span className="absolute -bottom-[1px] -left-[1px] w-2.5 h-2.5 border-b border-l border-zinc-500/80 pointer-events-none" />
       <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 border-b border-r border-zinc-500/80 pointer-events-none" />
 
-      {/* Green Accent Icon */}
-      <div className="mb-4 flex items-center justify-center text-[#5fe323]">
+      {/* Green Accent Icon with subtle hover glow */}
+      <div className="mb-4 flex items-center justify-center text-[#5fe323] p-3 rounded-xl bg-white/[0.03] group-hover:scale-110 transition-transform duration-300">
         {icon}
       </div>
 
@@ -40,11 +46,14 @@ function EngineCard({ id, engineNum, name, label, icon }: EngineCardProps) {
       <div className="font-mono text-[11px] sm:text-xs uppercase tracking-[0.2em] text-[#71717a] font-normal max-w-[200px]">
         {label}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 export const PlatformArchitectureSection: React.FC = () => {
+  const [activeEngineIdx, setActiveEngineIdx] = useState(0);
+  const enginesScrollRef = useRef<HTMLDivElement>(null);
+
   const engines = [
     {
       id: "engine-neo4j",
@@ -69,43 +78,79 @@ export const PlatformArchitectureSection: React.FC = () => {
     },
   ];
 
+  const handleEngineScroll = () => {
+    if (enginesScrollRef.current) {
+      const { scrollLeft, offsetWidth } = enginesScrollRef.current;
+      const index = Math.round(scrollLeft / (offsetWidth * 0.82));
+      setActiveEngineIdx(Math.min(Math.max(index, 0), engines.length - 1));
+    }
+  };
+
+  const scrollEngineTo = (index: number) => {
+    if (enginesScrollRef.current) {
+      const cardWidth = enginesScrollRef.current.offsetWidth * 0.85;
+      enginesScrollRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: "smooth",
+      });
+      setActiveEngineIdx(index);
+    }
+  };
+
   return (
     <section
       id="what-is-nexora"
-      className="w-full bg-black text-white flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-20 sm:py-28 selection:bg-[#5fe323] selection:text-black font-sans border-t border-white/5 relative z-20"
+      className="w-full bg-black text-white flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-20 sm:py-28 selection:bg-[#5fe323] selection:text-black font-sans border-t border-white/5 relative z-20 overflow-hidden"
     >
-      <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
-        {/* Top Tag / Eyebrow */}
-        <div
+      {/* Background Ambient Glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-to-r from-emerald-500/5 via-[#5fe323]/5 to-transparent blur-3xl rounded-full pointer-events-none" />
+
+      <div className="w-full max-w-6xl mx-auto flex flex-col items-center relative z-10">
+        {/* Top Tag / Eyebrow with Scroll Reveal */}
+        <motion.div
           id="telemetry-tag"
-          className="font-mono text-xs md:text-[13px] uppercase tracking-[0.28em] text-[#5fe323] font-medium mb-6 sm:mb-8 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="font-mono text-xs md:text-[13px] uppercase tracking-[0.28em] text-[#5fe323] font-medium mb-4 sm:mb-6 text-center"
         >
           // NEXT-GEN HYBRID GRAPHRAG
-        </div>
+        </motion.div>
 
-        {/* Main Headline */}
-        <h2
+        {/* Main Headline with Scroll Reveal */}
+        <motion.h2
           id="main-headline"
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
           className="text-3xl sm:text-5xl md:text-6xl lg:text-[4.25rem] font-normal tracking-tight text-center leading-[1.12] text-white max-w-5xl"
         >
           What is <span className="font-semibold">Nexora AI</span>? <br />
           Enterprise <span className="text-[#5fe323]">Multi-Hop Intelligence</span>
-        </h2>
+        </motion.h2>
 
-        {/* Description / Subtext */}
-        <p
+        {/* Description / Subtext with Scroll Reveal */}
+        <motion.p
           id="description-text"
-          className="font-mono text-xs sm:text-[13px] uppercase text-[#737373] tracking-[0.16em] leading-[1.7] text-center max-w-2xl mt-6 sm:mt-8 mb-12 sm:mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="font-mono text-xs sm:text-[13px] uppercase text-[#737373] tracking-[0.16em] leading-[1.7] text-center max-w-2xl mt-4 sm:mt-6 mb-10 sm:mb-16"
         >
           COMBINING DETERMINISTIC GRAPH TRAVERSAL WITH SEMANTIC VECTOR SEARCH.
-        </p>
+        </motion.p>
 
-        {/* 3-Engine Architecture Triad */}
+        {/* 3-Engine Architecture Triad: Horizontal Snap-Rail on Mobile, 3-Col Grid on Desktop */}
         <div
+          ref={enginesScrollRef}
+          onScroll={handleEngineScroll}
           id="engines-grid"
-          className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-12 sm:mb-16"
+          className="w-full flex md:grid md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-6 md:mb-16 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 -mx-4 md:px-0 md:mx-0 touch-pan-x"
         >
-          {engines.map((engine) => (
+          {engines.map((engine, idx) => (
             <EngineCard
               key={engine.id}
               id={engine.id}
@@ -113,19 +158,38 @@ export const PlatformArchitectureSection: React.FC = () => {
               name={engine.name}
               label={engine.label}
               icon={engine.icon}
+              index={idx}
             />
           ))}
         </div>
 
-        {/* Minimal Side-by-Side Comparison Cards */}
+        {/* Mobile Swipe Pagination Dots for Engines */}
+        <div className="flex md:hidden items-center justify-center gap-2 mb-10">
+          {engines.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => scrollEngineTo(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                activeEngineIdx === idx ? "w-6 bg-[#5fe323]" : "w-1.5 bg-white/20"
+              }`}
+              aria-label={`Go to engine ${idx + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Minimal Side-by-Side Comparison Cards with Scroll Reveal */}
         <div
           id="comparison-grid"
-          className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
+          className="w-full grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6"
         >
           {/* Standard Vector RAG */}
-          <div
+          <motion.div
             id="card-standard-rag"
-            className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-10 flex flex-col justify-between group hover:border-[#2a2a2a] transition-colors"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-10 flex flex-col justify-between group hover:border-[#2a2a2a] transition-all duration-300 rounded-2xl md:rounded-none"
           >
             {/* Corner Ticks */}
             <span className="absolute -top-[1px] -left-[1px] w-2.5 h-2.5 border-t border-l border-zinc-500/80 pointer-events-none" />
@@ -134,65 +198,86 @@ export const PlatformArchitectureSection: React.FC = () => {
             <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 border-b border-r border-zinc-500/80 pointer-events-none" />
 
             <div>
-              <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#71717a] mb-2 font-medium">
-                TRADITIONAL APPROACH
+              {/* Category Tag */}
+              <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#71717a] mb-3 font-medium">
+                TRADITIONAL // APPROACH
               </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-6">
+
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white mb-6">
                 Standard Vector RAG
               </h3>
 
-              <div className="space-y-4 font-mono text-xs sm:text-[13px] text-[#a1a1aa] uppercase tracking-wider">
-                <div className="flex items-center gap-3">
-                  <XCircle className="w-4 h-4 text-red-500/80 shrink-0" />
-                  <span>Fails at aggregations</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <XCircle className="w-4 h-4 text-red-500/80 shrink-0" />
-                  <span>Hallucinates numbers</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <XCircle className="w-4 h-4 text-red-500/80 shrink-0" />
-                  <span>Cannot link cross-dataset entities</span>
-                </div>
-              </div>
+              {/* Feature List */}
+              <ul className="space-y-4 font-mono text-xs sm:text-[13px] text-[#a1a1aa] leading-relaxed">
+                <li className="flex items-start gap-3">
+                  <XCircle className="w-4 h-4 text-red-500/80 shrink-0 mt-0.5" />
+                  <span>Unstructured chunks with zero relationship awareness</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <XCircle className="w-4 h-4 text-red-500/80 shrink-0 mt-0.5" />
+                  <span>Hallucinates cross-entity mathematical sums &amp; sales numbers</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <XCircle className="w-4 h-4 text-red-500/80 shrink-0 mt-0.5" />
+                  <span>Blind to multi-hop store hierarchies &amp; product SKU links</span>
+                </li>
+              </ul>
             </div>
-          </div>
 
-          {/* Nexora AI Hybrid GraphRAG */}
-          <div
+            <div className="mt-8 pt-4 border-t border-[#1a1a1a] font-mono text-[11px] text-[#71717a]">
+              PRECISION // ~62% ON COMPLEX AGGREGATIONS
+            </div>
+          </motion.div>
+
+          {/* Nexora AI Multi-Hop */}
+          <motion.div
             id="card-nexora-rag"
-            className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-10 flex flex-col justify-between group hover:border-[#2a2a2a] transition-colors"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-10 flex flex-col justify-between group hover:border-[#5fe323]/30 transition-all duration-300 rounded-2xl md:rounded-none"
           >
             {/* Corner Ticks */}
-            <span className="absolute -top-[1px] -left-[1px] w-2.5 h-2.5 border-t border-l border-zinc-500/80 pointer-events-none" />
-            <span className="absolute -top-[1px] -right-[1px] w-2.5 h-2.5 border-t border-r border-zinc-500/80 pointer-events-none" />
-            <span className="absolute -bottom-[1px] -left-[1px] w-2.5 h-2.5 border-b border-l border-zinc-500/80 pointer-events-none" />
-            <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 border-b border-r border-zinc-500/80 pointer-events-none" />
+            <span className="absolute -top-[1px] -left-[1px] w-2.5 h-2.5 border-t border-l border-[#5fe323] pointer-events-none" />
+            <span className="absolute -top-[1px] -right-[1px] w-2.5 h-2.5 border-t border-r border-[#5fe323] pointer-events-none" />
+            <span className="absolute -bottom-[1px] -left-[1px] w-2.5 h-2.5 border-b border-l border-[#5fe323] pointer-events-none" />
+            <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 border-b border-r border-[#5fe323] pointer-events-none" />
 
             <div>
-              <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#5fe323] mb-2 font-medium">
-                ZERO-HALLUCINATION ENGINE
+              {/* Category Tag */}
+              <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#5fe323] mb-3 font-medium flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fe323] animate-pulse"></span>
+                <span>ENTERPRISE // NEXORA AI</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-6">
-                Nexora AI Hybrid GraphRAG
+
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white mb-6">
+                Multi-Hop Hybrid GraphRAG
               </h3>
 
-              <div className="space-y-4 font-mono text-xs sm:text-[13px] text-zinc-200 uppercase tracking-wider">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-[#5fe323] shrink-0" />
-                  <span>Deterministic Cypher queries</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-[#5fe323] shrink-0" />
-                  <span>0% hallucination on metrics</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-[#5fe323] shrink-0" />
-                  <span>Multi-hop cross-domain reasoning</span>
-                </div>
-              </div>
+              {/* Feature List */}
+              <ul className="space-y-4 font-mono text-xs sm:text-[13px] text-zinc-200 leading-relaxed">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-[#5fe323] shrink-0 mt-0.5" />
+                  <span>Deterministic Cypher graph queries for 100% mathematical accuracy</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-[#5fe323] shrink-0 mt-0.5" />
+                  <span>Multi-hop relationship reasoning across Apple &amp; Samsung datasets</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-[#5fe323] shrink-0 mt-0.5" />
+                  <span>Self-correcting LangGraph routing with sub-second failovers</span>
+                </li>
+              </ul>
             </div>
-          </div>
+
+            <div className="mt-8 pt-4 border-t border-[#1a1a1a] font-mono text-[11px] text-[#5fe323] font-semibold">
+              PRECISION // 99.4% DETERMINISTIC RECALL
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

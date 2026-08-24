@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef } from "react";
+import { motion } from "motion/react";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 interface DatasetCardData {
@@ -22,6 +23,9 @@ interface DatasetCardsSectionProps {
 }
 
 export const DatasetCardsSection: React.FC<DatasetCardsSectionProps> = ({ onOpenRag }) => {
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const cardsScrollRef = useRef<HTMLDivElement>(null);
+
   const datasets: DatasetCardData[] = [
     {
       id: "apple-dataset",
@@ -82,32 +86,80 @@ export const DatasetCardsSection: React.FC<DatasetCardsSectionProps> = ({ onOpen
     },
   ];
 
+  const handleCardScroll = () => {
+    if (cardsScrollRef.current) {
+      const { scrollLeft, offsetWidth } = cardsScrollRef.current;
+      const index = Math.round(scrollLeft / (offsetWidth * 0.82));
+      setActiveCardIdx(Math.min(Math.max(index, 0), datasets.length - 1));
+    }
+  };
+
+  const scrollCardTo = (index: number) => {
+    if (cardsScrollRef.current) {
+      const cardWidth = cardsScrollRef.current.offsetWidth * 0.85;
+      cardsScrollRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: "smooth",
+      });
+      setActiveCardIdx(index);
+    }
+  };
+
   return (
     <section
       id="curated-datasets"
-      className="w-full bg-black text-white flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-20 sm:py-28 relative z-20 border-t border-white/5"
+      className="w-full bg-black text-white flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-20 sm:py-28 relative z-20 border-t border-white/5 overflow-hidden"
     >
-      <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
-        {/* Section Tag */}
-        <div className="font-mono text-xs md:text-[13px] uppercase tracking-[0.28em] text-[#5fe323] font-medium mb-4 text-center">
+      {/* Background Ambient Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-r from-emerald-500/5 via-sky-500/5 to-purple-500/5 blur-3xl rounded-full pointer-events-none" />
+
+      <div className="w-full max-w-6xl mx-auto flex flex-col items-center relative z-10">
+        {/* Section Tag with Scroll Reveal */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="font-mono text-xs md:text-[13px] uppercase tracking-[0.28em] text-[#5fe323] font-medium mb-4 text-center"
+        >
           // ENTERPRISE KNOWLEDGE BASE
-        </div>
+        </motion.div>
 
-        {/* Section Headline */}
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-center text-white mb-4">
+        {/* Section Headline with Scroll Reveal */}
+        <motion.h2
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-center text-white mb-4"
+        >
           Curated <span className="text-[#5fe323]">Multi-Modal</span> Datasets
-        </h2>
+        </motion.h2>
 
-        <p className="font-mono text-xs sm:text-[13px] uppercase text-[#8b949e] tracking-[0.16em] text-center max-w-2xl mb-12 sm:mb-16">
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="font-mono text-xs sm:text-[13px] uppercase text-[#8b949e] tracking-[0.16em] text-center max-w-2xl mb-10 sm:mb-16"
+        >
           INDEXED FOR SUB-SECOND CYPHER GRAPH TRAVERSAL &amp; NVIDIA DENSE VECTOR RETRIEVAL.
-        </p>
+        </motion.p>
 
-        {/* 3 Dataset Cards Grid with Frosted Glassmorphic Surfaces */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 justify-items-center">
-          {datasets.map((ds) => (
-            <div
+        {/* 3 Dataset Cards Grid: Horizontal Snap-Rail on Mobile, 3-Col Grid on Desktop */}
+        <div
+          ref={cardsScrollRef}
+          onScroll={handleCardScroll}
+          className="w-full flex md:grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 justify-items-center overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 -mx-4 md:px-0 md:mx-0 touch-pan-x mb-6 md:mb-0"
+        >
+          {datasets.map((ds, idx) => (
+            <motion.div
               key={ds.id}
-              className={`bg-gradient-to-b ${ds.themeColor} w-full max-w-[375px] rounded-3xl overflow-hidden shadow-2xl pb-5 sm:pb-6 relative flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/90 border border-white/10 group`}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.6, delay: idx * 0.15, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className={`bg-gradient-to-b ${ds.themeColor} w-[84vw] max-w-[360px] md:w-full md:max-w-[375px] shrink-0 snap-center rounded-3xl overflow-hidden shadow-2xl pb-5 sm:pb-6 relative flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/90 border border-white/10 group`}
             >
               {/* Top ambient rim light */}
               <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
@@ -183,7 +235,21 @@ export const DatasetCardsSection: React.FC<DatasetCardsSectionProps> = ({ onOpen
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Mobile Swipe Pagination Dots for Datasets */}
+        <div className="flex md:hidden items-center justify-center gap-2 mt-2">
+          {datasets.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => scrollCardTo(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                activeCardIdx === idx ? "w-6 bg-[#5fe323]" : "w-1.5 bg-white/20"
+              }`}
+              aria-label={`Go to dataset ${idx + 1}`}
+            />
           ))}
         </div>
       </div>
