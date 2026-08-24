@@ -353,4 +353,17 @@
     rgba(0, 0, 255, 0.03)
   );
   background-size: 100% 3px, 6px 100%;
+}
+
+/* Suppress iOS / Safari / Mobile OS Default Play Icon Overlays */
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls-play-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

@@ -1,7 +1,18 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 
 export const HeroBackground: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const attemptPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.defaultMuted = true;
+    video.muted = true;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {});
+    }
+  };
 
   const setVideoRef = (video: HTMLVideoElement | null) => {
     if (!video) return;
@@ -12,14 +23,37 @@ export const HeroBackground: React.FC = () => {
     video.setAttribute("muted", "");
     video.setAttribute("playsinline", "");
     video.setAttribute("webkit-playsinline", "");
+    video.setAttribute("x5-playsinline", "");
     video.setAttribute("autoplay", "");
     video.setAttribute("loop", "");
 
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {});
-    }
+    attemptPlay();
   };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    attemptPlay();
+
+    const handleResume = () => {
+      attemptPlay();
+    };
+
+    window.addEventListener("touchstart", handleResume, { passive: true });
+    window.addEventListener("touchend", handleResume, { passive: true });
+    window.addEventListener("click", handleResume, { passive: true });
+    window.addEventListener("scroll", handleResume, { passive: true });
+    document.addEventListener("visibilitychange", handleResume);
+
+    return () => {
+      window.removeEventListener("touchstart", handleResume);
+      window.removeEventListener("touchend", handleResume);
+      window.removeEventListener("click", handleResume);
+      window.removeEventListener("scroll", handleResume);
+      document.removeEventListener("visibilitychange", handleResume);
+    };
+  }, []);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
@@ -31,10 +65,13 @@ export const HeroBackground: React.FC = () => {
         loop
         muted
         playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
         preload="auto"
+        controls={false}
         disablePictureInPicture
         disableRemotePlayback
-        className="absolute inset-0 w-full h-full object-cover scale-[1.02] transform"
+        className="absolute inset-0 w-full h-full object-cover scale-[1.02] transform pointer-events-none"
         style={{
           filter: "brightness(0.65) contrast(1.15) saturate(1.1)",
         }}
