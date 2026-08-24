@@ -56,6 +56,8 @@ const FEATURED_PROJECTS: ProjectDetail[] = [
   }
 ];
 
+import { motion, AnimatePresence } from "motion/react";
+
 export const ProjectsModal: React.FC<ProjectsModalProps> = ({
   isOpen,
   onClose,
@@ -63,17 +65,28 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({
 }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("marketpulse-ai");
 
-  if (!isOpen) return null;
-
   const selectedProject = FEATURED_PROJECTS.find((p) => p.id === selectedProjectId) || FEATURED_PROJECTS[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 md:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl max-h-[92dvh] sm:max-h-[88dvh] flex flex-col rounded-3xl bg-[#090d16]/90 backdrop-blur-2xl text-white shadow-2xl border border-white/15 overflow-hidden"
-        style={{
-          boxShadow: "0 25px 60px -10px rgba(0,0,0,0.8), 0 0 35px rgba(255,159,28,0.15)"
-        }}
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="projects-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 md:p-6 bg-black/75 backdrop-blur-sm"
+        >
+          <div className="absolute inset-0 cursor-pointer" onClick={onClose} aria-label="Close" />
+          <motion.div
+            initial={{ opacity: 0, y: 150 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 150 }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            style={{ willChange: "transform, opacity" }}
+            className="relative z-10 w-full max-w-5xl max-h-[92dvh] sm:max-h-[88dvh] flex flex-col rounded-3xl bg-[#090d16]/95 backdrop-blur-md text-white shadow-2xl border border-white/15 overflow-hidden"
+          >
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-white/10 bg-gradient-to-r from-[#FF9F1C]/[0.08] via-transparent to-transparent shrink-0">
           <div className="flex items-center gap-3">
@@ -234,8 +247,9 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({
             Launch Interactive Q&amp;A
           </button>
         </div>
-
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };

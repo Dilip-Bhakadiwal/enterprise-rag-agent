@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Download, ExternalLink, FileText, Printer, Phone, Mail, Linkedin, Github, MapPin, Check, Sun, Moon } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import dilipLogo from "../assets/dilip_web_app_logo.png";
 
 interface ResumeModalProps {
@@ -10,8 +11,6 @@ interface ResumeModalProps {
 export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to clean white theme
-
-  if (!isOpen) return null;
 
   const pdfPath = "/Dilip_resume.pdf";
 
@@ -39,20 +38,36 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      {/* Backdrop overlay */}
-      <div
-        className="absolute inset-0 cursor-pointer"
-        onClick={onClose}
-        aria-label="Close Resume"
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="resume-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm"
+        >
+          {/* Backdrop overlay */}
+          <div
+            className="absolute inset-0 cursor-pointer"
+            onClick={onClose}
+            aria-label="Close Resume"
+          />
 
-      {/* Modal Container with UNIFIED seamless background */}
-      <div className={`relative z-10 w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border transition-all duration-300 font-gemini ${
-        isDarkMode 
-          ? "bg-[#0b1120] text-slate-100 border-white/20" 
-          : "bg-white text-slate-900 border-slate-300"
-      }`}>
+          {/* Modal Container with UNIFIED seamless background */}
+          <motion.div
+            initial={{ opacity: 0, y: 150 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 150 }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            style={{ willChange: "transform, opacity" }}
+            className={`relative z-10 w-full max-w-4xl max-h-[96dvh] sm:max-h-[92dvh] flex flex-col rounded-2xl sm:rounded-3xl shadow-2xl border overflow-hidden transition-colors duration-300 ${
+              isDarkMode
+                ? "bg-[#0b101b] border-white/15 text-slate-100"
+                : "bg-white border-slate-200 text-slate-900"
+            }`}
+          >
         
         {/* Modal Top Action Bar */}
         <div className={`flex flex-wrap items-center justify-between gap-2.5 px-3.5 sm:px-6 py-3 border-b shrink-0 ${
@@ -425,8 +440,9 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
             <div className="h-8"></div>
           </div>
         </div>
-
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };
