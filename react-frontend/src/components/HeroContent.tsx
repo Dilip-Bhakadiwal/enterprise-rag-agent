@@ -13,22 +13,13 @@ const GlitchHeadline: React.FC = () => {
   const [line1, setLine1] = useState("ARCHITECT.");
   const [line2, setLine2] = useState("ORCHESTRATE.");
   const [line3, setLine3] = useState("DEPLOY.");
-  const [filterScale, setFilterScale] = useState(0);
-  const [turbulenceSeed, setTurbulenceSeed] = useState(1);
   const [isGlitching, setIsGlitching] = useState(false);
 
   const triggerGlitchSpike = () => {
-    setTurbulenceSeed(Math.floor(Math.random() * 1000));
-    setFilterScale(24);
     setIsGlitching(true);
-
     setTimeout(() => {
-      setFilterScale(8);
-      setTimeout(() => {
-        setFilterScale(0);
-        setIsGlitching(false);
-      }, 70);
-    }, 90);
+      setIsGlitching(false);
+    }, 140);
   };
 
   // Initial Cipher text decryption reveal + periodic glitch
@@ -99,34 +90,11 @@ const GlitchHeadline: React.FC = () => {
   return (
     <div
       onClick={triggerGlitchSpike}
-      className="relative cursor-pointer select-none font-podium uppercase leading-[0.92] tracking-tight text-[clamp(2.3rem,7.5vw,7rem)] animate-fade-up-delay-1 mb-2"
-      style={{
-        filter: filterScale > 0 ? "url(#vfx-glitch-filter-hero)" : undefined,
-      }}
+      className={`relative cursor-pointer select-none font-podium uppercase leading-[0.92] tracking-tight text-[clamp(2.3rem,7.5vw,7rem)] animate-fade-up-delay-1 mb-2 transition-transform ${
+        isGlitching ? "scale-[1.01]" : "scale-100"
+      }`}
       title="Click to trigger glitch spike"
     >
-      {/* SVG Displacement Filter definition */}
-      <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
-        <defs>
-          <filter id="vfx-glitch-filter-hero" x="-10%" y="-10%" width="120%" height="120%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.04 0.95"
-              numOctaves="1"
-              seed={turbulenceSeed}
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={filterScale}
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-
       {/* 1. Crisp White Base Layer */}
       <div className="relative z-10 text-white">
         <div className="block">{line1}</div>
@@ -138,7 +106,7 @@ const GlitchHeadline: React.FC = () => {
       {isGlitching && (
         <div
           aria-hidden="true"
-          className="glitch-channel-cyan absolute inset-0 text-[#00f0ff] pointer-events-none z-0"
+          className="glitch-channel-cyan absolute inset-0 text-[#00f0ff] pointer-events-none z-0 select-none"
         >
           <div className="block">{line1}</div>
           <div className="block">{line2}</div>
@@ -150,7 +118,7 @@ const GlitchHeadline: React.FC = () => {
       {isGlitching && (
         <div
           aria-hidden="true"
-          className="glitch-channel-magenta absolute inset-0 text-[#ff0055] pointer-events-none z-0"
+          className="glitch-channel-magenta absolute inset-0 text-[#ff0055] pointer-events-none z-0 select-none"
         >
           <div className="block">{line1}</div>
           <div className="block">{line2}</div>
