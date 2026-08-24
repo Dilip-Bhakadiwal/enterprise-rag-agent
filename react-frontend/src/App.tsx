@@ -56,48 +56,44 @@ export default function App() {
       {/* ── HERO VIEWPORT (Fullscreen min-h-[100dvh]) ─────────────────────── */}
       <div className="relative min-h-[100dvh] w-full flex flex-col justify-between overflow-hidden bg-black">
         {/* Fullscreen Looping Background Video */}
-        <HeroBackground onVideoLoaded={() => setIsVideoLoaded(true)} />
+        <HeroBackground />
 
-        {isVideoLoaded && (
-          <>
-            {/* Top Header Navigation */}
-            <Navbar
-              onOpenRag={() => handleOpenRag()}
-              onOpenProjects={handleOpenProjects}
-              onOpenResume={handleOpenResume}
-              onToggleMenu={() => setIsMobileMenuOpen(true)}
-            />
+        {/* Top Header Navigation */}
+        <Navbar
+          onOpenRag={() => handleOpenRag()}
+          onOpenProjects={handleOpenProjects}
+          onOpenResume={handleOpenResume}
+          onToggleMenu={() => setIsMobileMenuOpen(true)}
+        />
 
-            {/* Fullscreen Mobile Menu Overlay (below md) */}
-            <MobileMenuOverlay
-              isOpen={isMobileMenuOpen}
-              onClose={() => setIsMobileMenuOpen(false)}
-              onOpenRag={handleOpenRag}
-              onOpenProjects={handleOpenProjects}
-              onOpenResume={handleOpenResume}
-            />
+        {/* Fullscreen Mobile Menu Overlay (below md) */}
+        <MobileMenuOverlay
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+          onOpenRag={handleOpenRag}
+          onOpenProjects={handleOpenProjects}
+          onOpenResume={handleOpenResume}
+        />
 
-            {/* Main Hero Viewport Content */}
-            <main className="relative z-20 flex-1 flex flex-col justify-center w-full">
-              <HeroContent
-                onOpenProjects={handleOpenProjects}
-                onOpenRag={handleOpenRag}
-              />
-            </main>
+        {/* Main Hero Viewport Content */}
+        <main className="relative z-20 flex-1 flex flex-col justify-center w-full">
+          <HeroContent
+            onOpenProjects={handleOpenProjects}
+            onOpenRag={handleOpenRag}
+          />
+        </main>
 
-            {/* Scroll Indicator Button to Section 1 */}
-            <div className="relative z-20 pb-5 flex justify-center w-full">
-              <button
-                onClick={scrollToArchitecture}
-                className="group flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 hover:bg-black/90 border border-white/20 hover:border-[#5fe323] text-white/80 hover:text-white text-xs font-mono tracking-widest uppercase transition-all duration-300 cursor-pointer backdrop-blur-md shadow-lg"
-                aria-label="Scroll to Platform Architecture"
-              >
-                <span>Explore Architecture &amp; Datasets</span>
-                <span className="text-[#5fe323] group-hover:translate-y-0.5 transition-transform">↓</span>
-              </button>
-            </div>
-          </>
-        )}
+        {/* Scroll Indicator Button to Section 1 */}
+        <div className="relative z-20 pb-5 flex justify-center w-full">
+          <button
+            onClick={scrollToArchitecture}
+            className="group flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 hover:bg-black/90 border border-white/20 hover:border-[#5fe323] text-white/80 hover:text-white text-xs font-mono tracking-widest uppercase transition-all duration-300 cursor-pointer backdrop-blur-md shadow-lg"
+            aria-label="Scroll to Platform Architecture"
+          >
+            <span>Explore Architecture &amp; Datasets</span>
+            <span className="text-[#5fe323] group-hover:translate-y-0.5 transition-transform">↓</span>
+          </button>
+        </div>
       </div>
 
       {/* ── SECTION 1: WHAT IS NEXORA AI (Core Architecture & Triad) ───────── */}
