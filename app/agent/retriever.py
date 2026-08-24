@@ -36,7 +36,6 @@ for _p in [_cuda_bin, _cudnn_bin]:
         except Exception:
             pass
 
-from fastembed import TextEmbedding
 from loguru import logger
 from pinecone import Pinecone
 
@@ -48,13 +47,18 @@ _QUERY_PREFIX = "query: "
 
 
 @lru_cache(maxsize=1)
-def _get_embedding_model() -> TextEmbedding:
-    """Singleton FastEmbed model (loaded once, cached forever)."""
-    logger.info(f"Loading FastEmbed model: {settings.embedding_model} (GPU/CUDA)")
-    return TextEmbedding(
-        model_name=settings.embedding_model,
-        providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
-    )
+def _get_embedding_model():
+    """Singleton FastEmbed model (loaded lazily if available)."""
+    try:
+        from fastembed import TextEmbedding
+        logger.info(f"Loading FastEmbed model: {settings.embedding_model}")
+        return TextEmbedding(
+            model_name=settings.embedding_model,
+            providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+        )
+    except ImportError:
+        logger.warning("fastembed not installed — using cloud embedding provider (NVIDIA NIM).")
+        return None
 
 
 @lru_cache(maxsize=1)
