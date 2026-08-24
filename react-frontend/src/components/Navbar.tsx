@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import dilipLogo from "../assets/dilip_web_app_logo.png";
 
 interface NavbarProps {
-  onOpenRag: () => void;
+  onOpenRag: (prompt?: string) => void;
   onOpenProjects: () => void;
   onOpenResume: () => void;
   onToggleMenu: () => void;

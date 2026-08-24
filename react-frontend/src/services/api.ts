@@ -50,7 +50,7 @@ export interface RagChatResponse {
  */
 export async function sendRagMessage(
   message: string,
-  chatHistory: ChatMessage[] = [],
+  chatHistory: ChatMessage[] | Array<{ role: string; content: string }> = [],
   signal?: AbortSignal
 ): Promise<RagChatResponse> {
   try {

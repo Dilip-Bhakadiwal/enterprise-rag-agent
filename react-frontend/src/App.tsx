@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HeroBackground } from "./components/HeroBackground";
 import { Navbar } from "./components/Navbar";
 import { MobileMenuOverlay } from "./components/MobileMenuOverlay";
@@ -14,7 +14,6 @@ export default function App() {
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [ragInitialPrompt, setRagInitialPrompt] = useState<string | undefined>(undefined);
 
   useEffect(() => {
