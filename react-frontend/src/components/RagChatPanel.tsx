@@ -771,7 +771,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                       N
                     </div>
                     <span className="text-xs sm:text-[13px] font-semibold tracking-wider font-inter leading-none">
-                      Enterprise RAG Assistant
+                      Nexora AI — Enterprise Workspace
                     </span>
                   </div>
                   <div className="flex items-center gap-1 sm:gap-1.5">
@@ -806,12 +806,12 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               </motion.main>
             </motion.div>
           ) : (
-            /* MODE B: COMPACT RIGHT-SIDE FLOATING COPILOT WIDGET */
+            /* MODE B: FLOATING RIGHT-SIDE COPILOT WIDGET */
             <motion.div
-              key="rag-copilot-widget"
-              initial={{ opacity: 0, scale: 0.9, y: 24 }}
+              key="rag-floating-widget"
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 24 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 w-[92vw] sm:w-[410px] md:w-[430px] h-[540px] sm:h-[600px] max-h-[88dvh] rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 flex flex-col overflow-hidden border border-white/20"
               data-purpose="chat-copilot-widget"
@@ -822,7 +822,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
                   <div className="w-6 h-6 rounded-md bg-black text-white text-xs font-bold italic flex items-center justify-center border border-white/20 shadow-xs">
                     N
                   </div>
-                  <span className="text-xs font-bold tracking-wide font-inter">Enterprise Copilot</span>
+                  <span className="text-xs font-bold tracking-wide font-inter">Nexora AI Copilot</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {/* Maximize to Full Workspace */}

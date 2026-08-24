@@ -28,7 +28,9 @@ react-frontend/dist/
 
 # ── Dataset (large binary files) ─────────────────────────────────────────
 Dataset/
+dataset/*.csv
 sales dataset/
+graphify-out/
 *.zip
 
 # ── Eval results ──────────────────────────────────────────────────────────
