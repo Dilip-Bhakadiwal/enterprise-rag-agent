@@ -103,11 +103,11 @@ export const HeroContent: React.FC<HeroContentProps> = ({
       <div className="animate-fade-up-delay-4 mt-6 sm:mt-10 lg:mt-14 grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row lg:items-start gap-x-4 sm:gap-x-8 lg:gap-10 xl:gap-14 gap-y-4 sm:gap-y-6 w-full">
         {/* Stat 1: Neo4j Knowledge Graph */}
         <div className="flex flex-col text-left shrink-0">
-          <span className="font-inter text-emerald-400 text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
+          <span className="font-inter text-white text-xl sm:text-3xl lg:text-5xl font-bold tracking-tight whitespace-nowrap">
             {stats.graph_nodes || 286}
           </span>
           <span className="text-white/60 font-inter text-[9px] sm:text-xs tracking-widest uppercase mt-1 flex items-center gap-1 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
             Graph Nodes (Neo4j)
           </span>
         </div>

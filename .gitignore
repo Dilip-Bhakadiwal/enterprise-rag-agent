@@ -52,3 +52,4 @@ Thumbs.db
 
 # ── FastEmbed cache (baked into Docker, not in repo) ──────────────────────
 .fastembed_cache/
+card.txt

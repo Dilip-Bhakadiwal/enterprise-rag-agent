@@ -64,7 +64,7 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
       animate={{ opacity: isLoaded ? 1 : 0 }}
       transition={{ duration: 2.0, ease: "easeInOut" }}
       onAnimationComplete={handleAnimationComplete}
-      className="fixed inset-0 overflow-hidden pointer-events-none select-none z-0"
+      className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
     >
       {/* Background Animated Video Layer */}
       <video
@@ -88,13 +88,13 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
       </video>
 
       {/* Cinematic Deep Dark Gradient Overlay for Maximum Text Legibility */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a111c]/75 via-[#0d1624]/40 to-[#080d16]/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/95" />
 
       {/* Atmospheric Aurora Light Glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-orange-500/10 blur-3xl rounded-full opacity-60 pointer-events-none" />
 
-      {/* Bottom Mist / Horizon Fade to blend into page footer */}
-      <div className="absolute bottom-0 inset-x-0 h-[35%] bg-gradient-to-t from-[#080d16] via-[#080d16]/70 to-transparent" />
+      {/* Ultra-Smooth Bottom Horizon Fade into Pure Black */}
+      <div className="absolute bottom-0 inset-x-0 h-[45%] bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-10" />
 
       {/* Top Edge Ambient Rim Light */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />

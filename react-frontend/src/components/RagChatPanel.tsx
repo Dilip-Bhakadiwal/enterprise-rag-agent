@@ -10,6 +10,7 @@ import {
   Minimize2,
   Plus,
   X,
+  Square,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -57,7 +58,7 @@ const MarkdownText: React.FC<{ content: string }> = React.memo(({ content }) => 
             <strong className="text-gray-900 font-semibold font-geist" {...props} />
           ),
           a: ({ node, ...props }) => (
-            <a className="text-[#F97316] hover:underline font-medium break-all font-geist" target="_blank" rel="noopener noreferrer" {...props} />
+            <a className="text-[#059669] hover:underline font-medium break-all font-geist" target="_blank" rel="noopener noreferrer" {...props} />
           ),
           code: ({ node, className, children, ...props }) => (
             <code className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-800 font-geist-mono text-xs" {...props}>
@@ -83,7 +84,7 @@ const UserMessageItem = React.memo<{ msg: ChatMessage }>(({ msg }) => {
 
   return (
     <div className="flex flex-col items-end">
-      <div className={`bg-[#F97316] text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm font-geist tracking-[-0.01em] ${animating ? "animate-pop-in" : ""}`}>
+      <div className={`bg-[#18202e] border border-white/15 text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-md font-geist tracking-[-0.01em] ${animating ? "animate-pop-in" : ""}`}>
         <p className="text-sm sm:text-base leading-relaxed select-text font-geist">{msg.content}</p>
       </div>
     </div>
@@ -132,6 +133,28 @@ const AssistantMessageItem = React.memo<{
         {/* 1. Query Response Markdown Text */}
         <MarkdownText content={msg.content || ""} />
 
+        {/* Suggested Queries Chips (Visible directly) */}
+        {msg.suggestions && msg.suggestions.length > 0 && (
+          <div className="mt-3.5 pt-3 border-t border-gray-200/80">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5fe323]"></span>
+              <span>Suggested Queries</span>
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {msg.suggestions.map((sug, sIdx) => (
+                <button
+                  key={sIdx}
+                  onClick={() => onSendMessage(sug)}
+                  className="text-left flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-[#5fe323] hover:bg-emerald-50/40 text-xs text-gray-800 font-medium transition-all cursor-pointer active:scale-[0.99] shadow-2xs group"
+                >
+                  <span className="font-geist">{sug}</span>
+                  <span className="text-gray-400 group-hover:text-[#5fe323] text-xs font-mono transition-colors font-bold">↵</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 2. Action Toolbar & Details Button */}
         {msg.id !== "welcome" && (
           <div className="mt-3 pt-2.5 border-t border-gray-200/90 flex items-center justify-between flex-wrap gap-2">
@@ -140,15 +163,15 @@ const AssistantMessageItem = React.memo<{
               <button
                 type="button"
                 onClick={() => onToggleDetails(msg.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100/90 border border-orange-200/80 text-xs font-semibold text-orange-900 transition-all cursor-pointer active:scale-95 shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/80 text-xs font-semibold text-emerald-900 transition-all cursor-pointer active:scale-95 shadow-xs"
               >
-                <i className="ph ph-sliders text-[#F97316] text-sm"></i>
+                <i className="ph ph-sliders text-[#059669] text-sm"></i>
                 <span>
                   {isExpanded
                     ? "Hide Technical Details & Sources"
                     : `View Details & Sources (${msg.citations!.length})`}
                 </span>
-                <i className={`ph ph-caret-down text-orange-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}></i>
+                <i className={`ph ph-caret-down text-emerald-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}></i>
               </button>
             ) : (
               <div />
@@ -220,7 +243,7 @@ const AssistantMessageItem = React.memo<{
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-                        <i className="ph ph-file-text text-[#F97316] text-sm"></i> Sources &amp; Citations ({msg.citations.length})
+                        <i className="ph ph-file-text text-[#059669] text-sm"></i> Sources &amp; Citations ({msg.citations.length})
                       </h4>
                       <span className="text-[11px] text-gray-400 font-geist">
                         {msg.citations.filter((c) => c.is_graph || c.source_type === "neo4j_graph").length > 0 && (
@@ -234,7 +257,7 @@ const AssistantMessageItem = React.memo<{
                         <button
                           key={cIdx}
                           onClick={() => onOpenCitation(cit, msg.citations)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 hover:bg-orange-50/60 hover:border-orange-300 hover:text-gray-900 transition-all cursor-pointer active:scale-95 shadow-2xs font-geist"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-gray-900 transition-all cursor-pointer active:scale-95 shadow-2xs font-geist"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0"></span>
                           <span>{formatCitationPillTitle(cit, cIdx)}</span>
@@ -250,7 +273,7 @@ const AssistantMessageItem = React.memo<{
                   <div className="bg-gray-50/90 rounded-xl p-4 border border-gray-200">
                     <div className="flex justify-between items-center mb-3">
                       <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-                        <i className="ph ph-clock text-[#F97316] text-sm"></i> LangGraph Node Execution Waterfall
+                        <i className="ph ph-clock text-[#059669] text-sm"></i> LangGraph Node Execution Waterfall
                       </h4>
                       <span className="text-xs font-bold text-gray-500 font-geist-mono">
                         {msg.telemetry?.total_time_ms ? (msg.telemetry.total_time_ms / 1000).toFixed(2) + "s" : "0.38s"}
@@ -418,16 +441,16 @@ const AssistantMessageItem = React.memo<{
                 {msg.suggestions && msg.suggestions.length > 0 && (
                   <div className="space-y-2 pt-1 border-t border-gray-200">
                     <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-                      <i className="ph ph-sparkle text-[#F97316] text-sm"></i> Suggested Follow-ups
+                      <i className="ph ph-sparkle text-[#059669] text-sm"></i> Suggested Follow-ups
                     </h4>
                     <div className="flex flex-col gap-1.5">
                       {msg.suggestions.map((sug, sIdx) => (
                         <button
                           key={sIdx}
                           onClick={() => onSendMessage(sug)}
-                          className="text-left flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50 transition-colors text-xs text-gray-700 cursor-pointer active:scale-[0.99] font-geist"
+                          className="text-left flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50 transition-colors text-xs text-gray-700 cursor-pointer active:scale-[0.99] font-geist"
                         >
-                          <i className="ph ph-arrow-bend-down-right text-orange-500 mt-0.5 shrink-0"></i>
+                          <i className="ph ph-arrow-bend-down-right text-emerald-600 mt-0.5 shrink-0"></i>
                           <span>{sug}</span>
                         </button>
                       ))}
@@ -455,13 +478,13 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
       id: "welcome",
       role: "assistant",
       content:
-        "Hello! I am your **Enterprise AI Copilot** — powered by **Neo4j AuraDB Knowledge Graph**, Pinecone Vector Search, and LangGraph multi-hop reasoning.\n\nAsk me anything about Apple & Samsung global sales intelligence, regional 5G market shares, or Dilip Bhakadiwal's AI architectures.",
+        "Hello! I am your **Nexora AI Copilot** — ready to answer questions on **Apple & Samsung global sales, 5G market telemetry, or Dilip's AI research**.",
       timestamp: "Just now",
       suggestions: [
-        "Which company sells more overall: Apple or Samsung?",
-        "What are the top Apple retail store locations in North America and Europe by product volume?",
-        "Compare Samsung 5G market share and revenue in Asia-Pacific vs Europe",
         "Which Apple products have the highest warranty repair claims?",
+        "Compare Samsung 5G revenue in Europe vs Apple store volume",
+        "What published research did Dilip work on with MoES funding?",
+        "Which region recorded the highest 5G speed and market share?",
       ],
     },
   ]);
@@ -473,8 +496,8 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, "up" | "down">>({});
   const [expandedDetailsIds, setExpandedDetailsIds] = useState<Set<string>>(new Set());
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (initialPrompt && isOpen) {
@@ -513,6 +536,30 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     });
   };
 
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    setThinkingStep("");
+    setMessages((prev) => {
+      const lastMsg = prev[prev.length - 1];
+      if (lastMsg && lastMsg.role === "user") {
+        return [
+          ...prev,
+          {
+            id: `assistant-stopped-${Date.now()}`,
+            role: "assistant",
+            content: "*(Response generation stopped by user)*",
+            timestamp: "Just now",
+          },
+        ];
+      }
+      return prev;
+    });
+  };
+
   const handleSendMessage = async (promptToSend?: string) => {
     const messageContent = promptToSend || inputValue.trim();
     if (!messageContent || isLoading) return;
@@ -529,6 +576,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
     setIsLoading(true);
     setThinkingStep(THINKING_STEPS[0]);
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     let stepIdx = 0;
     const stepInterval = setInterval(() => {
       stepIdx = (stepIdx + 1) % THINKING_STEPS.length;
@@ -541,7 +591,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         .slice(-6)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const response = await sendRagMessage(messageContent, history);
+      const response = await sendRagMessage(messageContent, history, abortController.signal);
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -580,20 +630,20 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err: any) {
-      console.error("RAG Query Error:", err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          role: "assistant",
-          content:
-            "⚠️ Sorry, I encountered an issue communicating with the Enterprise RAG Agent. Please check that the backend is running on `http://localhost:8000`.",
-          timestamp: "Just now",
-        },
-      ]);
+      if (err.name === "AbortError") {
+        return;
+      }
+      const errorMessage: ChatMessage = {
+        id: `assistant-err-${Date.now()}`,
+        role: "assistant",
+        content: `Error querying knowledge base: ${err.message || "Please check backend connectivity."}`,
+        timestamp: "Just now",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       clearInterval(stepInterval);
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -690,9 +740,9 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
           <div className="flex flex-col items-start animate-fade-in my-1.5" data-purpose="loading-indicator">
             <div className="bg-gray-100/95 border border-gray-200/80 p-3 px-4 rounded-2xl rounded-tl-none shadow-xs flex items-center gap-3">
               <div className="flex items-center gap-1.5 py-0.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C] typing-dot" style={{ animationDelay: "0ms" }} />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#F97316] typing-dot" style={{ animationDelay: "200ms" }} />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FBBF24] typing-dot" style={{ animationDelay: "400ms" }} />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#059669] typing-dot" style={{ animationDelay: "0ms" }} />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] typing-dot" style={{ animationDelay: "200ms" }} />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#5fe323] typing-dot" style={{ animationDelay: "400ms" }} />
               </div>
               <span className="text-xs font-medium text-gray-600 font-geist tracking-tight">{thinkingStep || "Thinking..."}</span>
             </div>
@@ -710,7 +760,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
         className="flex items-center shrink-0 pt-2 sm:pt-2.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-1 sm:px-2 border-t border-gray-200 bg-white"
         data-purpose="input-area"
       >
-        <div className="relative flex items-center flex-1 bg-gray-50/90 hover:bg-gray-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#F97316]/30 border border-gray-200 focus-within:border-[#F97316] rounded-full transition-all shadow-inner pl-4 sm:pl-5 pr-1.5 min-h-[42px] sm:min-h-[44px]">
+        <div className="relative flex items-center flex-1 bg-gray-50/90 hover:bg-gray-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#5fe323]/30 border border-gray-200 focus-within:border-[#5fe323] rounded-full transition-all shadow-inner pl-4 sm:pl-5 pr-1.5 min-h-[42px] sm:min-h-[44px]">
           <textarea
             id="rag-chat-input"
             value={inputValue}
@@ -727,15 +777,29 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             rows={1}
             disabled={isLoading}
           />
-          <button
-            id="rag-chat-send-btn"
-            type="submit"
-            disabled={isLoading || !inputValue.trim()}
-            aria-label="Send message"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent hover:bg-[#F97316]/15 active:bg-[#F97316]/25 flex items-center justify-center text-[#F97316] hover:text-[#EA580C] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 shrink-0 ml-1.5"
-          >
-            <i className="ph-fill ph-paper-plane-tilt text-lg sm:text-xl"></i>
-          </button>
+          {isLoading ? (
+            <button
+              id="rag-chat-stop-btn"
+              type="button"
+              onClick={handleStopGeneration}
+              aria-label="Stop generation"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#18202e] hover:bg-[#232d3f] border border-white/20 active:bg-black flex items-center justify-center text-[#5fe323] transition-all cursor-pointer active:scale-95 shrink-0 ml-1.5 shadow-md group"
+              title="Stop response generation"
+            >
+              <Square className="w-3.5 h-3.5 fill-current text-[#5fe323] group-hover:scale-90 transition-transform" />
+            </button>
+          ) : (
+            <button
+              id="rag-chat-send-btn"
+              type="submit"
+              disabled={!inputValue.trim()}
+              aria-label="Send message"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent hover:bg-emerald-50 active:bg-emerald-100 flex items-center justify-center text-[#059669] hover:text-[#047857] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 shrink-0 ml-1.5"
+              title="Send message"
+            >
+              <i className="ph-fill ph-paper-plane-tilt text-lg sm:text-xl"></i>
+            </button>
+          )}
         </div>
       </form>
     </div>

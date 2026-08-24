@@ -50,13 +50,15 @@ export interface RagChatResponse {
  */
 export async function sendRagMessage(
   message: string,
-  chatHistory: ChatMessage[] = []
+  chatHistory: ChatMessage[] = [],
+  signal?: AbortSignal
 ): Promise<RagChatResponse> {
   try {
     const response = await fetch(`${API_BASE_URL}/ask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question: message }),
+      signal,
     });
 
     if (!response.ok) {

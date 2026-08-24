@@ -380,9 +380,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.llm_clients import call_llm
 
 _DIRECT_CHAT_PROMPT = """\
-You are an intelligent, friendly, and helpful Enterprise AI Copilot.
+You are an intelligent, friendly, and helpful Nexora AI Copilot.
 Answer the user's conversational query or general question clearly, naturally, and concisely.
-If they ask who you are, introduce yourself as an Enterprise AI Copilot equipped with Neo4j Knowledge Graph (for Apple/Samsung retail sales & warranty analytics) and Pinecone Vector Search (for Dilip Bhakadiwal's AI architectures and research).
+If they ask who you are, introduce yourself as the Nexora AI Copilot equipped with Neo4j Knowledge Graph (for Apple/Samsung retail sales & warranty analytics) and Pinecone Vector Search (for Dilip Bhakadiwal's AI architectures and research).
 """
 
 _ENTERPRISE_RAG_KEYWORDS = [
@@ -422,7 +422,7 @@ def ask(query: str) -> dict:
             answer_text = response.content if hasattr(response, "content") else str(response)
         except Exception as exc:
             logger.error(f"Direct LLM call error: {exc}")
-            answer_text = "Hello! I am your Enterprise AI Copilot. How can I help you today?"
+            answer_text = "Hello! I am your Nexora AI Copilot. How can I help you today?"
             provider = "groq"
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
