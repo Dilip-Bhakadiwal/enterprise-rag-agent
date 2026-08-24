@@ -1,7 +1,24 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
-export const HeroBackground: React.FC = () => {
+interface HeroBackgroundProps {
+  onLoaded?: () => void;
+}
+
+export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onLoaded }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
+  const hasNotifiedRef = useRef(false);
+
+  const markReady = () => {
+    setIsVideoVisible(true);
+    if (!hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      // After video loads and starts its 2s fade, notify parent
+      setTimeout(() => {
+        onLoaded?.();
+      }, 2000);
+    }
+  };
 
   const attemptPlay = () => {
     const video = videoRef.current;
@@ -11,7 +28,15 @@ export const HeroBackground: React.FC = () => {
     video.playsInline = true;
     const playPromise = video.play();
     if (playPromise !== undefined) {
-      playPromise.catch(() => {});
+      playPromise
+        .then(() => {
+          markReady();
+        })
+        .catch(() => {
+          markReady();
+        });
+    } else {
+      markReady();
     }
   };
 
@@ -37,10 +62,14 @@ export const HeroBackground: React.FC = () => {
 
     attemptPlay();
 
-    video.addEventListener("loadedmetadata", attemptPlay);
     video.addEventListener("loadeddata", attemptPlay);
     video.addEventListener("canplay", attemptPlay);
     video.addEventListener("canplaythrough", attemptPlay);
+
+    // Guaranteed fallback: in case of low-power mode or slow network, reveal after 2s
+    const fallbackTimer = setTimeout(() => {
+      markReady();
+    }, 2000);
 
     const handleResume = () => {
       attemptPlay();
@@ -53,7 +82,7 @@ export const HeroBackground: React.FC = () => {
     document.addEventListener("visibilitychange", handleResume);
 
     return () => {
-      video.removeEventListener("loadedmetadata", attemptPlay);
+      clearTimeout(fallbackTimer);
       video.removeEventListener("loadeddata", attemptPlay);
       video.removeEventListener("canplay", attemptPlay);
       video.removeEventListener("canplaythrough", attemptPlay);
@@ -67,7 +96,7 @@ export const HeroBackground: React.FC = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
-      {/* Background Animated Video Layer */}
+      {/* Background Animated Video Layer with 2-second cinematic fade transition */}
       <video
         ref={setVideoRef}
         src="/i_want_to_animted_this_video_b.mp4"
@@ -76,14 +105,15 @@ export const HeroBackground: React.FC = () => {
         muted
         playsInline
         preload="auto"
-        onLoadedMetadata={attemptPlay}
         onLoadedData={attemptPlay}
         onCanPlay={attemptPlay}
         onCanPlayThrough={attemptPlay}
         controls={false}
         disablePictureInPicture
         disableRemotePlayback
-        className="absolute inset-0 w-full h-full object-cover scale-[1.02] transform pointer-events-none"
+        className={`absolute inset-0 w-full h-full object-cover scale-[1.02] transform pointer-events-none transition-opacity duration-[2000ms] ease-in-out ${
+          isVideoVisible ? "opacity-100" : "opacity-0"
+        }`}
         style={{
           filter: "brightness(0.65) contrast(1.15) saturate(1.1)",
         }}
