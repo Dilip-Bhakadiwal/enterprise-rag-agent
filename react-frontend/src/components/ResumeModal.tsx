@@ -174,12 +174,6 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
               <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs font-medium ${
                 isDarkMode ? "text-slate-300" : "text-slate-700"
               }`}>
-                <a href="tel:+918003046831" className="hover:text-sky-600 flex items-center gap-1">
-                  <Phone className={`w-3 h-3 ${isDarkMode ? "text-sky-400" : "text-slate-500"}`} />
-                  <span>+91-8003046831</span>
-                </a>
-                <span className="opacity-40">|</span>
-                
                 <button
                   onClick={handleCopyEmail}
                   className="hover:text-sky-600 flex items-center gap-1 cursor-pointer"

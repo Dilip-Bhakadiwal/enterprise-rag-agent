@@ -39,7 +39,7 @@ export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({
             className="w-6 h-6 object-contain rounded-md border border-white/20"
           />
           <span className="font-podium text-lg sm:text-xl font-bold uppercase tracking-wider text-white">
-            DILIP BHAKADIWAL
+            NEXORA AI
           </span>
         </div>
 

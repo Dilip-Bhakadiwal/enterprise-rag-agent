@@ -22,27 +22,21 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={onOpenResume}
           className="group flex items-center gap-2.5 text-white cursor-pointer select-none text-left"
-          title="Dilip Bhakadiwal"
+          title="Nexora AI"
         >
           <img
             src={dilipLogo}
-            alt="Logo"
+            alt="Nexora Logo"
             className="w-6 h-6 sm:w-7 sm:h-7 object-contain rounded-md border border-white/20 shadow-sm group-hover:scale-105 transition-transform duration-300 shrink-0"
           />
           <span className="font-podium text-lg sm:text-xl font-bold uppercase tracking-wider text-white group-hover:text-[#FFD166] transition-colors whitespace-nowrap">
-            DILIP BHAKADIWAL
+            NEXORA AI
           </span>
         </button>
       </div>
 
       {/* Center: Nav links in font-inter (hidden below md) */}
       <nav className="hidden md:flex items-center gap-8 lg:gap-10">
-        <button
-          onClick={onOpenRag}
-          className="font-inter text-sm text-white/80 tracking-widest uppercase hover:text-white transition-colors cursor-pointer"
-        >
-          RAG Agent
-        </button>
         <button
           onClick={onOpenProjects}
           className="font-inter text-sm text-white/80 tracking-widest uppercase hover:text-white transition-colors cursor-pointer"
@@ -63,13 +57,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
       </nav>
 
-      {/* Right: "GET IN TOUCH" / "CHAT WITH RAG" button in font-inter (hidden below md) */}
+      {/* Right: GET IN TOUCH button in font-inter (hidden below md) */}
       <div className="hidden md:flex items-center">
         <button
-          onClick={onOpenRag}
+          onClick={onOpenResume}
           className="group flex items-center gap-2 border border-white/30 hover:border-white/60 hover:bg-white/10 px-6 py-3 text-xs font-inter tracking-widest uppercase text-white transition-all duration-300 cursor-pointer"
         >
-          <span>Chat with RAG</span>
+          <span>Get in Touch</span>
           <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
         </button>
       </div>

@@ -16,6 +16,7 @@ import remarkGfm from "remark-gfm";
 import { ChatMessage, Citation } from "../types";
 import { sendRagMessage } from "../services/api";
 import { CitationDrawer } from "./CitationDrawer";
+import dilipLogo from "../assets/dilip_web_app_logo.png";
 
 interface RagChatPanelProps {
   isOpen: boolean;
@@ -120,8 +121,14 @@ const AssistantMessageItem = React.memo<{
   const hasCitations = msg.citations && msg.citations.length > 0;
 
   return (
-    <div className="flex flex-col items-start w-full">
-      <div className="bg-gray-100 text-gray-800 p-4 sm:p-5 rounded-2xl rounded-tl-none max-w-[92%] sm:max-w-[85%] shadow-xs w-full transition-all">
+    <div className="flex items-start gap-2.5 sm:gap-3 w-full">
+      {/* Assistant Brand Logo Avatar */}
+      <img
+        src={dilipLogo}
+        alt="Nexora AI"
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain border border-gray-200/90 shadow-2xs shrink-0 mt-0.5 bg-white p-0.5"
+      />
+      <div className="bg-gray-100 text-gray-800 p-4 sm:p-5 rounded-2xl rounded-tl-none max-w-[90%] sm:max-w-[85%] shadow-xs w-full transition-all flex-1">
         {/* 1. Query Response Markdown Text */}
         <MarkdownText content={msg.content || ""} />
 
@@ -745,7 +752,7 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
               className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 md:p-8 bg-black/70 backdrop-blur-md"
             >
               {/* Backdrop overlay */}
@@ -757,19 +764,21 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
               {/* Fullscreen Chat Container */}
               <motion.main
-                initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                initial={{ opacity: 0, scale: 0.96, y: 120 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: 10 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                exit={{ opacity: 0, scale: 0.96, y: 120 }}
+                transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
                 className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10 border border-white/20 overflow-hidden"
                 data-purpose="chat-container-fullscreen"
               >
                 {/* Fullscreen Top Bar */}
                 <div className="flex items-center justify-between px-3 sm:px-4.5 h-10 text-white shrink-0 bg-black/40 backdrop-blur-sm" data-purpose="top-bar">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-black text-white text-xs font-bold italic flex items-center justify-center border border-white/20 shadow-xs">
-                      N
-                    </div>
+                    <img
+                      src={dilipLogo}
+                      alt="Nexora AI"
+                      className="w-6 h-6 rounded-md object-contain border border-white/20 shadow-xs bg-black"
+                    />
                     <span className="text-xs sm:text-[13px] font-semibold tracking-wider font-inter leading-none">
                       Nexora AI — Enterprise Workspace
                     </span>
@@ -809,19 +818,21 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             /* MODE B: FLOATING RIGHT-SIDE COPILOT WIDGET */
             <motion.div
               key="rag-floating-widget"
-              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              initial={{ opacity: 0, scale: 0.94, y: 120 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 20 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.94, y: 120 }}
+              transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
               className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 w-[92vw] sm:w-[410px] md:w-[430px] h-[540px] sm:h-[600px] max-h-[88dvh] rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 flex flex-col overflow-hidden border border-white/20"
               data-purpose="chat-copilot-widget"
             >
               {/* Widget Top Bar */}
               <div className="flex items-center justify-between px-3 sm:px-4 h-10 text-white shrink-0 bg-black/40 backdrop-blur-sm" data-purpose="top-bar">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-black text-white text-xs font-bold italic flex items-center justify-center border border-white/20 shadow-xs">
-                    N
-                  </div>
+                  <img
+                    src={dilipLogo}
+                    alt="Nexora AI"
+                    className="w-6 h-6 rounded-md object-contain border border-white/20 shadow-xs bg-black"
+                  />
                   <span className="text-xs font-bold tracking-wide font-inter">Nexora AI Copilot</span>
                 </div>
                 <div className="flex items-center gap-1">
