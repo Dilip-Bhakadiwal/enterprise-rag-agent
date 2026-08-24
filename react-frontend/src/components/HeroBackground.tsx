@@ -10,47 +10,65 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const playVideo = () => {
-      if (videoRef.current) {
-        videoRef.current.muted = true;
-        videoRef.current.play().catch(() => {
-          // Autoplay policy fallback
-        });
+    const video = videoRef.current;
+    if (!video) return;
+
+    // React bugfix: explicitly set DOM properties for autoplay compliance
+    video.defaultMuted = true;
+    video.muted = true;
+    video.playsInline = true;
+
+    const attemptPlay = () => {
+      if (!video) return;
+      video.muted = true;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsLoaded(true);
+          })
+          .catch((err) => {
+            console.warn("Autoplay initial attempt deferred by browser policy:", err);
+          });
       }
     };
 
-    playVideo();
+    // Attempt immediate play
+    attemptPlay();
 
-    // iOS Low Power Mode interaction recovery
-    const handleFirstTouch = () => {
-      playVideo();
-      window.removeEventListener("touchstart", handleFirstTouch);
-      window.removeEventListener("click", handleFirstTouch);
+    // Attach robust lifecycle listeners
+    video.addEventListener("loadeddata", attemptPlay);
+    video.addEventListener("canplay", attemptPlay);
+    video.addEventListener("playing", () => setIsLoaded(true));
+
+    // Interaction fallback for low-power mode / strict browser autoplay policies
+    const handleInteraction = () => {
+      attemptPlay();
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("scroll", handleInteraction);
     };
 
-    window.addEventListener("touchstart", handleFirstTouch, { passive: true });
-    window.addEventListener("click", handleFirstTouch, { passive: true });
+    window.addEventListener("touchstart", handleInteraction, { passive: true });
+    window.addEventListener("click", handleInteraction, { passive: true });
+    window.addEventListener("scroll", handleInteraction, { passive: true });
 
-    // Safety fallback: if video doesn't trigger onCanPlay within 2.5s (e.g. slow mobile data / battery saver), mount UI gracefully
+    // Safety fallback: ensure UI renders gracefully within 1.5s even if video is buffering
     const fallbackTimer = setTimeout(() => {
-      setIsLoaded((prev) => {
-        if (!prev) return true;
-        return prev;
-      });
-    }, 2500);
+      setIsLoaded(true);
+    }, 1500);
 
     return () => {
       clearTimeout(fallbackTimer);
-      window.removeEventListener("touchstart", handleFirstTouch);
-      window.removeEventListener("click", handleFirstTouch);
+      if (video) {
+        video.removeEventListener("loadeddata", attemptPlay);
+        video.removeEventListener("canplay", attemptPlay);
+      }
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("scroll", handleInteraction);
     };
   }, []);
-
-  const handleVideoLoaded = () => {
-    if (!isLoaded) {
-      setIsLoaded(true);
-    }
-  };
 
   const handleAnimationComplete = () => {
     if (isLoaded && onVideoLoaded) {
@@ -62,20 +80,18 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: isLoaded ? 1 : 0 }}
-      transition={{ duration: 2.0, ease: "easeInOut" }}
+      transition={{ duration: 1.5, ease: "easeInOut" }}
       onAnimationComplete={handleAnimationComplete}
       className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
     >
       {/* Background Animated Video Layer */}
       <video
         ref={videoRef}
-        onLoadedData={handleVideoLoaded}
-        onCanPlay={handleVideoLoaded}
+        src="/i_want_to_animted_this_video_b.mp4"
         autoPlay
         loop
         muted
         playsInline
-        webkit-playsinline="true"
         preload="auto"
         disablePictureInPicture
         disableRemotePlayback
