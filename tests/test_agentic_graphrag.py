@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 from app.agent.guardrails import sanitize_pii
 from app.agent.graph_retriever import (
+    get_graph_driver,
     get_top_warranty_claims_graph_context,
     get_regional_sales_graph_context,
     get_samsung_5g_comparison,
@@ -44,6 +45,8 @@ def test_pii_sanitization_guardrail():
 
 def test_neo4j_warranty_graph_traversal():
     """Verify live Neo4j AuraDB warranty traversal returns expected product rankings."""
+    if get_graph_driver() is None:
+        pytest.skip("Neo4j AuraDB instance is offline / credentials pending new instance")
     w_facts = get_top_warranty_claims_graph_context()
     assert isinstance(w_facts, list)
     assert len(w_facts) > 0
@@ -55,6 +58,8 @@ def test_neo4j_warranty_graph_traversal():
 
 def test_neo4j_regional_store_traversal():
     """Verify live Neo4j AuraDB regional store lookups with geographic alias support."""
+    if get_graph_driver() is None:
+        pytest.skip("Neo4j AuraDB instance is offline / credentials pending new instance")
     us_stores = get_regional_sales_graph_context("North America")
     assert isinstance(us_stores, list)
     assert len(us_stores) > 0
@@ -68,6 +73,8 @@ def test_neo4j_regional_store_traversal():
 
 def test_neo4j_samsung_5g_market_intelligence():
     """Verify live Neo4j AuraDB Samsung 5G regional metrics."""
+    if get_graph_driver() is None:
+        pytest.skip("Neo4j AuraDB instance is offline / credentials pending new instance")
     sam_facts = get_samsung_5g_comparison()
     assert isinstance(sam_facts, list)
     assert len(sam_facts) > 0
