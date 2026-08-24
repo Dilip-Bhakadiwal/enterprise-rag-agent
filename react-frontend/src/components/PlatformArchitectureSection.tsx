@@ -11,14 +11,10 @@ interface EngineCardProps {
   index: number;
 }
 
-function EngineCard({ id, engineNum, name, label, icon, index }: EngineCardProps) {
+function EngineCard({ id, engineNum, name, label, icon }: EngineCardProps) {
   return (
-    <motion.div
+    <div
       id={id}
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.6, delay: index * 0.15, ease: [0.21, 0.47, 0.32, 0.98] }}
       className="relative bg-[#0e0e0e] border border-[#1a1a1a] p-6 sm:p-8 flex flex-col items-center text-center group hover:border-[#2a2a2a] transition-all duration-300 w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center rounded-2xl md:rounded-none"
     >
       {/* Corner Ticks */}
@@ -46,7 +42,7 @@ function EngineCard({ id, engineNum, name, label, icon, index }: EngineCardProps
       <div className="font-mono text-[11px] sm:text-xs uppercase tracking-[0.2em] text-[#71717a] font-normal max-w-[200px]">
         {label}
       </div>
-    </motion.div>
+    </div>
   );
 }
 

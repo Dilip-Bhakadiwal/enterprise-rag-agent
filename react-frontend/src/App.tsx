@@ -17,6 +17,15 @@ export default function App() {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [ragInitialPrompt, setRagInitialPrompt] = useState<string | undefined>(undefined);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   const handleOpenRag = (prompt?: string) => {
     if (prompt) {
       setRagInitialPrompt(prompt);

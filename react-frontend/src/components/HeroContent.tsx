@@ -7,6 +7,160 @@ interface HeroContentProps {
   onOpenRag: (prompt?: string) => void;
 }
 
+const CIPHER_GLYPHS = '!<>-_\\/[]{}?"=+*^?#________0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+const GlitchHeadline: React.FC = () => {
+  const [line1, setLine1] = useState("ARCHITECT.");
+  const [line2, setLine2] = useState("ORCHESTRATE.");
+  const [line3, setLine3] = useState("DEPLOY.");
+  const [filterScale, setFilterScale] = useState(0);
+  const [turbulenceSeed, setTurbulenceSeed] = useState(1);
+  const [isGlitching, setIsGlitching] = useState(false);
+
+  const triggerGlitchSpike = () => {
+    setTurbulenceSeed(Math.floor(Math.random() * 1000));
+    setFilterScale(24);
+    setIsGlitching(true);
+
+    setTimeout(() => {
+      setFilterScale(8);
+      setTimeout(() => {
+        setFilterScale(0);
+        setIsGlitching(false);
+      }, 70);
+    }, 90);
+  };
+
+  // Initial Cipher text decryption reveal + periodic glitch
+  useEffect(() => {
+    const target1 = "ARCHITECT.";
+    const target2 = "ORCHESTRATE.";
+    const target3 = "DEPLOY.";
+
+    let frame = 0;
+    const totalFrames = 35;
+
+    triggerGlitchSpike();
+
+    const interval = setInterval(() => {
+      frame++;
+      const progress = Math.min(frame / totalFrames, 1);
+
+      // Decrypt line 1
+      const chars1 = Math.floor(progress * target1.length);
+      let s1 = "";
+      for (let i = 0; i < target1.length; i++) {
+        s1 += i < chars1 ? target1[i] : CIPHER_GLYPHS[Math.floor(Math.random() * CIPHER_GLYPHS.length)];
+      }
+      setLine1(s1);
+
+      // Decrypt line 2 (delayed)
+      if (progress > 0.2) {
+        const p2 = (progress - 0.2) / 0.8;
+        const chars2 = Math.floor(p2 * target2.length);
+        let s2 = "";
+        for (let i = 0; i < target2.length; i++) {
+          s2 += i < chars2 ? target2[i] : CIPHER_GLYPHS[Math.floor(Math.random() * CIPHER_GLYPHS.length)];
+        }
+        setLine2(s2);
+      }
+
+      // Decrypt line 3 (delayed further)
+      if (progress > 0.4) {
+        const p3 = (progress - 0.4) / 0.6;
+        const chars3 = Math.floor(p3 * target3.length);
+        let s3 = "";
+        for (let i = 0; i < target3.length; i++) {
+          s3 += i < chars3 ? target3[i] : CIPHER_GLYPHS[Math.floor(Math.random() * CIPHER_GLYPHS.length)];
+        }
+        setLine3(s3);
+      }
+
+      if (progress >= 1) {
+        clearInterval(interval);
+        setLine1(target1);
+        setLine2(target2);
+        setLine3(target3);
+        triggerGlitchSpike();
+      }
+    }, 32);
+
+    // Periodic procedural glitch spike
+    const loopInterval = setInterval(() => {
+      triggerGlitchSpike();
+    }, 3800);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(loopInterval);
+    };
+  }, []);
+
+  return (
+    <div
+      onClick={triggerGlitchSpike}
+      className="relative cursor-pointer select-none font-podium uppercase leading-[0.92] tracking-tight text-[clamp(2.3rem,7.5vw,7rem)] animate-fade-up-delay-1 mb-2"
+      style={{
+        filter: filterScale > 0 ? "url(#vfx-glitch-filter-hero)" : undefined,
+      }}
+      title="Click to trigger glitch spike"
+    >
+      {/* SVG Displacement Filter definition */}
+      <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
+        <defs>
+          <filter id="vfx-glitch-filter-hero" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.04 0.95"
+              numOctaves="1"
+              seed={turbulenceSeed}
+              result="noise"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale={filterScale}
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
+
+      {/* 1. Crisp White Base Layer */}
+      <div className="relative z-10 text-white">
+        <div className="block">{line1}</div>
+        <div className="block">{line2}</div>
+        <div className="block">{line3}</div>
+      </div>
+
+      {/* 2. Optical Cyan Split Pass during Glitch */}
+      {isGlitching && (
+        <div
+          aria-hidden="true"
+          className="glitch-channel-cyan absolute inset-0 text-[#00f0ff] pointer-events-none z-0"
+        >
+          <div className="block">{line1}</div>
+          <div className="block">{line2}</div>
+          <div className="block">{line3}</div>
+        </div>
+      )}
+
+      {/* 3. Optical Magenta Split Pass during Glitch */}
+      {isGlitching && (
+        <div
+          aria-hidden="true"
+          className="glitch-channel-magenta absolute inset-0 text-[#ff0055] pointer-events-none z-0"
+        >
+          <div className="block">{line1}</div>
+          <div className="block">{line2}</div>
+          <div className="block">{line3}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const HeroContent: React.FC<HeroContentProps> = ({
   onOpenProjects,
   onOpenRag,
@@ -52,12 +206,8 @@ export const HeroContent: React.FC<HeroContentProps> = ({
         </span>
       </div>
 
-      {/* 2. Main Heading: 3 lines in font-podium with clamp sizing (animate-fade-up-delay-1, 0.2s delay) */}
-      <div className="animate-fade-up-delay-1 font-podium text-white uppercase leading-[0.92] tracking-tight text-[clamp(2.3rem,7.5vw,7rem)] select-none">
-        <div className="block">ARCHITECT.</div>
-        <div className="block">ORCHESTRATE.</div>
-        <div className="block">DEPLOY.</div>
-      </div>
+      {/* 2. Glitch Heading */}
+      <GlitchHeadline />
 
       {/* 3. Subtext: max-w-md with bold ending (animate-fade-up-delay-2, 0.4s delay) */}
       <p className="animate-fade-up-delay-2 text-white/70 text-xs sm:text-sm md:text-base font-inter leading-relaxed max-w-md mt-4 sm:mt-6 lg:mt-8 select-text">

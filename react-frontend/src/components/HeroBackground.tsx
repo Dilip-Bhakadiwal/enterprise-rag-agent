@@ -6,17 +6,36 @@ interface HeroBackgroundProps {
 }
 
 export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const setVideoRef = (video: HTMLVideoElement | null) => {
+    if (!video) return;
+    videoRef.current = video;
+    video.defaultMuted = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("loop", "");
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsLoaded(true);
+        })
+        .catch((err) => {
+          console.warn("Mobile autoplay policy deferred initial play:", err);
+        });
+    }
+  };
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    // React bugfix: explicitly set DOM properties for autoplay compliance
-    video.defaultMuted = true;
-    video.muted = true;
-    video.playsInline = true;
 
     const attemptPlay = () => {
       if (!video) return;
@@ -24,24 +43,16 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise
-          .then(() => {
-            setIsLoaded(true);
-          })
-          .catch((err) => {
-            console.warn("Autoplay initial attempt deferred by browser policy:", err);
-          });
+          .then(() => setIsLoaded(true))
+          .catch(() => {});
       }
     };
 
-    // Attempt immediate play
-    attemptPlay();
-
-    // Attach robust lifecycle listeners
+    video.addEventListener("loadedmetadata", attemptPlay);
     video.addEventListener("loadeddata", attemptPlay);
     video.addEventListener("canplay", attemptPlay);
     video.addEventListener("playing", () => setIsLoaded(true));
 
-    // Interaction fallback for low-power mode / strict browser autoplay policies
     const handleInteraction = () => {
       attemptPlay();
       window.removeEventListener("touchstart", handleInteraction);
@@ -53,14 +64,14 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
     window.addEventListener("click", handleInteraction, { passive: true });
     window.addEventListener("scroll", handleInteraction, { passive: true });
 
-    // Safety fallback: ensure UI renders gracefully within 1.5s even if video is buffering
     const fallbackTimer = setTimeout(() => {
       setIsLoaded(true);
-    }, 1500);
+    }, 1200);
 
     return () => {
       clearTimeout(fallbackTimer);
       if (video) {
+        video.removeEventListener("loadedmetadata", attemptPlay);
         video.removeEventListener("loadeddata", attemptPlay);
         video.removeEventListener("canplay", attemptPlay);
       }
@@ -80,13 +91,13 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ onVideoLoaded })
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: isLoaded ? 1 : 0 }}
-      transition={{ duration: 1.5, ease: "easeInOut" }}
+      transition={{ duration: 1.2, ease: "easeInOut" }}
       onAnimationComplete={handleAnimationComplete}
       className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
     >
       {/* Background Animated Video Layer */}
       <video
-        ref={videoRef}
+        ref={setVideoRef}
         src="/i_want_to_animted_this_video_b.mp4"
         autoPlay
         loop
