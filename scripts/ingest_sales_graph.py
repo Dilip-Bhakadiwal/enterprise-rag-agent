@@ -211,37 +211,43 @@ def populate_neo4j_graph(driver: Driver, data: dict[str, pd.DataFrame]):
                 )
 
         # 8. Ingest Samsung Mobile Intelligence (Quarters, 5G, Revenue, Regions)
-        logger.info("Creating Samsung Mobile Intelligence Nodes & Regional Performance...")
+        logger.info("Creating Samsung Mobile Intelligence Nodes & Regional Performance via batch UNWIND...")
+        batch_records = []
         for _, row in samsung_df.iterrows():
-            session.run(
-                """
-                MERGE (p:Product {name: $model, brand: 'Samsung'})
-                SET p.five_g_capable = $five_g
-                MERGE (b:Brand {name: 'Samsung'})
-                MERGE (b)-[:PRODUCES]->(p)
-                MERGE (r:Region {name: $region})
-                MERGE (q:Quarter {name: $quarter_year, year: $year, quarter: $quarter})
-                MERGE (p)-[perf:PERFORMED_IN {quarter: $quarter_year, region: $region}]->(r)
-                SET perf.units_sold = $units,
-                    perf.revenue = $rev,
-                    perf.market_share = $share,
-                    perf.regional_5g_coverage = $coverage,
-                    perf.subscribers_5g_m = $subs,
-                    perf.avg_5g_speed = $speed
-                """,
-                model=str(row["Product Model"]),
-                five_g=(str(row["5G Capability"]).strip().lower() == "yes"),
-                region=str(row["Region"]),
-                quarter_year=f"{row['Year']}-{row['Quarter']}",
-                year=int(row["Year"]),
-                quarter=str(row["Quarter"]),
-                units=int(row["Units Sold"]),
-                rev=float(row["Revenue ($)"]),
-                share=float(row["Market Share (%)"]),
-                coverage=float(row["Regional 5G Coverage (%)"]),
-                subs=float(row["5G Subscribers (millions)"]),
-                speed=float(row["Avg 5G Speed (Mbps)"]),
-            )
+            batch_records.append({
+                "model": str(row["Product Model"]),
+                "five_g": (str(row["5G Capability"]).strip().lower() == "yes"),
+                "region": str(row["Region"]),
+                "quarter_year": f"{row['Year']}-{row['Quarter']}",
+                "year": int(row["Year"]),
+                "quarter": str(row["Quarter"]),
+                "units": int(row["Units Sold"]),
+                "rev": float(row["Revenue ($)"]),
+                "share": float(row["Market Share (%)"]),
+                "coverage": float(row["Regional 5G Coverage (%)"]),
+                "subs": float(row["5G Subscribers (millions)"]),
+                "speed": float(row["Avg 5G Speed (Mbps)"]),
+            })
+
+        session.run(
+            """
+            UNWIND $batch AS row
+            MERGE (p:Product {name: row.model, brand: 'Samsung'})
+            SET p.five_g_capable = row.five_g
+            MERGE (b:Brand {name: 'Samsung'})
+            MERGE (b)-[:PRODUCES]->(p)
+            MERGE (r:Region {name: row.region})
+            MERGE (q:Quarter {name: row.quarter_year, year: row.year, quarter: row.quarter})
+            MERGE (p)-[perf:PERFORMED_IN {quarter: row.quarter_year, region: row.region}]->(r)
+            SET perf.units_sold = row.units,
+                perf.revenue = row.rev,
+                perf.market_share = row.share,
+                perf.regional_5g_coverage = row.coverage,
+                perf.subscribers_5g_m = row.subs,
+                perf.avg_5g_speed = row.speed
+            """,
+            batch=batch_records
+        )
 
     logger.info("Neo4j Knowledge Graph Construction Complete! 🎉")
 
