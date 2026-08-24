@@ -816,8 +816,8 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 md:p-8 bg-black/70 backdrop-blur-md"
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 md:p-8 bg-black/75 backdrop-blur-sm"
             >
               {/* Backdrop overlay */}
               <div
@@ -828,10 +828,11 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
 
               {/* Fullscreen Chat Container */}
               <motion.main
-                initial={{ opacity: 0, scale: 0.96, y: 120 }}
+                initial={{ opacity: 0, scale: 0.98, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: 120 }}
-                transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+                exit={{ opacity: 0, scale: 0.98, y: 30 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                style={{ willChange: "transform, opacity" }}
                 className="w-full max-w-5xl rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 relative flex flex-col h-[94dvh] sm:h-[90vh] max-h-[96dvh] z-10 border border-white/20 overflow-hidden"
                 data-purpose="chat-container-fullscreen"
               >
@@ -882,10 +883,11 @@ export const RagChatPanel: React.FC<RagChatPanelProps> = ({
             /* MODE B: FLOATING RIGHT-SIDE COPILOT WIDGET */
             <motion.div
               key="rag-floating-widget"
-              initial={{ opacity: 0, scale: 0.94, y: 120 }}
+              initial={{ opacity: 0, scale: 0.96, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 120 }}
-              transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.96, y: 30 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              style={{ willChange: "transform, opacity" }}
               className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 w-[92vw] sm:w-[410px] md:w-[430px] h-[540px] sm:h-[600px] max-h-[88dvh] rounded-2xl sm:rounded-3xl gradient-bg p-[2px] sm:p-[2.5px] shadow-2xl shadow-black/80 flex flex-col overflow-hidden border border-white/20"
               data-purpose="chat-copilot-widget"
             >

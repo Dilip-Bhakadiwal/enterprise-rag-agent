@@ -8,6 +8,7 @@ export const HeroBackground: React.FC = () => {
     if (!video) return;
     video.defaultMuted = true;
     video.muted = true;
+    video.playsInline = true;
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {});
@@ -36,6 +37,11 @@ export const HeroBackground: React.FC = () => {
 
     attemptPlay();
 
+    video.addEventListener("loadedmetadata", attemptPlay);
+    video.addEventListener("loadeddata", attemptPlay);
+    video.addEventListener("canplay", attemptPlay);
+    video.addEventListener("canplaythrough", attemptPlay);
+
     const handleResume = () => {
       attemptPlay();
     };
@@ -47,6 +53,10 @@ export const HeroBackground: React.FC = () => {
     document.addEventListener("visibilitychange", handleResume);
 
     return () => {
+      video.removeEventListener("loadedmetadata", attemptPlay);
+      video.removeEventListener("loadeddata", attemptPlay);
+      video.removeEventListener("canplay", attemptPlay);
+      video.removeEventListener("canplaythrough", attemptPlay);
       window.removeEventListener("touchstart", handleResume);
       window.removeEventListener("touchend", handleResume);
       window.removeEventListener("click", handleResume);
@@ -65,9 +75,11 @@ export const HeroBackground: React.FC = () => {
         loop
         muted
         playsInline
-        webkit-playsinline="true"
-        x5-playsinline="true"
         preload="auto"
+        onLoadedMetadata={attemptPlay}
+        onLoadedData={attemptPlay}
+        onCanPlay={attemptPlay}
+        onCanPlayThrough={attemptPlay}
         controls={false}
         disablePictureInPicture
         disableRemotePlayback
@@ -75,9 +87,7 @@ export const HeroBackground: React.FC = () => {
         style={{
           filter: "brightness(0.65) contrast(1.15) saturate(1.1)",
         }}
-      >
-        <source src="/i_want_to_animted_this_video_b.mp4" type="video/mp4" />
-      </video>
+      />
 
       {/* Cinematic Deep Dark Gradient Overlay for Maximum Text Legibility */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/95" />
