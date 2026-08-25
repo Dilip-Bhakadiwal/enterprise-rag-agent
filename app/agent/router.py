@@ -85,6 +85,17 @@ def classify_intent(query: str) -> tuple[str, list[str], str]:
         - source_filter: List of source_type strings to filter (empty = no filter)
         - provider_used: Which LLM provider answered the classification
     """
+    q_lower = query.lower()
+
+    # Hardware, retail, pricing, and portfolio queries must search ALL sources (no restrictive Jira filter)
+    is_open_domain = any(
+        k in q_lower
+        for k in [
+            "apple", "samsung", "iphone", "galaxy", "store", "price", "expensive", "cost",
+            "msrp", "warranty", "defect", "5g", "dilip", "research", "nexora", "fpga", "jetson"
+        ]
+    )
+
     messages = [
         SystemMessage(content=_ROUTER_SYSTEM_PROMPT),
         HumanMessage(content=f"Question: {query}"),
@@ -94,7 +105,14 @@ def classify_intent(query: str) -> tuple[str, list[str], str]:
         response, provider = call_llm(messages)
         raw = response.content if hasattr(response, "content") else str(response)
         intent, reason = _extract_intent_from_response(raw)
-        source_filter = INTENT_SOURCE_MAP[intent]
+        
+        # If the query is about products, retail, or hardware, keep filter open so catalogs aren't blocked
+        if is_open_domain and intent == "project_related" and not any(k in q_lower for k in ["jira", "github", "pull request", "pr ", "commit"]):
+            intent = "basic"
+            source_filter = []
+        else:
+            source_filter = INTENT_SOURCE_MAP[intent]
+
         logger.info(
             f"Router → intent='{intent}' | filter={source_filter} | "
             f"reason='{reason}' | provider={provider}"

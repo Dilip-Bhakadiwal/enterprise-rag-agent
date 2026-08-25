@@ -48,6 +48,7 @@ class AgentState(TypedDict):
     timings: dict[str, float]
     suggestions: list[str]
     telemetry: dict[str, Any]
+    chat_history: list[dict]
 
 
 # ── Helper: Dynamic Follow-Up Question Generator ───────────────────────────
@@ -56,53 +57,91 @@ def _generate_smart_suggestions(query: str, intent: str, sources: list[dict]) ->
     """Generates 3 contextual follow-up suggestions based on query and topic."""
     q_lower = query.lower()
     source_ids = [s.get("doc_id", "") for s in sources]
-    is_portfolio = any("portfolio" in sid for sid in source_ids) or any(k in q_lower for k in ["dilip", "m.tech", "btech", "research", "marketpulse", "redwood", "ieee"])
+    is_portfolio = any("portfolio" in sid for sid in source_ids) or any(
+        k in q_lower for k in ["dilip", "m.tech", "btech", "research", "nexora", "fpga", "jetson", "ieee", "moes"]
+    )
 
     if is_portfolio:
-        if "research" in q_lower or "ieee" in q_lower:
+        if "research" in q_lower or "ieee" in q_lower or "moes" in q_lower or "icasa" in q_lower:
             return [
                 "What dataset and accuracy did the Focal-CBAM Fish-YOLO model achieve?",
                 "How was the YOLOv8 model deployed on the Xilinx FPGA accelerator?",
                 "What is Dilip's M.Tech specialization from DIAT Pune?"
             ]
-        elif "marketpulse" in q_lower:
+        elif "nexora" in q_lower or "rag" in q_lower:
             return [
-                "How does MarketPulse AI handle real-time WebSocket ticker feeds?",
-                "What SQL security guardrails are built into MarketPulse AI?",
-                "Tell me about the Redwood Inference Enterprise RAG architecture."
+                "How does Nexora AI fuse Neo4j Knowledge Graph with Pinecone Serverless?",
+                "What 3-Tier failover strategy is implemented across LLM providers?",
+                "How does the sub-180ms p95 latency benchmark compare to vanilla RAG?"
             ]
-        elif "education" in q_lower or "btech" in q_lower or "mtech" in q_lower or "college" in q_lower:
+        elif "edge" in q_lower or "fpga" in q_lower or "jetson" in q_lower:
             return [
-                "What published research did Dilip work on during his M.Tech?",
-                "What are Dilip's core skills in LangGraph and FastAPI?",
-                "How can I get in touch with Dilip or view his GitHub projects?"
+                "What is the FPS benchmark difference between Xilinx FPGA and Jetson Orin?",
+                "How does INT8 post-training quantization preserve object detection mAP?",
+                "How does the local LLaMA 1B model generate scene captions on edge?"
             ]
         else:
             return [
                 "What research has Dilip published with MoES funding on IEEE Xplore?",
-                "How is the MarketPulse AI agentic terminal designed?",
-                "Which colleges did Dilip attend for his B.Tech and M.Tech?"
+                "What are Dilip's core architectures in LangGraph, FastAPI, and Neo4j?",
+                "Tell me about the Nexora AI Enterprise Multi-Agent RAG Engine."
             ]
-    else:
-        # Enterprise Dataset queries
-        if any(k in q_lower for k in ["liability", "cap", "legal", "sop", "contract", "procurement"]):
-            return [
-                "What are the mandatory data breach carve-outs in the procurement SOP?",
-                "What is the standard SLA penalty framework for cloud vendors?",
-                "Are there conflicting Jira tickets regarding this vendor contract?"
-            ]
-        elif any(k in q_lower for k in ["deploy", "ci", "cd", "docker", "release", "sprint"]):
-            return [
-                "What is the rollback procedure if a deployment healthcheck fails?",
-                "Show related pull request discussions and code review tickets on GitHub.",
-                "What runtime flags are required for production cluster startup?"
-            ]
-        else:
-            return [
-                "What related discussions exist in Slack engineering channels?",
-                "Are there any open Jira tickets or PRs tracking this issue?",
-                "What official Confluence SOP documentation covers this policy?"
-            ]
+
+    # Apple Domain
+    if "apple" in q_lower or "iphone" in q_lower or "macbook" in q_lower or "vision pro" in q_lower:
+        return [
+            "What are the top Apple retail store locations in North America and Europe by product volume?",
+            "What are the primary warranty repair claims recorded for iPhone 15 Pro Max?",
+            "How does Apple's 5G market share compare to Samsung across Asia-Pacific?"
+        ]
+
+    # Samsung Domain
+    if "samsung" in q_lower or "galaxy" in q_lower or "fold" in q_lower or "flip" in q_lower:
+        return [
+            "Compare Samsung 5G market share and revenue in Asia-Pacific vs Europe",
+            "What is the certified cycle threshold for the Galaxy Z Fold5 Flex Hinge?",
+            "Which Samsung product category generates the highest quarterly revenue in Latin America?"
+        ]
+
+    # Retail & Store Locations
+    if "store" in q_lower or "retail" in q_lower or "fifth ave" in q_lower or "regent" in q_lower or "ginza" in q_lower:
+        return [
+            "Which retail store has the highest daily foot traffic and product throughput?",
+            "Compare European store performance between London Regent St and Paris Champs-Élysées",
+            "What warranty failure modes are most frequently serviced at Fifth Avenue NYC?"
+        ]
+
+    # 5G & Telemetry
+    if "5g" in q_lower or "speed" in q_lower or "throughput" in q_lower:
+        return [
+            "What is the difference in median throughput between North America mmWave and APAC MIMO?",
+            "Which devices exhibit the lowest packet loss across European 3.5GHz networks?",
+            "Compare Apple vs Samsung 5G adoption rates across North America"
+        ]
+
+    # Warranty & Defects
+    if "warranty" in q_lower or "defect" in q_lower or "thermal" in q_lower or "hinge" in q_lower:
+        return [
+            "What is the root cause of OLED display burn-in on ultra-high nit panels?",
+            "How effective are the sweeper bristles in mitigating hinge particulate ingress?",
+            "What computational techniques are used to suppress sapphire lens flare reflections?"
+        ]
+
+    # Enterprise SOP / Procurement / Legal
+    if any(k in q_lower for k in ["liability", "cap", "legal", "sop", "contract", "procurement"]):
+        return [
+            "What are the mandatory data breach carve-outs in the procurement SOP?",
+            "What is the standard SLA penalty framework for cloud vendors?",
+            "Are there conflicting Jira tickets regarding this vendor contract?"
+        ]
+
+    # General / Scientific / Conversational
+    return [
+        "Which company sells more overall: Apple or Samsung?",
+        "What are the top Apple retail store locations in North America and Europe by product volume?",
+        "Compare Samsung 5G market share and revenue in Asia-Pacific vs Europe",
+        "What published research did Dilip work on during his M.Tech?"
+    ]
 
 
 # ── Node Functions ─────────────────────────────────────────────────────────
@@ -266,7 +305,13 @@ def synthesizer_node(state: AgentState) -> AgentState:
         f"[Synthesizer] Generating answer for intent='{intent}' with {len(chunks)} chunks"
     )
 
-    answer, provider = synthesize_answer(query, chunks, intent, used_fallback)
+    answer, provider = synthesize_answer(
+        query,
+        chunks,
+        intent,
+        used_fallback,
+        chat_history=state.get("chat_history", []),
+    )
     elapsed = (time.perf_counter() - t0) * 1000
 
     # ── Deduplicate sources and preserve full chunk text ───────────────────
@@ -400,23 +445,33 @@ def _is_rag_domain_query(query: str) -> bool:
     return any(k in q for k in _ENTERPRISE_RAG_KEYWORDS)
 
 
-def ask(query: str) -> dict:
+def ask(query: str, chat_history: list[dict] | None = None) -> dict:
     """Run Smart Router: Instant Upstash Redis Cache -> Direct LLM -> Full Hybrid GraphRAG."""
     clean_query = query.strip()
+    history = chat_history or []
     
     # ── Level 0: Check Upstash Serverless Redis Cache (~5ms Hit) ──────────
-    cached_response = get_cached_rag_response(clean_query)
-    if cached_response:
-        logger.info(f"⚡ [Cache] Returning instant Upstash Redis response for \"{clean_query[:50]}...\"")
-        return cached_response
+    # Note: Only check cache for fresh 1st queries without history to avoid stale context
+    if not history:
+        cached_response = get_cached_rag_response(clean_query)
+        if cached_response:
+            logger.info(f"⚡ [Cache] Returning instant Upstash Redis response for \"{clean_query[:50]}...\"")
+            return cached_response
 
     # ── Path A: Direct LLM Call for Conversational / Non-RAG Queries ───────
     if not _is_rag_domain_query(clean_query):
         t0 = time.perf_counter()
-        messages = [
-            SystemMessage(content=_DIRECT_CHAT_PROMPT),
-            HumanMessage(content=clean_query),
-        ]
+        
+        # Build direct messages with recent conversation context if present
+        messages = [SystemMessage(content=_DIRECT_CHAT_PROMPT)]
+        if history:
+            for turn in history[-2:]:
+                r = "User" if turn.get("role") == "user" else "Assistant"
+                c = str(turn.get("content", "")).strip()[:180]
+                if c:
+                    messages.append(HumanMessage(content=f"[{r}]: {c}"))
+        messages.append(HumanMessage(content=clean_query))
+
         try:
             response, provider = call_llm(messages)
             answer_text = response.content if hasattr(response, "content") else str(response)
@@ -458,7 +513,8 @@ def ask(query: str) -> dict:
                 "failover_status": "healthy",
             },
         }
-        set_cached_rag_response(clean_query, result_payload, ttl_seconds=3600)
+        if not history:
+            set_cached_rag_response(clean_query, result_payload, ttl_seconds=3600)
         return result_payload
 
     # ── Path B: Full LangGraph Hybrid GraphRAG Pipeline ───────────────────
@@ -478,6 +534,7 @@ def ask(query: str) -> dict:
         "timings": {},
         "suggestions": [],
         "telemetry": {},
+        "chat_history": history,
     }
     result = graph.invoke(initial_state)
     result_payload = {

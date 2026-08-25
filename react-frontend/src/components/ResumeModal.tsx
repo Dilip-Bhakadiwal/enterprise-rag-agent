@@ -311,37 +311,37 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
               </h2>
               
               <div className="space-y-4 text-xs sm:text-[13px]">
-                {/* MarketPulse AI */}
+                {/* Nexora AI Enterprise RAG */}
                 <div>
                   <div className="flex justify-between items-baseline">
                     <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      MarketPulse AI: Agentic Financial Terminal | <span className="font-normal italic text-sky-600">LangGraph, FastAPI, PostgreSQL, SSE, Render</span>
+                      Nexora AI: Enterprise Multi-Agent RAG &amp; Knowledge Graph | <span className="font-normal italic text-sky-600">LangGraph, Neo4j, Pinecone, Groq, FastEmbed</span>
                     </span>
                     <span className={isDarkMode ? "text-slate-400 font-semibold" : "text-slate-700 font-semibold"}>2026</span>
                   </div>
                   <ul className={`list-disc list-outside ml-4 mt-1.5 space-y-1 leading-relaxed ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <li>Developed a production-grade conversational financial terminal using LangGraph and FastAPI, integrating a self-healing 7-stage web scraper pipeline with automatic symbol alias resolution.</li>
-                    <li>Implemented real-time Server-Sent Events (SSE) token-streaming and a dynamic UI explorer, backed by an Aiven Managed PostgreSQL database handling advanced algorithmic SQL synthesis (Z-score anomaly detection).</li>
-                    <li>Engineered AST-level SQL security guardrails to block destructive queries and deployed via automated CI/CD on Render with a resilient 3-path cloud price fallback.</li>
+                    <li>Architected a hybrid self-routing RAG pipeline combining Neo4j AuraDB graph traversal with Pinecone 1024-dim dense vector search.</li>
+                    <li>Integrated FastEmbed and Pinecone Serverless with a 3-Tier failover engine (Gemini 3.7, Groq Llama 3.3 70B, and deterministic local heuristics).</li>
+                    <li>Containerized the application via Docker with AST SQL validation guardrails, reducing hallucinations by 64% with sub-180ms p95 latency.</li>
                   </ul>
                 </div>
 
-                {/* Enterprise RAG Pipeline */}
+                {/* Edge AI Vision on FPGA and Jetson */}
                 <div>
                   <div className="flex justify-between items-baseline">
                     <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      Enterprise RAG Pipeline (Redwood Inference) | <span className="font-normal italic text-sky-600">LangGraph, Pinecone, Groq, FastEmbed</span>
+                      Edge AI Acceleration &amp; Vision Engine | <span className="font-normal italic text-sky-600">PyTorch, Xilinx FPGA, NVIDIA Jetson, INT8</span>
                     </span>
-                    <span className={isDarkMode ? "text-slate-400 font-semibold" : "text-slate-700 font-semibold"}>2026</span>
+                    <span className={isDarkMode ? "text-slate-400 font-semibold" : "text-slate-700 font-semibold"}>2025 – 2026</span>
                   </div>
                   <ul className={`list-disc list-outside ml-4 mt-1.5 space-y-1 leading-relaxed ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <li>Architected a highly cost-optimized, automated RAG pipeline over the EnterpriseRAG-Bench dataset using LangGraph and FastAPI.</li>
-                    <li>Integrated FastEmbed and a Pinecone Serverless vector database for retrieval, utilizing the Groq API (Llama 3.3 70B) for synthesis alongside intelligent source deduplication.</li>
-                    <li>Containerized the application via Docker, optimizing image builds with pre-cached model weights to eliminate cold-start latency, and established a GitHub Actions CI/CD pipeline gated by sequential Ragas evaluations.</li>
+                    <li>Designed lightweight YOLOv8n architecture optimized for embedded edge deployment and real-time object detection.</li>
+                    <li>Quantized models from FP32 to INT8 with custom acceleration on Xilinx FPGA (13 FPS) and NVIDIA Jetson Orin (45 FPS).</li>
+                    <li>Integrated lightweight local LLaMA 1B model to synthesize contextual natural-language descriptions of detected scenes in real-time.</li>
                   </ul>
                 </div>
               </div>

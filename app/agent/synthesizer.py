@@ -97,20 +97,34 @@ def synthesize_answer(
     chunks: list[dict],
     intent: str,
     used_fallback: bool,
+    chat_history: list[dict] | None = None,
 ) -> tuple[str, str]:
     """
-    Generate a grounded answer from the retrieved chunks.
+    Generate a grounded answer from the retrieved chunks with conversational context.
 
     Args:
         query:        The user's original question.
         chunks:       Top-k reranked chunk dicts from the retriever.
         intent:       Classified intent ("basic", "project_related", "conflicting_info").
         used_fallback: Whether the unfiltered retrieval fallback was triggered.
+        chat_history: Optional recent turns for pronoun and follow-up resolution.
 
     Returns:
         (answer_text, provider_used)
     """
     context = _build_context_block(chunks)
+
+    # Format compact recent history (last 2 turns, max 180 chars per turn)
+    history_block = ""
+    if chat_history and len(chat_history) > 0:
+        history_lines = ["\n[Recent Conversation Context]"]
+        for turn in chat_history[-2:]:
+            r = "User" if turn.get("role") == "user" else "Assistant"
+            c = str(turn.get("content", "")).strip()[:180]
+            if c:
+                history_lines.append(f"- {r}: {c}")
+        if len(history_lines) > 1:
+            history_block = "\n".join(history_lines) + "\n\n"
 
     # Add a note if retrieval fallback was used
     fallback_note = (
@@ -135,6 +149,7 @@ def synthesize_answer(
         )
 
     user_message = (
+        f"{history_block}"
         f"Question: {query}{intent_hint}{fallback_note}\n\n"
         f"Retrieved context:\n{context}"
     )

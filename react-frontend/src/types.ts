@@ -73,7 +73,7 @@ export interface ProjectDetail {
   id: string;
   title: string;
   tagline: string;
-  category: "Agentic Systems" | "Enterprise RAG" | "Published Research";
+  category: "Enterprise RAG" | "Agentic Systems" | "Edge AI & Hardware" | "Published Research" | string;
   stack: string[];
   highlights: string[];
   architectureNotes: string;

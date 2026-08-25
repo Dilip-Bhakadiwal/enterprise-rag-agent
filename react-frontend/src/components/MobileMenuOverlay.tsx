@@ -8,6 +8,7 @@ interface MobileMenuOverlayProps {
   onOpenRag: (prompt?: string) => void;
   onOpenProjects: () => void;
   onOpenResume: () => void;
+  onOpenGraph?: () => void;
 }
 
 export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({
@@ -16,8 +17,10 @@ export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({
   onOpenRag,
   onOpenProjects,
   onOpenResume,
+  onOpenGraph,
 }) => {
   const navItems = [
+    { label: "Knowledge Graph", action: () => { onClose(); onOpenGraph?.(); } },
     { label: "RAG Agent", action: () => { onClose(); onOpenRag(); } },
     { label: "Projects", action: () => { onClose(); onOpenProjects(); } },
     { label: "Research", action: () => { onClose(); onOpenRag("What research has Dilip published with MoES funding?"); } },

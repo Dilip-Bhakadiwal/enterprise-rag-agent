@@ -8,12 +8,14 @@ import { DatasetCardsSection } from "./components/DatasetCardsSection";
 import { RagChatPanel } from "./components/RagChatPanel";
 import { ProjectsModal } from "./components/ProjectsModal";
 import { ResumeModal } from "./components/ResumeModal";
+import { KnowledgeGraphVisualizerModal } from "./components/KnowledgeGraphVisualizerModal";
 
 export default function App() {
   const [isSiteLoaded, setIsSiteLoaded] = useState(false);
   const [isRagOpen, setIsRagOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
+  const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [ragInitialPrompt, setRagInitialPrompt] = useState<string | undefined>(undefined);
 
@@ -41,6 +43,10 @@ export default function App() {
     setIsResumeOpen(true);
   };
 
+  const handleOpenGraph = () => {
+    setIsGraphModalOpen(true);
+  };
+
   const handleOpenRagWithTopic = (topic: string) => {
     setRagInitialPrompt(topic);
     setIsRagOpen(true);
@@ -66,6 +72,7 @@ export default function App() {
             onOpenRag={() => handleOpenRag()}
             onOpenProjects={handleOpenProjects}
             onOpenResume={handleOpenResume}
+            onOpenGraph={handleOpenGraph}
             onToggleMenu={() => setIsMobileMenuOpen(true)}
           />
         </div>
@@ -77,6 +84,7 @@ export default function App() {
           onOpenRag={handleOpenRag}
           onOpenProjects={handleOpenProjects}
           onOpenResume={handleOpenResume}
+          onOpenGraph={handleOpenGraph}
         />
 
         {/* Main Hero Viewport Content (Revealed after video loads) */}
@@ -137,6 +145,13 @@ export default function App() {
       <ResumeModal
         isOpen={isResumeOpen}
         onClose={() => setIsResumeOpen(false)}
+      />
+
+      {/* Interactive 2D/3D Knowledge Graph Visualizer Modal */}
+      <KnowledgeGraphVisualizerModal
+        isOpen={isGraphModalOpen}
+        onClose={() => setIsGraphModalOpen(false)}
+        onOpenRagWithTopic={handleOpenRagWithTopic}
       />
 
       {/* Floating Neon Green (#5fe323) AI Copilot Launcher Button */}
