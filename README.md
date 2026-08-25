@@ -42,31 +42,33 @@
 
 ```mermaid
 flowchart TD
-    U(["👤 User Query / Ephemeral Context"]) --> G1["🛡️ PII Guardrail & Security Sanitizer"]
+    U["👤 User Query / Ephemeral Context"] --> G1["🛡️ PII Guardrail & Security Sanitizer"]
     G1 --> R["🧭 Router Node<br/>Intent & Knowledge Domain Classifier"]
     
     R --> D["🧩 Decomposer Node<br/>Multi-Hop Sub-Query Planner"]
     
-    D -->|Deterministic Relationships| E1["🕸️ Neo4j AuraDB<br/>Cypher Knowledge Graph"]
-    D -->|Dense 1024-dim Semantics| E2["🌲 Pinecone Vector Index<br/>NVIDIA NIM Embeddings"]
+    D -->|Deterministic Graph Queries| E1["🕸️ Neo4j AuraDB<br/>Cypher Knowledge Graph"]
+    D -->|Dense 1024-dim Embeddings| E2["🌲 Pinecone Vector Index<br/>NVIDIA NIM Embeddings"]
     
     E1 --> HF["⚡ Hybrid Context Fusion & BM25 Reranker"]
     E2 --> HF
     
     HF --> GR["⚖️ Fact Grader & Hallucination Filter"]
     
-    GR -->|Grounded Facts (Passed)| S["💡 Synthesizer Node<br/>Groq LPU (GPT-OSS 120B)"]
-    GR -->|Missing Context (Failed)| REW["🔄 Query Rewriter Loop"] --> D
+    GR -->|Context Grounded| S["💡 Synthesizer Node<br/>Groq LPU - GPT-OSS 120B"]
+    GR -->|Context Missing| REW["🔄 Query Rewriter Loop"]
+    REW --> D
     
     subgraph FailoverCascade ["3-Tier Resilient Inference Ladder"]
-        GQ["Primary: Groq Cloud (Ultra-Fast LPU @ <150ms)"]
-        OR["Secondary Failover: OpenRouter (Llama 3.3 70B)"]
-        NV["Tertiary Failover: NVIDIA NIM (Nemotron Super 49B)"]
-        GQ -->|RateLimit 429 / Error| OR -->|Quota Limit| NV
+        GQ["Primary: Groq Cloud Ultra-Fast LPU"]
+        OR["Secondary Failover: OpenRouter Llama 3.3 70B"]
+        NV["Tertiary Failover: NVIDIA NIM Nemotron 49B"]
+        GQ -->|Rate Limit 429| OR
+        OR -->|Quota Exhausted| NV
     end
     
     S -.-> FailoverCascade
-    S --> OUT(["📦 Markdown Response + Source Citations + Telemetry Timings"])
+    S --> OUT["📦 Markdown Response + Citations + Telemetry"]
 ```
 
 ---
