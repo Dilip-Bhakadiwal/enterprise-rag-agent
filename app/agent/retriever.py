@@ -51,13 +51,14 @@ def _get_embedding_model():
     """Singleton FastEmbed model (loaded lazily if available)."""
     try:
         from fastembed import TextEmbedding
-        logger.info(f"Loading FastEmbed model: {settings.embedding_model}")
+        model_name = "BAAI/bge-small-en-v1.5"
+        logger.info(f"Loading FastEmbed model: {model_name}")
         return TextEmbedding(
-            model_name=settings.embedding_model,
-            providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+            model_name=model_name,
+            providers=["CPUExecutionProvider"]
         )
-    except ImportError:
-        logger.warning("fastembed not installed — using cloud embedding provider (NVIDIA NIM).")
+    except Exception as e:
+        logger.warning(f"fastembed loading failed ({e}) — using zero vector fallback.")
         return None
 
 
@@ -100,30 +101,66 @@ def _embed_queries(queries: list[str]) -> list[list[float]]:
         return [r for r in results if r is not None]
 
     # 3. Compute missing embeddings
+    new_embeddings = []
     if settings.embedding_provider == "nvidia":
-        logger.info(f"Embedding batch of {len(missing_queries)} queries via NVIDIA NIM: {settings.embedding_model}")
-        response = httpx.post(
-            "https://integrate.api.nvidia.com/v1/embeddings",
-            headers={
-                "Authorization": f"Bearer {settings.nvidia_api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "input": missing_queries if len(missing_queries) > 1 else missing_queries[0],
-                "model": settings.embedding_model,
-                "input_type": "query"
-            },
-            timeout=30.0
-        )
-        response.raise_for_status()
-        data = response.json().get("data", [])
-        new_embeddings = [item["embedding"] for item in data]
+        try:
+            logger.info(f"Embedding batch of {len(missing_queries)} queries via NVIDIA NIM: {settings.embedding_model}")
+            response = httpx.post(
+                "https://integrate.api.nvidia.com/v1/embeddings",
+                headers={
+                    "Authorization": f"Bearer {settings.nvidia_api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "input": missing_queries if len(missing_queries) > 1 else missing_queries[0],
+                    "model": settings.embedding_model,
+                    "input_type": "query"
+                },
+                timeout=10.0
+            )
+            response.raise_for_status()
+            data = response.json().get("data", [])
+            new_embeddings = [item["embedding"] for item in data]
+        except Exception as e:
+            logger.warning(f"⚠️ [Embedding Failover] NVIDIA NIM returned error ({e}). Falling back to local FastEmbed.")
+            model = _get_embedding_model()
+            if model is not None:
+                try:
+                    prefixed = [_QUERY_PREFIX + q for q in missing_queries]
+                    embeddings = list(model.embed(prefixed))
+                    new_embeddings = []
+                    for e in embeddings:
+                        arr = e.tolist()
+                        if len(arr) < 1024:
+                            arr = arr + [0.0] * (1024 - len(arr))
+                        elif len(arr) > 1024:
+                            arr = arr[:1024]
+                        new_embeddings.append(arr)
+                except Exception as emb_err:
+                    logger.warning(f"FastEmbed execution failed ({emb_err}) — using zero vector fallback.")
+                    new_embeddings = [[0.0] * 1024 for _ in missing_queries]
+            else:
+                new_embeddings = [[0.0] * 1024 for _ in missing_queries]
     else:
         # Fallback to local FastEmbed
         model = _get_embedding_model()
-        prefixed = [_QUERY_PREFIX + q for q in missing_queries]
-        embeddings = list(model.embed(prefixed))
-        new_embeddings = [e.tolist() for e in embeddings]
+        if model is not None:
+            try:
+                prefixed = [_QUERY_PREFIX + q for q in missing_queries]
+                embeddings = list(model.embed(prefixed))
+                new_embeddings = []
+                for e in embeddings:
+                    arr = e.tolist()
+                    if len(arr) < 1024:
+                        arr = arr + [0.0] * (1024 - len(arr))
+                    elif len(arr) > 1024:
+                        arr = arr[:1024]
+                    new_embeddings.append(arr)
+            except Exception as emb_err:
+                logger.warning(f"FastEmbed execution failed ({emb_err}) — using zero vector fallback.")
+                new_embeddings = [[0.0] * 1024 for _ in missing_queries]
+        else:
+            new_embeddings = [[0.0] * 1024 for _ in missing_queries]
 
     # 4. Cache new embeddings in Upstash Redis and fill results array
     for orig_idx, q_text, emb in zip(missing_indices, missing_queries, new_embeddings):

@@ -40,9 +40,9 @@ class SanitizationResult(TypedDict):
 
 # ── Regular Expression Pattern Compilations for Microsecond Performance ─────
 
-# 1. Emails
+# 1. Emails (including obfuscated [at], (at), [dot], (dot))
 _EMAIL_PATTERN = re.compile(
-    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    r"\b[A-Za-z0-9._%+-]+(?:\s*@\s*|\s*\[\s*at\s*\]\s*|\s*\(\s*at\s*\)\s*)[A-Za-z0-9.-]+(?:\s*\.\s*|\s*\[\s*dot\s*\]\s*|\s*\(\s*dot\s*\)\s*)[A-Za-z]{2,}\b",
     re.IGNORECASE,
 )
 
@@ -52,9 +52,9 @@ _PHONE_PATTERN = re.compile(
     r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}\b"
 )
 
-# 3. Credit Card Numbers (13-19 digits, formatted or consecutive)
+# 3. Credit Card Numbers (13-19 digits, formatted, spaced, or consecutive)
 _CREDIT_CARD_PATTERN = re.compile(
-    r"\b(?:\d{4}[-\s]?){3}\d{4}\b|\b(?:\d{4}[-\s]?){2}\d{4}[-\s]?\d{3,4}\b"
+    r"\b(?:\d{4}[-\s]?){3}\d{4}\b|\b(?:\d{4}[-\s]?){2}\d{4}[-\s]?\d{3,4}\b|\b(?:\d\s+){12,18}\d\b"
 )
 
 # 4. API Keys & Cloud Secrets
