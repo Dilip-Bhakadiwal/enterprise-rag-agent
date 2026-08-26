@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Live Web App](https://img.shields.io/badge/🚀_Live_Demo-nexora--ai.vercel.app-5fe323?style=for-the-badge&logo=vercel&logoColor=black)](https://nexora-ai-nine-indol.vercel.app/)
+[![Live Web App](https://img.shields.io/badge/🚀_Live_Demo-enterprise--rag--agent.onrender.com-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://enterprise-rag-agent-6zc3.onrender.com/)
 [![React 19](https://img.shields.io/badge/Frontend-React_19_+_TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Neo4j](https://img.shields.io/badge/Graph_DB-Neo4j_AuraDB-45818e?style=for-the-badge&logo=neo4j&logoColor=white)](https://neo4j.com/)
@@ -13,9 +13,15 @@
 
 **Autonomous Multi-Agent Hybrid GraphRAG System combining Deterministic Knowledge Graph Traversals with Semantic Dense Vector Search & Sub-Second LPU Synthesis.**
 
-[🌐 **Explore Live Web Application**](https://nexora-ai-nine-indol.vercel.app/) • [📊 **Knowledge Graph Visualizer**](https://nexora-ai-nine-indol.vercel.app/) • [📑 **Dataset Catalog**](dataset/DATASET_CATALOG.md)
+[🌐 **Explore Live Web Application (Render)**](https://enterprise-rag-agent-6zc3.onrender.com/) • [📊 **Knowledge Graph Visualizer**](https://enterprise-rag-agent-6zc3.onrender.com/) • [📑 **Dataset Catalog**](dataset/DATASET_CATALOG.md)
 
 </div>
+
+> [!NOTE]
+> **🚀 Live Hosting & Enterprise Scalability Notice:**
+> - **Live Demo Infrastructure**: This demonstration is deployed on **Render Free Cloud Container Instances** with resource-conscious memory tuning. Due to free-tier idle spin-down, the initial server wake-up (cold start) may take approximately ~50–60 seconds on the first request.
+> - **Performance Once Active**: Once initialized, all multi-hop LangGraph queries and hybrid Neo4j + Pinecone traversals execute with sub-200ms TTFT powered by Groq LPU hardware.
+> - **100% Horizontally Scalable**: The architecture is stateless, decoupled, and packaged in a production-grade multi-stage Docker container. It is architected to effortlessly scale across **AWS ECS / EKS, GCP Cloud Run, Kubernetes, or multi-region enterprise clusters** with zero code changes.
 
 ---
 
@@ -29,12 +35,13 @@
 
 ## 🌟 Key Highlights & Engineering Capabilities
 
-* 🌐 **Live Web Application**: Fully interactive, mobile-responsive deployment accessible at **[https://nexora-ai-nine-indol.vercel.app/](https://nexora-ai-nine-indol.vercel.app/)**.
+* 🌐 **Live Production Deployment**: Fully unified Docker container serving both React 19 SPA and FastAPI backend at **[https://enterprise-rag-agent-6zc3.onrender.com/](https://enterprise-rag-agent-6zc3.onrender.com/)**.
 * 🕸️ **Deterministic Hybrid GraphRAG**: Combines exact Cypher graph queries over **Neo4j AuraDB** (hierarchies, store rankings, warranty defect links) with dense 1024-dim semantic retrieval on **Pinecone**.
 * ⚡ **Sub-Second Agentic Speed (<200ms TTFT)**: Powered by **Groq LPU hardware inference** with automated, zero-downtime failover to **OpenRouter (`Llama 3.3 70B`)**.
+* 📄 **Ephemeral Document Intelligence**: In-memory multi-format document parser (PDF, JSON, Markdown, TXT) with zero database persistence and instant session cleanup.
 * 🔒 **Enterprise PII & Security Guardrails**: Pre-LLM redaction pipeline stripping Credit Cards, SSNs, API Keys, Phone Numbers, and Obfuscated Emails before payloads leave the boundary.
 * 🧠 **Volatile Ephemeral Memory**: 100% in-memory multi-turn conversational context resolution without database storage, ensuring zero leakage and instant cleanup on page refresh.
-* 📊 **Interactive Knowledge Graph Canvas**: Visual interactive node-link exploration modal displaying dynamic relationships between stores, SKU warranties, and research publications.
+* 📊 **Interactive Knowledge Graph Canvas**: Visual interactive node-link exploration modal displaying 476 nodes and 7,614 live relationships.
 
 ---
 

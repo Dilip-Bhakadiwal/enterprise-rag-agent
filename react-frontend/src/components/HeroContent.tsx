@@ -168,20 +168,27 @@ export const HeroContent: React.FC<HeroContentProps> = ({
     <div className="relative z-20 flex-1 flex flex-col justify-center px-5 sm:px-10 lg:px-16 w-full items-start text-left pt-5 sm:pt-7 lg:pt-8 pb-5 sm:pb-6 my-auto max-w-7xl">
       
       {/* 1. Tagline: Crown icon + tracked uppercase text (animate-fade-up, 0s delay) */}
-      <div className="animate-fade-up flex items-center gap-2 mb-2 sm:mb-2.5">
-        <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FFD166] shrink-0" />
-        <span className="text-white/70 text-[10px] sm:text-xs md:text-sm font-inter tracking-[0.22em] sm:tracking-[0.3em] uppercase font-medium">
-          Production-Grade Agentic AI &amp; Backend Systems
-        </span>
+      <div className="animate-fade-up flex flex-wrap items-center gap-2 mb-2 sm:mb-2.5">
+        <div className="flex items-center gap-1.5">
+          <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FFD166] shrink-0" />
+          <span className="text-white/70 text-[10px] sm:text-xs md:text-sm font-inter tracking-[0.22em] sm:tracking-[0.3em] uppercase font-medium">
+            Production-Grade Agentic AI &amp; Backend Systems
+          </span>
+        </div>
+        <span className="hidden sm:inline text-white/30">•</span>
+        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[9px] sm:text-[10px] font-mono text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Render Cloud Live • Fully Scalable</span>
+        </div>
       </div>
 
       {/* 2. Glitch Heading */}
       <GlitchHeadline />
 
       {/* 3. Subtext: max-w-md with bold ending (animate-fade-up-delay-2, 0.4s delay) */}
-      <p className="animate-fade-up-delay-2 text-white/70 text-xs sm:text-sm font-inter leading-relaxed max-w-md mt-2 sm:mt-2.5 select-text">
+      <p className="animate-fade-up-delay-2 text-white/70 text-xs sm:text-sm font-inter leading-relaxed max-w-lg mt-2 sm:mt-2.5 select-text">
         We engineer multi-agent workflows and sub-second enterprise retrieval pipelines —{" "}
-        <strong className="text-white font-bold">that scale to production.</strong>
+        <strong className="text-white font-bold">horizontally scalable across enterprise cloud clusters.</strong>
       </p>
 
       {/* 4. CTA Row: Side-by-side on mobile, plus Award badge on desktop */}
