@@ -1,0 +1,7 @@
+{
+  "name": "enterprise-rag-root",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix react-frontend install && npm --prefix react-frontend run build"
+  }
+}

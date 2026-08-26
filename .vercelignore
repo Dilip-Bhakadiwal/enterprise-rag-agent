@@ -1,0 +1,24 @@
+# Ignore Python backend files from Vercel frontend deployment
+app/
+scripts/
+dataset/
+sales dataset/
+tests/
+eval/
+denv/
+docs/
+scratch_profile/
+graphify-out/
+requirements.txt
+Dockerfile
+render.yaml
+setup_new_laptop.bat
+start.bat
+dev.bat
+api.txt
+card.txt
+chat_interface.html
+*.py
+*.parquet
+*.csv
+*.bat
