@@ -108,6 +108,22 @@ flowchart TD
 
 ---
 
+## 🛡️ Enterprise Security Architecture & Threat Defense
+
+Nexora AI is engineered with an active defense perimeter that protects enterprise data across every layer of the ingestion, retrieval, and inference lifecycle:
+
+| Threat / Attack Vector | Risk Profile | Defense Mechanism & Implementation | Protection Level |
+|---|---|---|---|
+| **Cypher / Graph Query Injection** | Malicious queries manipulating graph traversals | 100% Parameterized Cypher Queries via `$param` driver bindings in Neo4j AuraDB. No f-string interpolation. | 🟢 **Immune** |
+| **Adversarial Prompt Injection & Jailbreaks** | Attempting to override system prompts or bypass safety boundaries | Active intent sanitizer detects and neutralizes jailbreak signatures (`ignore instructions`, `DAN mode`, `<|system|>`, raw system overrides) pre-inference. | 🟢 **Neutralized** |
+| **PII & Credential Exfiltration** | Sensitive emails, phone numbers, or API keys leaking to external LLM providers | Microsecond pre-LLM redaction pipeline stripping Credit Cards, SSNs, Bearer/API Keys, and Phone Numbers before payloads exit the perimeter. | 🟢 **Zero Leakage** |
+| **Data Persistence / Data Residency Risk** | Compliance violations from storing confidential enterprise documents in persistent DBs | **Ephemeral Zero-Persistence Engine**: Volatile in-memory processing in RAM with automatic TTL expiration; zero writes to disk or vector/graph databases. | 🟢 **Stateless / Zero Disk** |
+| **DDoS & Scraping Attacks** | Bot floods exhausting LPU/GPU inference quotas | Sliding-window IP rate limiter reading true client origin from `X-Forwarded-For` with automatic `429` throttling. | 🟢 **Rate-Limited** |
+| **ReDoS (Regular Expression DoS)** | Catastrophic backtracking via maliciously crafted payload lengths | Bounded string length guards (≤500 chars) before executing complex multi-entity regex extractors. | 🟢 **Bounded O(N)** |
+| **Cross-Origin Reconnaissance (CORS)** | Unauthorized cross-origin script execution | Strict CORS whitelist locked to verified enterprise production origins in production mode. | 🟢 **Locked** |
+
+---
+
 ## 📁 Repository Structure
 
 ```

@@ -10,6 +10,7 @@ Supports:
 Zero-Persistence: Chunks are stored in volatile RAM only, never written to disk or DB.
 """
 
+import asyncio
 import io
 import json
 import os
@@ -116,9 +117,10 @@ def parse_pdf_pypdf_fallback(file_bytes: bytes) -> str:
         return "Failed to extract text from PDF."
 
 
-def parse_pdf_with_llamaparse(file_bytes: bytes, filename: str) -> tuple[str, str]:
+async def parse_pdf_with_llamaparse(file_bytes: bytes, filename: str) -> tuple[str, str]:
     """
     Parse PDF using LlamaParse REST API for state-of-the-art table and markdown extraction.
+    Uses async httpx so it never blocks the FastAPI event loop during the ~5s polling wait.
     Falls back to PyPDF native extractor if API is unavailable or times out.
     """
     api_key = settings.llamaparse_api_key
@@ -137,38 +139,46 @@ def parse_pdf_with_llamaparse(file_bytes: bytes, filename: str) -> tuple[str, st
             "language": "en"
         }
 
-        # Step 1: Upload Job with generous timeout
-        resp = httpx.post(upload_url, headers=headers, files=files, data=data, timeout=35.0)
-        if resp.status_code != 200:
-            logger.warning(f"LlamaParse upload returned HTTP {resp.status_code}: {resp.text[:150]}. Using PyPDF fallback.")
-            return parse_pdf_pypdf_fallback(file_bytes), "pypdf_fallback"
+        async with httpx.AsyncClient(headers=headers, timeout=40.0) as client:
+            # Step 1: Upload Job
+            resp = await client.post(upload_url, files=files, data=data)
+            if resp.status_code != 200:
+                logger.warning(f"LlamaParse upload returned HTTP {resp.status_code}: {resp.text[:150]}. Using PyPDF fallback.")
+                return parse_pdf_pypdf_fallback(file_bytes), "pypdf_fallback"
 
-        job_id = resp.json().get("id")
-        if not job_id:
-            return parse_pdf_pypdf_fallback(file_bytes), "pypdf_fallback"
+            job_id = resp.json().get("id")
+            if not job_id:
+                return parse_pdf_pypdf_fallback(file_bytes), "pypdf_fallback"
 
-        # Step 2: Poll Job Status (Up to 30 seconds)
-        status_url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}"
-        t_start = time.perf_counter()
-        while time.perf_counter() - t_start < 30.0:
-            time.sleep(1.5)
-            st_resp = httpx.get(status_url, headers=headers, timeout=10.0)
-            if st_resp.status_code == 200:
-                st_data = st_resp.json()
-                status = st_data.get("status")
-                if status == "SUCCESS":
-                    # Step 3: Fetch Markdown Result
-                    res_url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/markdown"
-                    res_resp = httpx.get(res_url, headers=headers, timeout=15.0)
-                    if res_resp.status_code == 200:
-                        markdown_text = res_resp.json().get("markdown", "").strip()
-                        if markdown_text:
-                            logger.info(f"✅ LlamaParse successfully parsed '{filename}' in {time.perf_counter()-t_start:.1f}s")
-                            return markdown_text, "llamaparse_ai"
-                    break
-                elif status in ("ERROR", "CANCELLED"):
-                    logger.warning(f"LlamaParse job failed with status: {status}")
-                    break
+            logger.info(f"LlamaParse job queued: {job_id}")
+
+            # Step 2: Poll Job Status (Up to 45 seconds, non-blocking)
+            status_url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}"
+            t_start = time.perf_counter()
+            while time.perf_counter() - t_start < 45.0:
+                await asyncio.sleep(1.5)   # non-blocking sleep — event loop stays alive
+                st_resp = await client.get(status_url)
+                if st_resp.status_code == 200:
+                    st_data = st_resp.json()
+                    status = st_data.get("status")
+                    logger.debug(f"LlamaParse job {job_id} status: {status}")
+                    if status == "SUCCESS":
+                        # Step 3: Fetch Markdown Result
+                        res_url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/markdown"
+                        res_resp = await client.get(res_url)
+                        if res_resp.status_code == 200:
+                            markdown_text = res_resp.json().get("markdown", "").strip()
+                            if markdown_text:
+                                logger.info(f"✅ LlamaParse successfully parsed '{filename}' in {time.perf_counter()-t_start:.1f}s")
+                                return markdown_text, "llamaparse_ai"
+                        else:
+                            logger.warning(f"LlamaParse fetch markdown returned HTTP {res_resp.status_code}: {res_resp.text[:150]}")
+                        break
+                    elif status in ("ERROR", "CANCELLED"):
+                        logger.warning(f"LlamaParse job failed with status: {status}")
+                        break
+                else:
+                    logger.warning(f"LlamaParse poll returned HTTP {st_resp.status_code}: {st_resp.text[:100]}")
 
         logger.warning("LlamaParse polling timeout/incomplete. Using PyPDF fallback.")
         return parse_pdf_pypdf_fallback(file_bytes), "pypdf_fallback"
@@ -328,9 +338,9 @@ def generate_starter_questions(chunks: list[dict], filename: str) -> list[str]:
     return questions[:3]
 
 
-def parse_and_chunk_document(file_bytes: bytes, filename: str, content_type: str = "") -> dict:
+async def parse_and_chunk_document(file_bytes: bytes, filename: str, content_type: str = "") -> dict:
     """
-    Main entrypoint:
+    Main entrypoint (async):
     Validates, parses (via LlamaParse or native zero-cost parser), chunks in-memory,
     and returns a structured ephemeral document object.
     """
@@ -339,7 +349,7 @@ def parse_and_chunk_document(file_bytes: bytes, filename: str, content_type: str
     ext = meta["extension"]
 
     if ext == ".pdf":
-        markdown_text, parser_used = parse_pdf_with_llamaparse(file_bytes, filename)
+        markdown_text, parser_used = await parse_pdf_with_llamaparse(file_bytes, filename)
     elif ext == ".json":
         markdown_text = parse_json_document(file_bytes)
         parser_used = "native_json"

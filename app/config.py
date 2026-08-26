@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         alias="GROQ_MODEL",
     )
     fallback_model: str = Field(
-        default="nvidia/llama-3.3-nemotron-super-49b-v1",
+        default="meta/llama-3.2-11b-vision-instruct",
         alias="FALLBACK_MODEL",
     )
     primary_base_url: str = Field(
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     )
 
     # ── Ingestion ──────────────────────────────────────────────────────────
-    embedding_provider: str = Field(default="nvidia", alias="EMBEDDING_PROVIDER")
+    embedding_provider: str = Field(default="fastembed", alias="EMBEDDING_PROVIDER")
     nvidia_embedding_model: str = Field(default="nvidia/nv-embedqa-e5-v5", alias="NVIDIA_EMBEDDING_MODEL")
 
     chunk_size: int = Field(default=500, alias="CHUNK_SIZE")
@@ -96,6 +96,20 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, alias="APP_PORT")
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+
+    # ── Security ───────────────────────────────────────────────────────────
+    # Set APP_API_KEY in Render env vars to require an X-API-Key header on sensitive endpoints.
+    # Leave empty to run in open/demo mode (safe for public demos without auth).
+    app_api_key: str = Field(default="", alias="APP_API_KEY")
+
+    # CORS: set to your production domain, or "*" for fully open (demo mode).
+    cors_allowed_origin: str = Field(
+        default="https://enterprise-rag-agent-6zc3.onrender.com",
+        alias="CORS_ALLOWED_ORIGIN",
+    )
+
+    # Set ENVIRONMENT=production on Render to disable Swagger /api/docs.
+    environment: str = Field(default="development", alias="ENVIRONMENT")
 
     # ── Eval ───────────────────────────────────────────────────────────────
     ragas_eval_delay_seconds: float = Field(

@@ -807,22 +807,25 @@ async function extractCleanDocumentText(file: File): Promise<string> {
         return pageTexts.join("\n\n");
       }
     } catch (err) {
-      console.warn("[PDF Extract] pdfjs-dist failed, falling back:", err);
+      console.warn("[PDF Extract] pdfjs-dist client extract failed:", err);
+      return "";
     }
   }
 
-  // Text/Markdown/JSON fallback
-  return new Promise<string>((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const raw = (reader.result as string) || "";
-      // Strip binary gibberish if any
-      const cleaned = raw.replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s{3,}/g, " ");
-      resolve(cleaned);
-    };
-    reader.onerror = () => resolve("");
-    reader.readAsText(file);
-  });
+  // Text/Markdown/JSON fallback (ONLY for non-PDF text formats)
+  if (ext !== "pdf") {
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const raw = (reader.result as string) || "";
+        resolve(raw.trim());
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsText(file);
+    });
+  }
+
+  return "";
 }
 
 function extractClientTextChunks(text: string, filename: string): Array<{ heading: string; text: string }> {
@@ -900,39 +903,14 @@ export async function uploadAndParseDocument(
     if (res.ok) {
       const result = await res.json();
       return result.data as DocSessionData;
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Upload failed with status ${res.status}`);
     }
-  } catch (err) {
-    console.warn("[Doc RAG] Backend parse unreachable, using client-side in-memory parser:", err);
+  } catch (err: any) {
+    console.error("[Doc RAG] Backend parse error:", err);
+    throw err;
   }
-
-  // Client-side volatile in-memory parser fallback (Zero persistence, runs in browser RAM)
-  const rawText = await extractCleanDocumentText(file);
-  const wordCount = rawText.split(/\s+/).filter(Boolean).length || 1;
-  const pageCount = Math.max(1, Math.ceil(wordCount / 350));
-  const chunks = extractClientTextChunks(rawText, file.name);
-
-  const starterSuggestions = [
-    `Summarize the key sections and metrics in ${file.name}.`,
-    `What technical frameworks, skills, or projects are documented in ${file.name}?`,
-    `What are the main takeaways from ${file.name}?`,
-  ];
-
-  clientDocSessions[sessionId] = {
-    filename: file.name,
-    wordCount,
-    pageCount,
-    chunks,
-    starterSuggestions,
-  };
-
-  return {
-    session_id: sessionId,
-    filename: file.name,
-    word_count: wordCount,
-    page_count: pageCount,
-    parser_used: "In-Memory Client Parser",
-    starter_suggestions: starterSuggestions,
-  };
 }
 
 export async function askDocumentQuestion(

@@ -15,7 +15,7 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING
 
 :: ── Step 1: Start FastAPI backend in a separate window ────
 echo  [1/3] Starting FastAPI backend on http://localhost:8000 ...
-start "FastAPI Backend" cmd /k "title FastAPI Backend && color 0B && %~dp0denv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000"
+start "FastAPI Backend" cmd /k "title FastAPI Backend && color 0B && %~dp0denv\Scripts\python.exe -m uvicorn app.main:app --no-reload --port 8000"
 timeout /t 2 /nobreak >nul
 
 :: ── Step 2: Start Vite Dev Server with Live Reload ─────────

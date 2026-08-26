@@ -37,9 +37,7 @@ from app.config import settings
 from app.agent.graph import get_graph, ask as agent_ask
 from app.doc_parser import parse_and_chunk_document, DocValidationError
 from app.doc_rag import store_ephemeral_doc, query_ephemeral_doc, clear_ephemeral_doc, get_ephemeral_doc
-
-
-# ── Request / Response models ──────────────────────────────────────────────
+from app.agent.guardrails import sanitize_pii, detect_prompt_injection, neutralize_prompt_injection
 
 class DocAskRequest(BaseModel):
     session_id: str
@@ -148,25 +146,47 @@ app = FastAPI(
         "Confluence, Gmail) using LangGraph + Pinecone + OpenRouter."
     ),
     version="1.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    # Disable Swagger/ReDoc in production to prevent endpoint recon by attackers.
+    docs_url="/api/docs" if settings.environment != "production" else None,
+    redoc_url="/api/redoc" if settings.environment != "production" else None,
     lifespan=lifespan,
 )
 
-# ── CORS ───────────────────────────────────────────────────────────────────
+# ── CORS ───────────────────────────────────────────────────────────────────────
+# Lock CORS to the configured production origin. "*" only in open demo mode.
+_cors_origins = (
+    ["*"]
+    if settings.cors_allowed_origin == "*" or settings.environment != "production"
+    else [settings.cors_allowed_origin]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
 
-# ── Rate Limiting (In-Memory Sliding Window) ──────────────────────────────
+# ── Rate Limiting (In-Memory Sliding Window) ───────────────────────────────────────────
 _RATE_LIMIT_WINDOW = 60.0  # seconds
 _MAX_REQUESTS_PER_WINDOW = 25  # generous limit for real users, prevents bot spam
 _client_request_history: dict[str, list[float]] = {}
+
+
+def _get_real_client_ip(req: Request) -> str:
+    """
+    Extract the true client IP from X-Forwarded-For (set by Render's proxy).
+    Falls back to req.client.host if the header is absent.
+    Only uses the first (leftmost) value to prevent spoofing via appended IPs.
+    """
+    xff = req.headers.get("x-forwarded-for", "")
+    if xff:
+        # X-Forwarded-For: client, proxy1, proxy2 — first entry is the originating client
+        first_ip = xff.split(",")[0].strip()
+        if first_ip:
+            return first_ip
+    return req.client.host if req.client else "unknown"
 
 
 def _check_rate_limit(client_ip: str) -> bool:
@@ -179,6 +199,17 @@ def _check_rate_limit(client_ip: str) -> bool:
         return False
     _client_request_history[client_ip].append(now)
     return True
+
+
+def _check_api_key(req: Request) -> bool:
+    """
+    Validates the X-API-Key header when APP_API_KEY is configured.
+    Returns True (allowed) if no key is set (demo mode) or key matches.
+    """
+    if not settings.app_api_key:
+        return True  # Demo mode: no auth required
+    provided = req.headers.get("x-api-key", "")
+    return provided == settings.app_api_key
 
 
 # ── API Endpoints ──────────────────────────────────────────────────────────
@@ -197,8 +228,12 @@ async def ask_question(request: AskRequest, req: Request):
     Returns the answer, deduplicated source citations, intent classification,
     which LLM provider was used, and whether retrieval fallback was triggered.
     """
-    # Extract client IP
-    client_ip = req.client.host if req.client else "unknown"
+    # ── API Key Auth Check ─────────────────────────────────────────────────
+    if not _check_api_key(req):
+        raise HTTPException(status_code=401, detail="Unauthorized. Valid X-API-Key header required.")
+
+    # ── Rate Limiting ──────────────────────────────────────────────────────
+    client_ip = _get_real_client_ip(req)
     if not _check_rate_limit(client_ip):
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         raise HTTPException(
@@ -208,7 +243,15 @@ async def ask_question(request: AskRequest, req: Request):
 
     start = time.perf_counter()
     raw_query = request.question.strip()
-    
+
+    # ── Prompt Injection Detection & Neutralization ────────────────────────
+    if detect_prompt_injection(raw_query):
+        logger.warning(
+            f"🚨 Prompt Injection Attempt Detected | client={client_ip} | "
+            f"query_preview='{raw_query[:80]}'"
+        )
+        raw_query = neutralize_prompt_injection(raw_query)
+
     # ── PII Sanitization Guardrail (Microsecond pre-LLM redaction) ─────────
     sanitized_query, pii_meta = sanitize_pii(raw_query)
     if pii_meta["is_masked"]:
@@ -218,6 +261,7 @@ async def ask_question(request: AskRequest, req: Request):
         )
     else:
         logger.info(f"POST /ask | client={client_ip} | question={sanitized_query[:80]}…")
+
 
     try:
         result = agent_ask(sanitized_query, chat_history=request.chat_history)
@@ -260,16 +304,27 @@ async def ask_question(request: AskRequest, req: Request):
 
 @app.post("/api/doc-rag/parse", tags=["doc-rag"])
 async def upload_and_parse_document(
+    req: Request,
     file: UploadFile = File(...),
-    session_id: str = Form(...)
+    session_id: str = Form(...),
 ):
     """
     Parse an uploaded document (PDF, JSON, Markdown, TXT) and store chunks in ephemeral RAM.
     Zero persistent writes to Pinecone, Neo4j, or Redis.
     """
+    # ── API Key Auth Check ────────────────────────────────────────────
+    if not _check_api_key(req):
+        raise HTTPException(status_code=401, detail="Unauthorized. Valid X-API-Key header required.")
+
     try:
         file_bytes = await file.read()
-        parsed_data = parse_and_chunk_document(
+        if len(file_bytes) > settings.max_doc_size_bytes:
+            raise DocValidationError(
+                f"File too large. Maximum allowed size is "
+                f"{settings.max_doc_size_bytes // (1024 * 1024)}MB."
+            )
+
+        parsed_data = await parse_and_chunk_document(
             file_bytes=file_bytes,
             filename=file.filename or "uploaded_doc",
             content_type=file.content_type or ""
@@ -287,7 +342,7 @@ async def upload_and_parse_document(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as exc:
         logger.exception(f"Document parsing error: {exc}")
-        raise HTTPException(status_code=500, detail=f"Failed to parse document: {str(exc)}")
+        raise HTTPException(status_code=500, detail="Failed to parse document. Please try again.")
 
 
 @app.post("/api/doc-rag/ask", tags=["doc-rag"])
@@ -305,7 +360,7 @@ async def ask_document_question(request: DocAskRequest):
         return result
     except Exception as exc:
         logger.exception(f"Document ask error: {exc}")
-        raise HTTPException(status_code=500, detail="Failed to generate document answer.")
+        raise HTTPException(status_code=500, detail="Failed to generate document answer. Please try again.")
 
 
 @app.post("/api/doc-rag/clear", tags=["doc-rag"])
@@ -569,7 +624,7 @@ async def get_live_graph_data():
         }
     except Exception as exc:
         logger.error(f"Error fetching live Neo4j graph data: {exc}")
-        return {"status": "error", "nodes": [], "links": [], "error": str(exc)}
+        return {"status": "error", "nodes": [], "links": [], "error": "Graph data temporarily unavailable."}
 
 
 @app.get("/api/info", tags=["system"])
@@ -613,6 +668,9 @@ if __name__ == "__main__":
         "app.main:app",
         host=settings.app_host,
         port=settings.app_port,
-        reload=True,
+        # reload=False prevents hot-reload from wiping in-memory ephemeral document sessions.
+        # Ephemeral sessions live in _EPHEMERAL_SESSIONS (volatile RAM) — a reload clears them,
+        # causing 'No active document' errors immediately after upload.
+        reload=False,
         log_level=settings.log_level.lower(),
     )

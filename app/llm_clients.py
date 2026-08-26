@@ -52,8 +52,8 @@ def _build_openrouter_client() -> ChatOpenAI:
             "X-Title": "Enterprise RAG Demo",
         },
         temperature=0.1,
-        timeout=6.0,
-        request_timeout=6.0,
+        timeout=25.0,
+        request_timeout=25.0,
         max_retries=0,
     )
 
@@ -65,8 +65,8 @@ def _build_groq_client() -> ChatOpenAI:
         api_key=settings.groq_api_key or "missing_groq_key",
         base_url=settings.groq_base_url,
         temperature=0.1,
-        timeout=6.0,
-        request_timeout=6.0,
+        timeout=10.0,
+        request_timeout=10.0,
         max_retries=0,
     )
 
@@ -78,8 +78,8 @@ def _build_nvidia_client() -> ChatOpenAI:
         api_key=settings.nvidia_api_key,
         base_url=settings.fallback_base_url,
         temperature=0.1,
-        timeout=6.0,
-        request_timeout=6.0,
+        timeout=20.0,
+        request_timeout=20.0,
         max_retries=0,
     )
 

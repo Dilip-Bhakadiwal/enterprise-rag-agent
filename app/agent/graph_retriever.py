@@ -253,28 +253,29 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
 
     # ── Universal Knowledge Graph Entity Resolver (City & Location Deep-Dive) ──
     city_nodes = query_neo4j_graph(
-        f"MATCH (c:City) WHERE '{clean_q}' CONTAINS toLower(c.name) RETURN c.name AS city LIMIT 3"
+        "MATCH (c:City) WHERE $clean_q CONTAINS toLower(c.name) RETURN c.name AS city LIMIT 3",
+        params={"clean_q": clean_q},
     )
     if city_nodes:
         for c_entry in city_nodes:
             c_name = c_entry.get("city")
             if not c_name:
                 continue
-            stores_in_city = query_neo4j_graph(f"""
+            stores_in_city = query_neo4j_graph("""
                 MATCH (c:City)<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)
-                WHERE c.name = '{c_name}'
+                WHERE c.name = $city_name
                 OPTIONAL MATCH (c)-[:IN_COUNTRY]->(co:Country)
                 RETURN c.name AS city, co.name AS country, s.name AS store,
                        sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue,
                        count(DISTINCT p) AS products_count
                 ORDER BY total_revenue DESC
-            """)
-            top_prods_city = query_neo4j_graph(f"""
+            """, params={"city_name": c_name})
+            top_prods_city = query_neo4j_graph("""
                 MATCH (c:City)<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)
-                WHERE c.name = '{c_name}'
+                WHERE c.name = $city_name
                 RETURN s.name AS store, p.name AS product, p.price AS price, sum(r.total_units) AS units, sum(r.revenue) AS revenue
                 ORDER BY revenue DESC LIMIT 5
-            """)
+            """, params={"city_name": c_name})
             
             if stores_in_city:
                 country_name = stores_in_city[0].get("country", "United States")
@@ -311,24 +312,25 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
 
     # ── Universal Knowledge Graph Store Deep-Dive ──
     store_nodes = query_neo4j_graph(
-        f"MATCH (s:Store) WHERE '{clean_q}' CONTAINS toLower(s.name) RETURN s.name AS store LIMIT 2"
+        "MATCH (s:Store) WHERE $clean_q CONTAINS toLower(s.name) RETURN s.name AS store LIMIT 2",
+        params={"clean_q": clean_q},
     )
     if store_nodes:
         for s_entry in store_nodes:
             s_name = s_entry.get("store")
             if not s_name:
                 continue
-            store_details = query_neo4j_graph(f"""
-                MATCH (s:Store {{name: '{s_name}'}})-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
+            store_details = query_neo4j_graph("""
+                MATCH (s:Store {name: $store_name})-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
                 OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
                 RETURN s.name AS store, c.name AS city, co.name AS country,
                        sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue, count(DISTINCT p) AS products_count
-            """)
-            top_prods_store = query_neo4j_graph(f"""
-                MATCH (s:Store {{name: '{s_name}'}})-[r:SOLD_PRODUCT]->(p:Product)
+            """, params={"store_name": s_name})
+            top_prods_store = query_neo4j_graph("""
+                MATCH (s:Store {name: $store_name})-[r:SOLD_PRODUCT]->(p:Product)
                 RETURN p.name AS product, p.price AS price, r.total_units AS units, r.revenue AS revenue
                 ORDER BY revenue DESC LIMIT 5
-            """)
+            """, params={"store_name": s_name})
             if store_details:
                 sd = store_details[0]
                 prods_bullet = "\n".join(
@@ -355,20 +357,21 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
 
     # ── Universal Knowledge Graph Category Resolver ──
     cat_nodes = query_neo4j_graph(
-        f"MATCH (cat:Category) WHERE '{clean_q}' CONTAINS toLower(cat.name) RETURN cat.name AS category LIMIT 2"
+        "MATCH (cat:Category) WHERE $clean_q CONTAINS toLower(cat.name) RETURN cat.name AS category LIMIT 2",
+        params={"clean_q": clean_q},
     )
     if cat_nodes:
         for cat_entry in cat_nodes:
             cat_name = cat_entry.get("category")
             if not cat_name:
                 continue
-            cat_details = query_neo4j_graph(f"""
-                MATCH (cat:Category {{name: '{cat_name}'}})<-[:BELONGS_TO]-(p:Product)
+            cat_details = query_neo4j_graph("""
+                MATCH (cat:Category {name: $cat_name})<-[:BELONGS_TO]-(p:Product)
                 OPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)
                 RETURN cat.name AS category, count(DISTINCT p) AS product_count,
                        avg(p.price) AS avg_price, sum(p.total_warranty_claims) AS total_warranty_claims,
                        sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue
-            """)
+            """, params={"cat_name": cat_name})
             if cat_details:
                 cd = cat_details[0]
                 graph_facts.append({

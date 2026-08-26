@@ -182,16 +182,22 @@ def query_ephemeral_doc(
 
     # For documents under 25 chunks (which is up to ~4,000 words / 5-10 pages),
     # include all chunks in document order so multi-hop, summary, and cross-section synthesis is 100% comprehensive!
+    def _chunk_order_key(item: tuple, fallback_idx: int = 0) -> int:
+        """Extract numeric order key from chunk_id if present, else use insertion index."""
+        cid = item[0].get("chunk_id", "")
+        m = re.search(r"\d+", cid) if cid else None
+        return int(m.group()) if m else item[0].get("_idx", fallback_idx)
+
     if len(chunks) <= 25:
         context_chunks = sorted(
             scored_chunks,
-            key=lambda x: int(re.search(r"\d+", x[0]["chunk_id"]).group()) if re.search(r"\d+", x[0]["chunk_id"]) else 0
+            key=lambda x: _chunk_order_key(x)
         )
     elif is_broad_query:
         top_candidates = scored_chunks[:min(len(scored_chunks), 12)]
         context_chunks = sorted(
             top_candidates,
-            key=lambda x: int(re.search(r"\d+", x[0]["chunk_id"]).group()) if re.search(r"\d+", x[0]["chunk_id"]) else 0
+            key=lambda x: _chunk_order_key(x)
         )
     else:
         context_chunks = scored_chunks[:8]

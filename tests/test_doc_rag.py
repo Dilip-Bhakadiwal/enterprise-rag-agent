@@ -92,7 +92,8 @@ def test_native_json_parser():
     assert "Galaxy S24 Ultra" in md
 
 
-def test_native_markdown_parser():
+@pytest.mark.asyncio
+async def test_native_markdown_parser():
     """Verify markdown content is read and chunked preserving headings."""
     md_content = b"""# Project Titan Architecture Overview
 
@@ -104,14 +105,15 @@ Project Titan is an autonomous multi-agent financial reconciliation engine built
 - Daily transaction throughput: 4.2 million events
 - Automated reconciliation accuracy: 99.94%
 """
-    result = parse_and_chunk_document(md_content, "titan_spec.md")
+    result = await parse_and_chunk_document(md_content, "titan_spec.md")
     assert result["chunk_count"] >= 1
     assert result["word_count"] > 20
     assert any("Project Titan" in c["text"] for c in result["chunks"])
     assert len(result["starter_suggestions"]) >= 1
 
 
-def test_ephemeral_doc_rag_workflow():
+@pytest.mark.asyncio
+async def test_ephemeral_doc_rag_workflow():
     """Verify complete in-memory Ephemeral Doc RAG session flow."""
     session_id = "test-session-doc-xyz-123"
 
@@ -124,7 +126,7 @@ Zero persistent retention policy guarantees that session logs are purged upon di
 ## SLA & Availability
 We maintain a 99.99% uptime guarantee with 3-tier disaster recovery failover across AWS us-east-1 and us-west-2.
 """
-    parsed = parse_and_chunk_document(md_content, "security_whitepaper.md")
+    parsed = await parse_and_chunk_document(md_content, "security_whitepaper.md")
     stored = store_ephemeral_doc(session_id, parsed)
 
     assert stored["session_id"] == session_id

@@ -51,7 +51,7 @@ def _get_embedding_model():
     """Singleton FastEmbed model (loaded lazily if available)."""
     try:
         from fastembed import TextEmbedding
-        model_name = "BAAI/bge-small-en-v1.5"
+        model_name = settings.embedding_model
         logger.info(f"Loading FastEmbed model: {model_name}")
         return TextEmbedding(
             model_name=model_name,

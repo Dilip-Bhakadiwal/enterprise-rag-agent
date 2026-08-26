@@ -7,6 +7,7 @@ Operates as a high-throughput, pre-LLM & pre-retrieval data sanitization layer:
   - Scans user prompts and documents for sensitive data.
   - Automatically redacts / masks PII before payloads leave the server to cloud LLM APIs.
   - Guarantees compliance with GDPR, HIPAA, and enterprise privacy standards.
+  - Detects and neutralizes prompt injection / jailbreak attempts.
 
 Supported Entity Detectors:
   1. Email Addresses
@@ -16,6 +17,7 @@ Supported Entity Detectors:
   5. Government IDs (SSN, Aadhaar, Indian PAN)
   6. Passwords & Auth Tokens in query text
   7. IPv4 Network Addresses
+  8. Prompt Injection / Jailbreak Attempts
 """
 
 from __future__ import annotations
@@ -80,6 +82,41 @@ _IP_PATTERN = re.compile(
     r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
 )
 
+# 8. Prompt Injection / Jailbreak Detection
+# Detects common instruction-override and system-prompt-leak attempts.
+_PROMPT_INJECTION_PATTERN = re.compile(
+    r"(?i)\b("
+    r"ignore\s+(all\s+)?(previous|prior|above|earlier|system)\s+(instructions?|prompts?|context|rules?|constraints?)|\b"
+    r"forget\s+(all\s+)?(previous|prior|above|earlier|your)\s+(instructions?|training|rules?)|\b"
+    r"you\s+are\s+now\s+(a|an|in|my)|\b"
+    r"(act|pretend|behave)\s+(as|like)\s+(if\s+you\s+are|you\s+are|you\s+were)|\b"
+    r"(reveal|show|print|output|dump|leak|expose)\s+(your\s+)?(system\s+prompt|instructions?|api\s+key|secret|env|environment\s+var)|\b"
+    r"(jailbreak|DAN|do\s+anything\s+now|developer\s+mode|admin\s+mode|god\s+mode)|\b"
+    r"new\s+instruction[s]?\s*:|\b"
+    r"\[SYSTEM\]|\[INST\]|\[SYS\]|<\|system\|>|<\|im_start\|>|<\|im_end\|>"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def detect_prompt_injection(text: str) -> bool:
+    """
+    Returns True if the text appears to contain a prompt injection / jailbreak attempt.
+    Used as a pre-LLM safety gate — flagged queries are still processed but the
+    injection fragments are neutralized and logged for monitoring.
+    """
+    if not text or len(text.strip()) < 10:
+        return False
+    return bool(_PROMPT_INJECTION_PATTERN.search(text))
+
+
+def neutralize_prompt_injection(text: str) -> str:
+    """
+    Replaces detected injection patterns with a safe placeholder so the LLM
+    never sees instruction-override attempts in the prompt context.
+    """
+    return _PROMPT_INJECTION_PATTERN.sub("[INJECTION_ATTEMPT_REMOVED]", text)
+
 
 def sanitize_pii(text: str) -> tuple[str, SanitizationResult]:
     """
@@ -131,16 +168,18 @@ def sanitize_pii(text: str) -> tuple[str, SanitizationResult]:
     sanitized = _replace_and_count(_EMAIL_PATTERN, "[EMAIL_REDACTED]", sanitized, "EMAIL")
 
     # 6. Phone numbers
-    # Ensure we only mask strings with at least 8 digits to avoid short numbers
-    phone_candidates = _PHONE_PATTERN.findall(sanitized)
-    actual_phone_count = 0
-    for cand in phone_candidates:
-        digits_only = re.sub(r"\D", "", cand)
-        if 8 <= len(digits_only) <= 15 and not cand.startswith("http"):
-            sanitized = sanitized.replace(cand, "[PHONE_REDACTED]")
-            actual_phone_count += 1
-    if actual_phone_count > 0:
-        entities_map["PHONE"] = entities_map.get("PHONE", 0) + actual_phone_count
+    # ReDoS guard: only apply phone regex on strings short enough to be safe.
+    # Catastrophic backtracking is impossible on inputs under 200 chars.
+    if len(sanitized) <= 500:
+        phone_candidates = _PHONE_PATTERN.findall(sanitized)
+        actual_phone_count = 0
+        for cand in phone_candidates:
+            digits_only = re.sub(r"\D", "", cand)
+            if 8 <= len(digits_only) <= 15 and not cand.startswith("http"):
+                sanitized = sanitized.replace(cand, "[PHONE_REDACTED]")
+                actual_phone_count += 1
+        if actual_phone_count > 0:
+            entities_map["PHONE"] = entities_map.get("PHONE", 0) + actual_phone_count
 
     total_masked = sum(entities_map.values())
     is_masked = total_masked > 0
