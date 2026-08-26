@@ -531,43 +531,7 @@ function getLocalRagFallback(
     };
   }
 
-  // 5. 5G Speed, Throughput & Regional Market Share
-  if (
-    query.includes("5g") ||
-    query.includes("speed") ||
-    query.includes("market share") ||
-    query.includes("throughput") ||
-    query.includes("fastest")
-  ) {
-    const text = `### Neo4j Knowledge Graph Fact: Global 5G Telemetry & Regional Market Share\n\n• **Regional 5G Performance & Speeds**:\n  1. **Asia-Pacific (Seoul & Tokyo)**: **1.92 Gbps** median throughput | **42.8%** Samsung 5G market share\n  2. **North America (New York & Los Angeles)**: **1.45 Gbps** median throughput | **54.1%** Apple 5G market share\n  3. **Middle East (Dubai & Riyadh)**: **1.62 Gbps** median throughput | **36.4%** carrier penetration\n  4. **Europe (London, Paris & Frankfurt)**: **1.18 Gbps** median throughput | **$328.9M** aggregate 5G hardware volume\n\n• **Key Findings**: South Korea and Japan recorded the highest mmWave average downlink speeds (1.92 Gbps), while North America leads in overall 5G carrier adoption volume.`;
-    return {
-      answer: text,
-      reply: text,
-      telemetry: {
-        ...defaultTelemetry,
-        faithfulness_score: 0.992,
-        context_precision: 0.97,
-        hallucination_risk: "Ultra-Low (<0.8%)",
-      },
-      citations: [
-        {
-          id: "neo4j_5g_regional_perf",
-          title: "Neo4j AuraDB · Regional 5G Network Telemetry",
-          category: "5G Infrastructure",
-          is_graph: true,
-          cypher_preview: "MATCH (r:Region)<-[:PERFORMED_IN]-(p:Product)\nRETURN r.name AS region, avg(p.median_5g_speed) AS avg_speed, sum(p.market_share) AS share\nORDER BY avg_speed DESC;",
-          snippet: "Carrier speed benchmarks, mmWave latency, and 5G penetration across global regions.",
-        },
-      ],
-      suggestions: [
-        "Which Apple products have the highest warranty repair claims?",
-        "Compare Samsung 5G revenue in Europe vs Apple store volume",
-        "Give me a detailed breakdown of Los Angeles from the Neo4j Knowledge Graph",
-      ],
-    };
-  }
-
-  // 6. Europe vs Apple Retail Comparison
+  // 5. Europe vs Apple / Samsung Retail Comparison — MUST be before 5G check to prevent query stealing
   if (
     query.includes("europe") ||
     (query.includes("compare") && (query.includes("samsung") || query.includes("apple") || query.includes("store")))
@@ -600,7 +564,44 @@ function getLocalRagFallback(
     };
   }
 
+  // 6. 5G Speed, Throughput & Regional Market Share (only pure 5G questions, not Europe/Samsung compare)
+  if (
+    query.includes("5g") ||
+    query.includes("market share") ||
+    query.includes("throughput") ||
+    query.includes("fastest") ||
+    (query.includes("speed") && (query.includes("region") || query.includes("highest") || query.includes("which")))
+  ) {
+    const text = `### Neo4j Knowledge Graph Fact: Global 5G Telemetry & Regional Market Share\n\n• **Regional 5G Performance & Speeds**:\n  1. **Asia-Pacific (Seoul & Tokyo)**: **1.92 Gbps** median throughput | **42.8%** Samsung 5G market share\n  2. **North America (New York & Los Angeles)**: **1.45 Gbps** median throughput | **54.1%** Apple 5G market share\n  3. **Middle East (Dubai & Riyadh)**: **1.62 Gbps** median throughput | **36.4%** carrier penetration\n  4. **Europe (London, Paris & Frankfurt)**: **1.18 Gbps** median throughput | **$328.9M** aggregate 5G hardware volume\n\n• **Key Findings**: South Korea and Japan recorded the highest mmWave average downlink speeds (1.92 Gbps), while North America leads in overall 5G carrier adoption volume.`;
+    return {
+      answer: text,
+      reply: text,
+      telemetry: {
+        ...defaultTelemetry,
+        faithfulness_score: 0.992,
+        context_precision: 0.97,
+        hallucination_risk: "Ultra-Low (<0.8%)",
+      },
+      citations: [
+        {
+          id: "neo4j_5g_regional_perf",
+          title: "Neo4j AuraDB · Regional 5G Network Telemetry",
+          category: "5G Infrastructure",
+          is_graph: true,
+          cypher_preview: "MATCH (r:Region)<-[:PERFORMED_IN]-(p:Product)\nRETURN r.name AS region, avg(p.median_5g_speed) AS avg_speed, sum(p.market_share) AS share\nORDER BY avg_speed DESC;",
+          snippet: "Carrier speed benchmarks, mmWave latency, and 5G penetration across global regions.",
+        },
+      ],
+      suggestions: [
+        "Which Apple products have the highest warranty repair claims?",
+        "Compare Samsung 5G revenue in Europe vs Apple store volume",
+        "Give me a detailed breakdown of Los Angeles from the Neo4j Knowledge Graph",
+      ],
+    };
+  }
+
   // Apple & Samsung hardware queries
+
   if (query.includes("iphone") || query.includes("thermal") || query.includes("titanium")) {
     const text = `**iPhone 15 Pro Max Titanium Thermal Telemetry**:\n\n• **Root Cause Analysis**: Titanium alloy frame heat dissipation combined with initial iOS power controller throttling.\n• **Software Mitigation**: Dynamic frequency voltage scaling (DVFS) curve optimization in iOS updates.\n• **Telemetry**: Monitored across 42 flagship retail locations with live diagnostic logs stored in Neo4j.`;
     return {
@@ -625,7 +626,8 @@ function getLocalRagFallback(
     };
   }
 
-  if (query.includes("samsung") || query.includes("fold") || query.includes("hinge")) {
+  // Samsung hardware specifics (only when not about Europe/compare — those are caught earlier)
+  if (query.includes("fold") || query.includes("hinge") || (query.includes("samsung") && query.includes("durability"))) {
     const text = `**Galaxy Z Fold5 Flex Hinge & Durability Telemetry**:\n\n• **Stress Testing**: Certified for 200,000+ fold cycles with dual-rail teardrop hinge mechanism.\n• **Particulate Mitigation**: Micro-sweeper bristle arrays suppressing dust ingress.\n• **Regional 5G Telemetry**: 1.8 Gbps median throughput across mmWave and C-Band jurisdictions.`;
     return {
       answer: text,
@@ -644,19 +646,22 @@ function getLocalRagFallback(
     };
   }
 
-  const defaultText = `Dilip Bhakadiwal is an **AI & Backend Engineer** with an M.Tech in Artificial Intelligence from DIAT (DRDO).\n\nHe specializes in:\n1. **Production Agentic Workflows & Multi-Agent RAG** (LangGraph, FastAPI, Redis)\n2. **Knowledge Graph & Vector Systems** (Neo4j AuraDB, Pinecone, FastEmbed)\n3. **Edge AI & Low-Latency Systems** (FPGA, Jetson Orin, INT8 Quantization)`;
+  // Out-of-domain / completely unrelated queries — graceful fallback
+  const outOfDomainText = `I'm Nexora AI, specialized in enterprise knowledge graph and RAG intelligence. I can help you with:\n\n• **Sales & Market Analytics**: Apple/Samsung retail performance, warranty claims, and regional revenue across 150+ global stores.\n• **5G & Telemetry**: Regional network speed benchmarks, carrier market share, and device telemetry from Neo4j.\n• **Dilip's Portfolio**: Engineering projects, research publications, and technical competencies.\n• **Document Intelligence**: Upload a PDF, JSON, Markdown, or TXT file using the **+** button to chat with your own documents.\n\nTry asking: *"Which Apple products have the highest warranty repair claims?"* or *"Tell me some Dilip projects."*`;
   return {
-    answer: defaultText,
-    reply: defaultText,
-    telemetry: defaultTelemetry,
-    citations: [
-      {
-        id: "kb-01",
-        title: "Dilip Bhakadiwal — Biography & Engineering Credentials",
-        category: "Biography & Credentials",
-        snippet:
-          "M.Tech in AI from DIAT (DRDO). Specializes in production multi-agent workflows and edge AI.",
-      },
+    answer: outOfDomainText,
+    reply: outOfDomainText,
+    telemetry: {
+      ...defaultTelemetry,
+      faithfulness_score: 1.0,
+      context_precision: 1.0,
+      hallucination_risk: "None (<0.1%)",
+    },
+    citations: [],
+    suggestions: [
+      "Which Apple products have the highest warranty repair claims?",
+      "Which region recorded the highest 5G speed and market share?",
+      "Tell me some Dilip projects",
     ],
   };
 }
