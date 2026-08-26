@@ -87,12 +87,13 @@ def classify_intent(query: str) -> tuple[str, list[str], str]:
     """
     q_lower = query.lower()
 
-    # Hardware, retail, pricing, and portfolio queries must search ALL sources (no restrictive Jira filter)
+    # Hardware, retail, pricing, location, graph, and portfolio queries must search ALL sources (no restrictive Jira filter)
     is_open_domain = any(
         k in q_lower
         for k in [
             "apple", "samsung", "iphone", "galaxy", "store", "price", "expensive", "cost",
-            "msrp", "warranty", "defect", "5g", "dilip", "research", "nexora", "fpga", "jetson"
+            "msrp", "warranty", "defect", "5g", "dilip", "research", "nexora", "fpga", "jetson",
+            "neo4j", "graph", "knowledge graph", "breakdown", "city", "location", "angeles", "york", "tokyo", "london", "paris"
         ]
     )
 

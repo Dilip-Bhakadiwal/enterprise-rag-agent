@@ -54,9 +54,20 @@ def get_cached_rag_response(query: str) -> dict[str, Any] | None:
         if resp.status_code == 200:
             raw_val = resp.json().get("result")
             if raw_val:
+                cached_data = json.loads(raw_val)
+                ans_str = cached_data.get("answer", "").lower()
+                # Bypass negative cache hits (e.g. "does not contain details") so live Graph/Vector retrieval runs
+                if any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any"]):
+                    logger.info(f"🔄 [Upstash Redis] Bypassing stale negative cache for: \"{query[:50]}...\"")
+                    try:
+                        del_url = f"{settings.upstash_redis_rest_url.rstrip('/')}/del/{key}"
+                        httpx.get(del_url, headers=headers, timeout=1.5)
+                    except Exception:
+                        pass
+                    return None
+                
                 elapsed_ms = (time.perf_counter() - t0) * 1000
                 logger.info(f"⚡ [Upstash Redis] Cache HIT for query in {elapsed_ms:.1f}ms: \"{query[:50]}...\"")
-                cached_data = json.loads(raw_val)
                 cached_data["cached"] = True
                 cached_data["cache_latency_ms"] = round(elapsed_ms, 1)
                 return cached_data
@@ -71,6 +82,11 @@ def set_cached_rag_response(query: str, data: dict[str, Any], ttl_seconds: int =
     Cache a synthesized RAG response with an expiration TTL (default 1 hour).
     """
     if not is_redis_configured():
+        return False
+
+    ans_str = data.get("answer", "").lower()
+    # Never cache negative or empty responses
+    if not ans_str or any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any"]):
         return False
 
     key = _ANSWER_PREFIX + _hash_key(query)

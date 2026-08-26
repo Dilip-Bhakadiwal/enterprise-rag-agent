@@ -83,7 +83,7 @@ export const TelemetryBadge: React.FC<TelemetryBadgeProps> = ({
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Knowledge Base:</span>
-                <span className="font-mono text-slate-200">286 Nodes · 7.2K Edges</span>
+                <span className="font-mono text-slate-200">476 Nodes · 7.6K Edges</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Authority:</span>

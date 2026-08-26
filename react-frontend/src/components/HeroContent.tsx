@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUpRight, Award, Crown } from "lucide-react";
+import { ArrowUpRight, Award, Crown, FileUp, Sparkles } from "lucide-react";
 import { fetchLiveHeroStats, HeroStats } from "../services/api";
 
 interface HeroContentProps {
   onOpenProjects: () => void;
-  onOpenRag: (prompt?: string) => void;
+  onOpenRag: (prompt?: string, mode?: "enterprise" | "doc") => void;
 }
 
 const CIPHER_GLYPHS = '!<>-_\\/[]{}?"=+*^?#________0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -138,6 +138,7 @@ export const HeroContent: React.FC<HeroContentProps> = ({
     agentic_latency_ms: 180,
     latency_display: "<200ms",
     failover_tier: "3-Tier",
+    graph_nodes: 476,
   });
 
   useEffect(() => {
@@ -184,15 +185,26 @@ export const HeroContent: React.FC<HeroContentProps> = ({
       </p>
 
       {/* 4. CTA Row: Side-by-side on mobile, plus Award badge on desktop */}
-      <div className="animate-fade-up-delay-3 mt-3.5 sm:mt-5 flex flex-wrap items-center gap-3 sm:gap-5 w-full">
+      <div className="animate-fade-up-delay-3 mt-3.5 sm:mt-5 flex flex-wrap items-center gap-2.5 sm:gap-4 w-full">
         {/* Primary CTA: CHAT WITH RAG AGENT */}
         <button
           id="hero-rag-cta"
-          onClick={() => onOpenRag()}
-          className="group flex items-center gap-2 sm:gap-2.5 bg-black hover:bg-neutral-900 border border-white/20 hover:border-[#FF9F1C]/70 hover:shadow-[0_0_30px_rgba(255,159,28,0.3)] px-4 sm:px-6 py-2 sm:py-2.5 text-[10px] sm:text-xs font-inter tracking-widest uppercase text-white transition-all duration-300 cursor-pointer"
+          onClick={() => onOpenRag(undefined, "enterprise")}
+          className="group flex items-center gap-2 sm:gap-2.5 bg-black hover:bg-neutral-900 border border-white/20 hover:border-[#FF9F1C]/70 hover:shadow-[0_0_30px_rgba(255,159,28,0.3)] px-4 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-inter tracking-widest uppercase text-white transition-all duration-300 cursor-pointer"
         >
           <span>Chat with RAG Agent</span>
           <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+        </button>
+
+        {/* NEW CTA: UPLOAD & CHAT WITH YOUR DOCS */}
+        <button
+          id="hero-doc-copilot-cta"
+          onClick={() => onOpenRag(undefined, "doc")}
+          className="group flex items-center gap-2 sm:gap-2.5 bg-gradient-to-r from-emerald-950/90 via-black to-teal-950/90 hover:from-emerald-900 hover:to-teal-900 border border-emerald-500/50 hover:border-emerald-400 hover:shadow-[0_0_30px_rgba(16,185,129,0.35)] px-4 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-inter tracking-widest uppercase text-emerald-200 hover:text-white transition-all duration-300 cursor-pointer shadow-lg"
+          title="Upload PDF, JSON, Markdown, or TXT and chat live with your document"
+        >
+          <FileUp className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+          <span>Upload &amp; Chat with Docs</span>
         </button>
 
         {/* Secondary CTA: VIEW PROJECTS */}
@@ -203,8 +215,8 @@ export const HeroContent: React.FC<HeroContentProps> = ({
           <span>View Projects</span>
         </button>
 
-        {/* Award Badge beside button (hidden on mobile, visible on sm+) */}
-        <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-white/15">
+        {/* Award Badge beside button (hidden on mobile, visible on lg+) */}
+        <div className="hidden lg:flex items-center gap-2.5 pl-2 border-l border-white/15">
           <Award className="w-6 h-6 text-[#FFD166]/80 shrink-0" />
           <div className="flex flex-col text-left">
             <span className="text-white/80 font-inter text-[11px] tracking-wider uppercase font-semibold">
@@ -222,10 +234,10 @@ export const HeroContent: React.FC<HeroContentProps> = ({
         {/* Stat 1: Neo4j Knowledge Graph */}
         <div className="flex flex-col text-left shrink-0">
           <span className="font-inter text-white text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight whitespace-nowrap">
-            {stats.graph_nodes || 286}
+            {stats.graph_nodes || 476}
           </span>
           <span className="text-white/60 font-inter text-[10px] sm:text-[11px] tracking-widest uppercase mt-1 flex items-center gap-1 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             Graph Nodes (Neo4j)
           </span>
         </div>
@@ -233,7 +245,7 @@ export const HeroContent: React.FC<HeroContentProps> = ({
         {/* Stat 2: Pinecone Vectors */}
         <div className="flex flex-col text-left shrink-0">
           <span className="font-inter text-white text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight whitespace-nowrap">
-            {stats.vectors_indexed}
+            {stats.vectors_indexed || "61.5K+"}
           </span>
           <span className="text-white/50 font-inter text-[10px] sm:text-[11px] tracking-widest uppercase mt-1 whitespace-nowrap">
             Vectors (Pinecone)

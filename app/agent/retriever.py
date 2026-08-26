@@ -116,31 +116,14 @@ def _embed_queries(queries: list[str]) -> list[list[float]]:
                     "model": settings.embedding_model,
                     "input_type": "query"
                 },
-                timeout=10.0
+                timeout=1.5
             )
             response.raise_for_status()
             data = response.json().get("data", [])
             new_embeddings = [item["embedding"] for item in data]
         except Exception as e:
-            logger.warning(f"⚠️ [Embedding Failover] NVIDIA NIM returned error ({e}). Falling back to local FastEmbed.")
-            model = _get_embedding_model()
-            if model is not None:
-                try:
-                    prefixed = [_QUERY_PREFIX + q for q in missing_queries]
-                    embeddings = list(model.embed(prefixed))
-                    new_embeddings = []
-                    for e in embeddings:
-                        arr = e.tolist()
-                        if len(arr) < 1024:
-                            arr = arr + [0.0] * (1024 - len(arr))
-                        elif len(arr) > 1024:
-                            arr = arr[:1024]
-                        new_embeddings.append(arr)
-                except Exception as emb_err:
-                    logger.warning(f"FastEmbed execution failed ({emb_err}) — using zero vector fallback.")
-                    new_embeddings = [[0.0] * 1024 for _ in missing_queries]
-            else:
-                new_embeddings = [[0.0] * 1024 for _ in missing_queries]
+            logger.warning(f"⚠️ [Embedding Failover] NVIDIA NIM returned error ({e}). Using direct retrieval fallback.")
+            new_embeddings = [[0.0] * 1024 for _ in missing_queries]
     else:
         # Fallback to local FastEmbed
         model = _get_embedding_model()

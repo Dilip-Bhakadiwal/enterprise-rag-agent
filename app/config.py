@@ -84,6 +84,14 @@ class Settings(BaseSettings):
     upsert_batch_size: int = Field(default=100, alias="UPSERT_BATCH_SIZE")
     max_docs: int = Field(default=20000, alias="MAX_DOCS")
 
+    # ── Ephemeral Document RAG & LlamaParse ────────────────────────────────
+    llamaparse_api_key: str = Field(
+        default="llx-G0U7i5DFvrtQT9q1of8aDPdyz5OlnnsRVWnpDVLZZCJ6kOPw",
+        alias="LLAMAPARSE_API_KEY",
+    )
+    max_doc_pages: int = Field(default=5, alias="MAX_DOC_PAGES")
+    max_doc_size_bytes: int = Field(default=10485760, alias="MAX_DOC_SIZE_BYTES")  # 10 MB
+
     # ── App ────────────────────────────────────────────────────────────────
     app_port: int = Field(default=8000, alias="APP_PORT")
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")

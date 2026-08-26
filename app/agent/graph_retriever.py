@@ -249,6 +249,145 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
 
     # 2. Extract potential entities / intents for Graph Traversal
     graph_facts: list[dict[str, Any]] = []
+    clean_q = query.lower().replace("'", "").replace('"', "")
+
+    # ── Universal Knowledge Graph Entity Resolver (City & Location Deep-Dive) ──
+    city_nodes = query_neo4j_graph(
+        f"MATCH (c:City) WHERE '{clean_q}' CONTAINS toLower(c.name) RETURN c.name AS city LIMIT 3"
+    )
+    if city_nodes:
+        for c_entry in city_nodes:
+            c_name = c_entry.get("city")
+            if not c_name:
+                continue
+            stores_in_city = query_neo4j_graph(f"""
+                MATCH (c:City)<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)
+                WHERE c.name = '{c_name}'
+                OPTIONAL MATCH (c)-[:IN_COUNTRY]->(co:Country)
+                RETURN c.name AS city, co.name AS country, s.name AS store,
+                       sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue,
+                       count(DISTINCT p) AS products_count
+                ORDER BY total_revenue DESC
+            """)
+            top_prods_city = query_neo4j_graph(f"""
+                MATCH (c:City)<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)
+                WHERE c.name = '{c_name}'
+                RETURN s.name AS store, p.name AS product, p.price AS price, sum(r.total_units) AS units, sum(r.revenue) AS revenue
+                ORDER BY revenue DESC LIMIT 5
+            """)
+            
+            if stores_in_city:
+                country_name = stores_in_city[0].get("country", "United States")
+                tot_city_units = sum(s.get("total_units", 0) for s in stores_in_city)
+                tot_city_rev = sum(s.get("total_revenue", 0.0) for s in stores_in_city)
+                
+                stores_bullet = "\n".join(
+                    f"  - **{s.get('store')}**: {s.get('total_units', 0):,} units sold | ${s.get('total_revenue', 0):,.2f} USD Revenue ({s.get('products_count', 0)} product SKUs)"
+                    for s in stores_in_city
+                )
+                top_prods_bullet = "\n".join(
+                    f"  {idx}. **{tp.get('product')}** (${tp.get('price', 0):,.2f} MSRP) — {tp.get('units', 0):,} units (${tp.get('revenue', 0):,.2f} USD revenue) at {tp.get('store')}"
+                    for idx, tp in enumerate(top_prods_city, 1)
+                ) if top_prods_city else "  - Data aggregated across all store SKUs."
+
+                graph_facts.append({
+                    "doc_id": f"neo4j_city_{c_name.lower().replace(' ', '_')}",
+                    "chunk_text": (
+                        f"### Neo4j Knowledge Graph Fact: City Market Intelligence — {c_name} ({country_name})\n"
+                        f"- **City**: {c_name}\n"
+                        f"- **Country**: {country_name}\n"
+                        f"- **Flagship Retail Stores in {c_name} ({len(stores_in_city)})**:\n{stores_bullet}\n"
+                        f"- **Total Aggregated City Revenue**: ${tot_city_rev:,.2f} USD\n"
+                        f"- **Total Units Sold across {c_name} Stores**: {tot_city_units:,} units\n"
+                        f"- **Top Revenue-Generating Products in {c_name}**:\n{top_prods_bullet}"
+                    ),
+                    "source_type": "neo4j_graph",
+                    "category": "City Intelligence",
+                    "authority": 10,
+                    "score": 0.99,
+                    "is_graph": True,
+                    "cypher_preview": f"MATCH (c:City {{name: '{c_name}'}})<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)\nOPTIONAL MATCH (c)-[:IN_COUNTRY]->(co:Country)\nRETURN c.name AS city, co.name AS country, s.name AS store, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue, count(DISTINCT p) AS products_count\nORDER BY total_revenue DESC;",
+                })
+
+    # ── Universal Knowledge Graph Store Deep-Dive ──
+    store_nodes = query_neo4j_graph(
+        f"MATCH (s:Store) WHERE '{clean_q}' CONTAINS toLower(s.name) RETURN s.name AS store LIMIT 2"
+    )
+    if store_nodes:
+        for s_entry in store_nodes:
+            s_name = s_entry.get("store")
+            if not s_name:
+                continue
+            store_details = query_neo4j_graph(f"""
+                MATCH (s:Store {{name: '{s_name}'}})-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
+                OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
+                RETURN s.name AS store, c.name AS city, co.name AS country,
+                       sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue, count(DISTINCT p) AS products_count
+            """)
+            top_prods_store = query_neo4j_graph(f"""
+                MATCH (s:Store {{name: '{s_name}'}})-[r:SOLD_PRODUCT]->(p:Product)
+                RETURN p.name AS product, p.price AS price, r.total_units AS units, r.revenue AS revenue
+                ORDER BY revenue DESC LIMIT 5
+            """)
+            if store_details:
+                sd = store_details[0]
+                prods_bullet = "\n".join(
+                    f"  {idx}. **{tp.get('product')}** (${tp.get('price', 0):,.2f}) — {tp.get('units', 0):,} units (${tp.get('revenue', 0):,.2f} USD)"
+                    for idx, tp in enumerate(top_prods_store, 1)
+                ) if top_prods_store else "  - All products stocked."
+                graph_facts.append({
+                    "doc_id": f"neo4j_store_detail_{s_name.lower().replace(' ', '_')}",
+                    "chunk_text": (
+                        f"### Neo4j Knowledge Graph Fact: Retail Store Deep-Dive — {s_name}\n"
+                        f"- **Store Location**: {sd.get('city')}, {sd.get('country')}\n"
+                        f"- **Total Aggregated Revenue**: ${sd.get('total_revenue', 0):,.2f} USD\n"
+                        f"- **Total Units Sold**: {sd.get('total_units', 0):,} units\n"
+                        f"- **Distinct Product SKUs**: {sd.get('products_count', 0)} products\n"
+                        f"- **Top Selling Products**:\n{prods_bullet}"
+                    ),
+                    "source_type": "neo4j_graph",
+                    "category": "Store Analytics",
+                    "authority": 10,
+                    "score": 0.99,
+                    "is_graph": True,
+                    "cypher_preview": f"MATCH (s:Store {{name: '{s_name}'}})-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)\nOPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN s.name, c.name, co.name, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue;",
+                })
+
+    # ── Universal Knowledge Graph Category Resolver ──
+    cat_nodes = query_neo4j_graph(
+        f"MATCH (cat:Category) WHERE '{clean_q}' CONTAINS toLower(cat.name) RETURN cat.name AS category LIMIT 2"
+    )
+    if cat_nodes:
+        for cat_entry in cat_nodes:
+            cat_name = cat_entry.get("category")
+            if not cat_name:
+                continue
+            cat_details = query_neo4j_graph(f"""
+                MATCH (cat:Category {{name: '{cat_name}'}})<-[:BELONGS_TO]-(p:Product)
+                OPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)
+                RETURN cat.name AS category, count(DISTINCT p) AS product_count,
+                       avg(p.price) AS avg_price, sum(p.total_warranty_claims) AS total_warranty_claims,
+                       sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue
+            """)
+            if cat_details:
+                cd = cat_details[0]
+                graph_facts.append({
+                    "doc_id": f"neo4j_cat_{cat_name.lower().replace(' ', '_')}",
+                    "chunk_text": (
+                        f"### Neo4j Knowledge Graph Fact: Category Intelligence — {cat_name}\n"
+                        f"- **Category**: {cat_name}\n"
+                        f"- **Products in Category**: {cd.get('product_count', 0)} product models\n"
+                        f"- **Average MSRP**: ${cd.get('avg_price', 0):,.2f} USD\n"
+                        f"- **Recorded Warranty Claims**: {cd.get('total_warranty_claims', 0):,} claims\n"
+                        f"- **Total Aggregated Revenue**: ${cd.get('total_revenue', 0):,.2f} USD"
+                    ),
+                    "source_type": "neo4j_graph",
+                    "category": "Category Analytics",
+                    "authority": 10,
+                    "score": 0.99,
+                    "is_graph": True,
+                    "cypher_preview": f"MATCH (cat:Category {{name: '{cat_name}'}})<-[:BELONGS_TO]-(p:Product)\nOPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)\nRETURN cat.name, count(DISTINCT p) AS product_count, avg(p.price) AS avg_price, sum(r.revenue) AS total_revenue;",
+                })
     
     # Check for Brand comparison queries (Apple vs Samsung)
     if re.search(r"\b(apple.*samsung|samsung.*apple|which company.*sell.*more|who sell.*more|more sell|which company do more sell)\b", query, re.IGNORECASE):
@@ -269,6 +408,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                 "category": "Brand Analytics",
                 "authority": 10,
                 "score": 0.99,
+                "is_graph": True,
+                "cypher_preview": "MATCH (s:Store)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN 'Apple' AS brand, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue;\n\nMATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(r:Region)\nRETURN 'Samsung' AS brand, sum(perf.units_sold) AS total_units, sum(perf.revenue) AS total_revenue;",
             })
     
     # Check for Samsung keywords / models
@@ -296,6 +437,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                 "category": "Market Intelligence",
                 "authority": 10,
                 "score": 0.99,
+                "is_graph": True,
+                "cypher_preview": f"MATCH (p:Product)-[perf:PERFORMED_IN]->(r:Region)\nWHERE toLower(p.name) CONTAINS toLower('{model_term}')\nRETURN p.name AS model, r.name AS region, avg(perf.market_share) AS avg_share, sum(perf.revenue) AS total_revenue\nORDER BY total_revenue DESC LIMIT 5;",
             })
             
         if not sam_model_facts:
@@ -316,6 +459,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                     "category": "Graph Analytics",
                     "authority": 10,
                     "score": 0.99,
+                    "is_graph": True,
+                    "cypher_preview": "MATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(reg:Region)\nRETURN reg.name AS region, avg(perf.market_share) AS avg_market_share, sum(perf.revenue) AS total_revenue, avg(perf.avg_5g_speed) AS avg_speed\nORDER BY total_revenue DESC LIMIT 5;",
                 })
 
     # Check for Regional / Store queries (if not already purely Samsung model query)
@@ -337,6 +482,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                 "category": "Store Analytics",
                 "authority": 10,
                 "score": 0.99,
+                "is_graph": True,
+                "cypher_preview": "MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)\nOPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN s.name AS store, c.name AS city, co.name AS country, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue\nORDER BY total_units DESC LIMIT 6;",
             })
     
     # Check for Warranty claims queries
@@ -356,6 +503,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                 "category": "Warranty Analytics",
                 "authority": 10,
                 "score": 0.99,
+                "is_graph": True,
+                "cypher_preview": "MATCH (p:Product)\nWHERE p.total_warranty_claims > 0\nOPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)\nRETURN p.name AS product, c.name AS category, p.price AS price, p.total_warranty_claims AS claims\nORDER BY claims DESC LIMIT 6;",
             })
 
     # Check for Top Retail Stores queries
@@ -375,6 +524,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                 "category": "Store Analytics",
                 "authority": 10,
                 "score": 0.98,
+                "is_graph": True,
+                "cypher_preview": "MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)\nOPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN s.name AS store, c.name AS city, co.name AS country, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue\nORDER BY total_units DESC LIMIT 6;",
             })
 
     # Check for specific Apple products / keywords
@@ -396,6 +547,8 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
                 "category": "Graph Analytics",
                 "authority": 10,
                 "score": 0.98,
+                "is_graph": True,
+                "cypher_preview": f"MATCH (p:Product)\nWHERE toLower(p.name) CONTAINS toLower('{apple_match.group(1)}')\nOPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)\nOPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)\nRETURN p.name, p.price, p.launch_date, p.total_warranty_claims, count(DISTINCT s) AS store_count LIMIT 5;",
             })
 
     # 3. Merge Graph Facts with Pinecone Vector Chunks

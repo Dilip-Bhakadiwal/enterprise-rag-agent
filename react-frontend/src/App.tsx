@@ -18,6 +18,7 @@ export default function App() {
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [ragInitialPrompt, setRagInitialPrompt] = useState<string | undefined>(undefined);
+  const [ragInitialMode, setRagInitialMode] = useState<"enterprise" | "doc">("enterprise");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -28,9 +29,14 @@ export default function App() {
     }
   }, []);
 
-  const handleOpenRag = (prompt?: string) => {
+  const handleOpenRag = (prompt?: string, mode?: "enterprise" | "doc") => {
     if (prompt) {
       setRagInitialPrompt(prompt);
+    }
+    if (mode) {
+      setRagInitialMode(mode);
+    } else {
+      setRagInitialMode("enterprise");
     }
     setIsRagOpen(true);
   };
@@ -130,8 +136,10 @@ export default function App() {
         onClose={() => {
           setIsRagOpen(false);
           setRagInitialPrompt(undefined);
+          setRagInitialMode("enterprise");
         }}
         initialPrompt={ragInitialPrompt}
+        initialMode={ragInitialMode}
       />
 
       {/* Projects Showcase Modal */}

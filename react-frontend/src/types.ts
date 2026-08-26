@@ -42,6 +42,11 @@ export interface Telemetry {
   estimated_cost_usd?: number;
   active_provider?: string;
   failover_status?: string;
+  faithfulness_score?: number;
+  context_precision?: number;
+  hallucination_risk?: string;
+  cached?: boolean;
+  cache_latency_ms?: number;
   graph_nodes?: number;
   graph_relationships?: number;
   knowledge_graph_status?: string;
@@ -80,4 +85,16 @@ export interface ProjectDetail {
   githubUrl?: string;
   liveDemoUrl?: string;
   metrics: string[];
+}
+
+export interface DocSessionData {
+  session_id: string;
+  filename: string;
+  word_count: number;
+  page_count: number;
+  chunk_count: number;
+  parser_used: string;
+  starter_suggestions?: string[];
+  preview_text?: string;
+  parse_time_ms?: number;
 }
