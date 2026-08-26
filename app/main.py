@@ -466,14 +466,14 @@ async def get_live_graph_data():
         if not node_records:
             return {"status": "fallback", "nodes": [], "links": []}
 
-        # 2. Fetch all structural relationships connecting nodes
+        # 2. Fetch all structural relationships connecting nodes (all 7,614 edges)
         rel_query = """
         MATCH (n)-[r]->(m)
         RETURN 
           elementId(n) AS source_id,
           elementId(m) AS target_id,
           type(r) AS rel_type
-        LIMIT 3000
+        LIMIT 10000
         """
         rel_records = query_neo4j_graph(rel_query) or []
 
