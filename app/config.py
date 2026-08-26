@@ -58,9 +58,9 @@ class Settings(BaseSettings):
     pinecone_region: str = Field(default="us-east-1", alias="PINECONE_REGION")
 
     # ── Neo4j AuraDB (Knowledge Graph) ─────────────────────────────────────
-    neo4j_uri: str = Field(default="neo4j+s://f2c03d7b.databases.neo4j.io", alias="NEO4J_URI")
-    neo4j_username: str = Field(default="neo4j", alias="NEO4J_USERNAME")
-    neo4j_password: str = Field(default="", alias="NEO4J_PASSWORD")
+    neo4j_uri: str = Field(default="neo4j+ssc://3bbfa576.databases.neo4j.io", alias="NEO4J_URI")
+    neo4j_username: str = Field(default="3bbfa576", alias="NEO4J_USERNAME")
+    neo4j_password: str = Field(default="4EduBcif-guwm2Updqvbn_Pxxgh1c9GJXDnvyUjJo6Y", alias="NEO4J_PASSWORD")
 
     # ── Serverless Cache (Upstash Redis) ───────────────────────────────────
     upstash_redis_rest_url: str = Field(default="", alias="UPSTASH_REDIS_REST_URL")
