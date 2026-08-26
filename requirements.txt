@@ -1,6 +1,7 @@
 # ── Core Framework ──────────────────────────────────────────────────────────
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
+python-multipart==0.0.9
 
 # ── LLM Clients & Agentic Graph ─────────────────────────────────────────────
 langchain==0.3.7
@@ -12,6 +13,10 @@ openai==1.54.4
 # ── Vector & Graph Database ──────────────────────────────────────────────────
 pinecone>=5.3.1
 neo4j>=5.18.0
+fastembed>=0.3.0
+
+# ── Document Parsing ─────────────────────────────────────────────────────────
+pypdf>=4.0.0
 
 # ── Utilities, Cache & Async Networking ──────────────────────────────────────
 python-dotenv==1.0.1

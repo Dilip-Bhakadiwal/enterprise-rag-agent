@@ -48,9 +48,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# ── Copy FastAPI app code ─────────────────────────────────────────────────
+# ── Copy FastAPI app code ─────────────────────────────────────────────────────
 COPY app/ ./app/
-COPY eval/ ./eval/
 
 # ── Copy built React frontend from Stage 1 ────────────────────────────────
 # FastAPI serves this as static files from /react-frontend/dist
