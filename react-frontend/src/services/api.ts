@@ -1,4 +1,12 @@
 import { ChatMessage, Citation, KnowledgeDoc, Telemetry, DocSessionData } from "../types";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Configure pdfjs worker via unpkg CDN (browser only, no Node worker needed)
+try {
+  (pdfjsLib as any).GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${(pdfjsLib as any).version}/build/pdf.worker.min.mjs`;
+} catch (_e) {
+  // Fallback: worker will run inline
+}
 
 /**
  * Backend API Client — Enterprise RAG Integration
@@ -676,15 +684,6 @@ export async function fetchLiveHeroStats(): Promise<HeroStats> {
     failover_tier: "3-Tier",
     graph_nodes: 476,
   };
-}
-
-import * as pdfjsLib from "pdfjs-dist";
-
-// Configure pdfjs worker to unpkg CDN
-try {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-} catch (e) {
-  // worker fallback
 }
 
 // ─── Ephemeral In-Memory Client Store (Zero-Persistence Vercel Fallback) ──────
