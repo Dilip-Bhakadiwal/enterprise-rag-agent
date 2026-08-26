@@ -161,11 +161,13 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
     const resultMap = new Map<string, GraphNode>();
 
     Object.entries(categorized).forEach(([cat, catNodes]) => {
+      if (!catNodes || catNodes.length === 0) return;
       const orbit = orbits[cat] || { orbitRadius: 400, angle: 0, subSpread: 1.2 };
       const px = Math.cos(orbit.angle) * orbit.orbitRadius;
       const py = Math.sin(orbit.angle) * orbit.orbitRadius;
 
       const hub = catNodes.find((n) => n.hierarchyLevel === 1 || n.isParentNode || (n.subcategory && ['Brand', 'Platform', 'Author'].includes(n.subcategory))) || catNodes[0];
+      if (!hub || !hub.id) return;
       resultMap.set(hub.id, { ...hub, hierarchyLevel: 1, isParentNode: true, x: px, y: py, vx: 0, vy: 0, radius: cat === 'dilip_ai' ? 22 : 18 });
 
       const satellites = catNodes.filter((n) => n.id !== hub.id);
@@ -267,7 +269,7 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       byCat[c].push(n);
     });
     categorizedNodesRef.current = Object.entries(byCat).map(([, catNodes]) => ({
-      color: catNodes[0].color || '#06b6d4',
+      color: catNodes[0]?.color || '#06b6d4',
       nodes: catNodes,
     }));
 
