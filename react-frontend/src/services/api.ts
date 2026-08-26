@@ -755,6 +755,7 @@ export async function fetchLiveHeroStats(): Promise<HeroStats> {
         latency_display: data.latency_display || "<200ms",
         failover_tier: data.failover_tier || "3-Tier",
         graph_nodes: data.graph_nodes || 476,
+        graph_relationships: data.graph_relationships || 7614,
       };
     }
   } catch (e) {
@@ -766,6 +767,7 @@ export async function fetchLiveHeroStats(): Promise<HeroStats> {
     latency_display: "<200ms",
     failover_tier: "3-Tier",
     graph_nodes: 476,
+    graph_relationships: 7614,
   };
 }
 

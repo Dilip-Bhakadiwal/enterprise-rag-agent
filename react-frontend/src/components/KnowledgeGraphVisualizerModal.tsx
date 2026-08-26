@@ -5,13 +5,16 @@ import { KnowledgeGraphCanvas } from "./KnowledgeGraphCanvas";
 import { INITIAL_NODES, INITIAL_LINKS } from "../data/knowledgeGraphData";
 import { GraphNode, GraphLink } from "../types/graph";
 
+const API_BASE_URL =
+  ((import.meta as any).env?.VITE_API_BASE_URL as string) || "";
+
 // ── Persistent Module-Level Cache (Lazy on-demand only) ─────────────────────
 let _cachedGraphData: { nodes: GraphNode[]; links: GraphLink[] } | null = null;
 
 const fetchGraphDataOnDemand = async () => {
   if (_cachedGraphData) return _cachedGraphData;
   try {
-    const response = await fetch("/api/graph/data");
+    const response = await fetch(`${API_BASE_URL}/api/graph/data`);
     if (!response.ok) return null;
     const data = await response.json();
     if (data.status === "connected" && data.nodes && data.nodes.length > 0) {
@@ -133,11 +136,13 @@ export const KnowledgeGraphVisualizerModal: React.FC<KnowledgeGraphVisualizerMod
                 </span>
               </div>
               <span className="text-white/20">|</span>
-              <div className="flex items-center gap-1 text-slate-300 font-mono text-[10px] sm:text-[11px]">
+              <div className="flex items-center gap-1.5 text-slate-300 font-mono text-[10px] sm:text-[11px]">
                 <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
                 <span ref={fpsRef} className="text-emerald-400 font-semibold">30 FPS</span>
-                <span>•</span>
-                <span>{liveNodes.length} Nodes</span>
+                <span className="text-white/30">•</span>
+                <span className="font-medium text-slate-200">{liveNodes.length || 476} Nodes</span>
+                <span className="text-white/30">•</span>
+                <span className="font-medium text-emerald-300/90">{liveLinks.length ? (liveLinks.length >= 1000 ? `${(liveLinks.length / 1000).toFixed(1)}K` : liveLinks.length) : "7.6K"} Edges</span>
               </div>
             </div>
 

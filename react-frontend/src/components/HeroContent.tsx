@@ -233,12 +233,17 @@ export const HeroContent: React.FC<HeroContentProps> = ({
       <div className="animate-fade-up-delay-4 mt-5 sm:mt-7 lg:mt-8 grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row lg:items-start gap-x-5 sm:gap-x-8 lg:gap-10 xl:gap-14 gap-y-3 sm:gap-y-4 w-full">
         {/* Stat 1: Neo4j Knowledge Graph */}
         <div className="flex flex-col text-left shrink-0">
-          <span className="font-inter text-white text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight whitespace-nowrap">
-            {stats.graph_nodes || 476}
-          </span>
+          <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+            <span className="font-inter text-white text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+              {stats.graph_nodes || 476}
+            </span>
+            <span className="text-emerald-400/90 font-mono text-xs sm:text-sm font-semibold">
+              / {stats.graph_relationships ? (stats.graph_relationships >= 1000 ? `${(stats.graph_relationships / 1000).toFixed(1)}K` : stats.graph_relationships) : "7.6K"} Edges
+            </span>
+          </div>
           <span className="text-white/60 font-inter text-[10px] sm:text-[11px] tracking-widest uppercase mt-1 flex items-center gap-1 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Graph Nodes (Neo4j)
+            Neo4j Graph (Nodes / Edges)
           </span>
         </div>
 
