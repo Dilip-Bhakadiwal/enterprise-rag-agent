@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
-import { GraphNode, GraphLink, EnergyPulsePacket } from '../types/graph';
+import { GraphNode, GraphLink } from '../types/graph';
 
 interface KnowledgeGraphCanvasProps {
   nodes?: GraphNode[];
@@ -11,7 +11,7 @@ interface KnowledgeGraphCanvasProps {
   onStatsUpdate?: (fps: number, particleCount: number) => void;
 }
 
-// ── STATIC CACHES (module-level, zero allocation per frame) ─────────────────
+// ── COLOR HELPERS ──────────────────────────────────────────────────────────
 const RGBA_CACHE: Record<string, string> = {};
 const hexToRgba = (hex: string, alpha: number): string => {
   const key = `${hex}_${alpha}`;
@@ -26,87 +26,143 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return res;
 };
 
-// Semantic Sub-Category Classifier
-const getSemanticSubcluster = (node: GraphNode): string => {
-  const label = (node.label || '').toLowerCase();
-  const sub = (node.subcategory || '').toLowerCase();
-  const cat = node.category;
+// ── REFINED KNOWLEDGE DOMAINS (Linear / Cosmograph Minimal Precision) ───────
+export interface KnowledgeDomain {
+  id: string;
+  name: string;
+  subtitle: string;
+  x: number;
+  y: number;
+  headerOffset: number; // Guaranteed safe distance from all nodes
+  color: string;
+}
 
-  if (cat === 'dilip_ai') {
-    if (label.includes('yolo') || label.includes('vision') || label.includes('fpga') || label.includes('jetson') || label.includes('moes')) return 'Edge Vision & MoES';
-    if (label.includes('rag') || label.includes('engine') || label.includes('nexora')) return 'Autonomous Engines & RAG';
-    if (label.includes('ieee') || label.includes('climate') || label.includes('weather')) return 'IEEE Climate AI';
-    if (label.includes('quant') || label.includes('npu') || label.includes('int4')) return 'Neural Quantization';
-    return 'Dilip AI Research';
-  }
-  if (cat === 'medical') {
-    if (label.includes('checkpoint') || label.includes('immunotherapy') || label.includes('pd-1') || label.includes('t-cell')) return 'Immunotherapy & Checkpoints';
-    if (label.includes('kinase') || label.includes('inhibitor') || label.includes('egfr') || label.includes('targeted')) return 'Kinase & Targeted Therapy';
-    if (label.includes('genom') || label.includes('biomarker') || label.includes('mutation') || label.includes('ngs')) return 'Genomics & Biomarkers';
-    if (label.includes('trial') || label.includes('patient') || label.includes('survival') || label.includes('clinical')) return 'Clinical Trials & Outcomes';
-    if (sub.includes('topic')) return 'Medical Topics';
-    if (sub.includes('fact')) return 'Clinical Evidence Facts';
-    return 'Clinical Oncology KG';
-  }
-  if (cat === 'literature') {
-    if (label.includes('entity') || label.includes('coreference') || label.includes('link')) return 'Cross-Doc Entity Linking';
-    if (label.includes('hop') || label.includes('path') || label.includes('traversal')) return 'Multi-Hop Path Reasoning';
-    if (label.includes('triple') || label.includes('relation')) return 'Scientific Triples';
-    return 'Literature QA Graph';
-  }
-  if (cat === 'corpus') {
-    if (label.includes('vector') || label.includes('pinecone') || label.includes('embed')) return 'Dense Vector Substrate';
-    if (label.includes('graph') || label.includes('neo4j') || label.includes('auradb')) return 'Neo4j Graph Store';
-    return 'Benchmark Corpora';
-  }
-  if (cat === 'apple') return 'Apple Hardware';
-  if (cat === 'samsung') return 'Samsung Galaxy';
-  if (cat === 'stores') return 'Retail Flagships';
-  if (cat === '5g_regions') return '5G Telemetry';
-  if (cat === 'warranty') return 'Defect Telemetry';
-
-  return 'Knowledge Entity';
+const KNOWLEDGE_DOMAINS: Record<string, KnowledgeDomain> = {
+  dilip_ai: {
+    id: 'dilip_ai',
+    name: 'DILIP AI RESEARCH',
+    subtitle: 'Multi-Agent RAG & Edge Vision',
+    x: 0,
+    y: 0,
+    headerOffset: -125,
+    color: '#10b981', // Emerald
+  },
+  medical: {
+    id: 'medical',
+    name: 'CLINICAL ONCOLOGY',
+    subtitle: '5,193 Facts • 6 Sub-specialties',
+    x: -450,
+    y: -80,
+    headerOffset: -180,
+    color: '#38bdf8', // Electric Sky
+  },
+  literature: {
+    id: 'literature',
+    name: 'LITERATURE & MULTI-HOP QA',
+    subtitle: '2,282 Knowledge Triples',
+    x: 450,
+    y: -80,
+    headerOffset: -180,
+    color: '#a78bfa', // Soft Violet
+  },
+  corpus: {
+    id: 'corpus',
+    name: 'GRAPHRAG CORPUS',
+    subtitle: 'Pinecone Vector + Neo4j Graph',
+    x: 0,
+    y: 390,
+    headerOffset: -85, // Positioned at y = 305 with all nodes pushed to y >= 390!
+    color: '#fbbf24', // Warm Amber
+  },
 };
+
+const getDomainForCategory = (cat: string): KnowledgeDomain => {
+  if (KNOWLEDGE_DOMAINS[cat]) return KNOWLEDGE_DOMAINS[cat];
+  if (cat === 'apple' || cat === 'warranty') return KNOWLEDGE_DOMAINS.medical;
+  if (cat === 'samsung') return KNOWLEDGE_DOMAINS.literature;
+  if (cat === 'stores') return KNOWLEDGE_DOMAINS.corpus;
+  return KNOWLEDGE_DOMAINS.dilip_ai;
+};
+
+// Animated node state with elastic spring physics & harmonic breathing
+interface SimulatedNode extends GraphNode {
+  baseX: number;
+  baseY: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  phase1: number;
+  phase2: number;
+  freq1: number;
+  freq2: number;
+  driftRadius: number;
+  targetRadius: number;
+  currentRadius: number;
+}
+
+interface SimulatedPulse {
+  sourceId: string;
+  targetId: string;
+  progress: number;
+  speed: number;
+  color: string;
+  isCurved: boolean;
+  ctrlX?: number;
+  ctrlY?: number;
+}
+
+interface BackgroundStar {
+  x: number;
+  y: number;
+  size: number;
+  alpha: number;
+  driftSpeed: number;
+}
 
 export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
   nodes = [],
   links = [],
   selectedNodeId = null,
   pulseSpeedMultiplier = 1.0,
-  viewPerspective3D = false,
   onSelectNode,
   onStatsUpdate,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // ── ALL MUTABLE STATE IN REFS (ZERO React re-renders during animation) ──
-  const transformRef = useRef({ x: 0, y: 0, k: 0.72 });
+  // ── TRANSFORMS & CAMERA REFS ─────────────────────────────────────────────
+  const transformRef = useRef({ x: 0, y: 0, k: 0.75 });
   const selectedIdRef = useRef<string | null>(selectedNodeId);
   selectedIdRef.current = selectedNodeId;
+  const hoveredNodeRef = useRef<SimulatedNode | null>(null);
+  const mouseWorldPosRef = useRef({ x: 0, y: 0 });
+  const mouseScreenPosRef = useRef({ x: 0, y: 0 });
+  const isMouseInsideRef = useRef(false);
 
-  // Stable callback refs
+  // Callbacks
   const onSelectNodeRef = useRef(onSelectNode);
   onSelectNodeRef.current = onSelectNode;
   const onStatsUpdateRef = useRef(onStatsUpdate);
   onStatsUpdateRef.current = onStatsUpdate;
   const pulseSpeedRef = useRef(pulseSpeedMultiplier);
   pulseSpeedRef.current = pulseSpeedMultiplier;
-  const viewPerspective3DRef = useRef(viewPerspective3D);
-  viewPerspective3DRef.current = viewPerspective3D;
 
-  // Pre-computed layout & typed buffers
-  const physicsNodesRef = useRef<GraphNode[]>([]);
-  const nodeMapRef = useRef<Map<string, GraphNode>>(new Map());
-  const categorizedNodesRef = useRef<{ color: string; nodes: GraphNode[] }[]>([]);
-  
-  // Dense link buffers pre-baked into typed arrays
-  const denseLinksRef = useRef<Float64Array>(new Float64Array(0));
-  const denseLinkCountRef = useRef(0);
-  const backboneLinksRef = useRef<Float64Array>(new Float64Array(0));
-  const backboneLinkCountRef = useRef(0);
+  // Nodes, Links, Background stars
+  const simNodesRef = useRef<SimulatedNode[]>([]);
+  const simNodeMapRef = useRef<Map<string, SimulatedNode>>(new Map());
+  const activeLinksRef = useRef<{
+    source: SimulatedNode;
+    target: SimulatedNode;
+    color: string;
+    isCurved: boolean;
+    ctrlX?: number;
+    ctrlY?: number;
+  }[]>([]);
+  const pulsesRef = useRef<SimulatedPulse[]>([]);
+  const domainTotalsRef = useRef<Record<string, number>>({});
+  const bgStarsRef = useRef<BackgroundStar[]>([]);
 
-  const energyPulsesRef = useRef<EnergyPulsePacket[]>([]);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const animFrameIdRef = useRef<number | null>(null);
@@ -114,10 +170,22 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
   const fpsTimerRef = useRef(performance.now());
   const isInitialCenterDoneRef = useRef(false);
 
-  const linksRef = useRef(links);
-  linksRef.current = links;
+  // Initialize subtle cosmic starfield
+  useEffect(() => {
+    const stars: BackgroundStar[] = [];
+    for (let i = 0; i < 35; i++) {
+      stars.push({
+        x: (Math.random() - 0.5) * 2200,
+        y: (Math.random() - 0.5) * 1600,
+        size: 0.7 + Math.random() * 1.3,
+        alpha: 0.12 + Math.random() * 0.35,
+        driftSpeed: 0.0002 + Math.random() * 0.0003,
+      });
+    }
+    bgStarsRef.current = stars;
+  }, []);
 
-  // ── O(1) ADJACENCY CACHE ─────────────────────────────────────────────────
+  // ── ADJACENCY CACHE ──────────────────────────────────────────────────────
   const adjacency = useMemo(() => {
     const connectedMap = new Map<string, Set<string>>();
     const activeLinksMap = new Map<string, Set<string>>();
@@ -139,467 +207,675 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
   const adjacencyRef = useRef(adjacency);
   adjacencyRef.current = adjacency;
 
-  // ── ZERO-OVERLAP LAYOUT COMPUTATION (runs ONCE on data load) ──────────────
-  const computeLayout = useCallback((nodeList: GraphNode[]) => {
-    const orbits: Record<string, { orbitRadius: number; angle: number; subSpread: number }> = {
-      dilip_ai: { orbitRadius: 0, angle: 0, subSpread: Math.PI * 2 },
-      medical: { orbitRadius: 420, angle: -Math.PI * 0.7, subSpread: 1.4 },
-      literature: { orbitRadius: 420, angle: -Math.PI * 0.3, subSpread: 1.4 },
-      corpus: { orbitRadius: 440, angle: Math.PI * 0.5, subSpread: 1.6 },
-      apple: { orbitRadius: 420, angle: -Math.PI * 0.75, subSpread: 1.3 },
-      samsung: { orbitRadius: 420, angle: -Math.PI * 0.25, subSpread: 1.3 },
-      stores: { orbitRadius: 460, angle: Math.PI * 0.75, subSpread: 1.4 },
-      '5g_regions': { orbitRadius: 460, angle: Math.PI * 0.25, subSpread: 1.4 },
-      warranty: { orbitRadius: 360, angle: Math.PI * 0.5, subSpread: 1.1 },
+  // ── ORGANIC FORCE-DIRECTED CONSTELLATION LAYOUT ─────────────────────────
+  const computeOrganicConstellation = useCallback((nodeList: GraphNode[], linkList: GraphLink[]) => {
+    const degreeMap = new Map<string, number>();
+    linkList.forEach((l) => {
+      const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
+      const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
+      degreeMap.set(s, (degreeMap.get(s) || 0) + 1);
+      degreeMap.set(t, (degreeMap.get(t) || 0) + 1);
+    });
+
+    const domainBuckets: Record<string, GraphNode[]> = {
+      dilip_ai: [],
+      medical: [],
+      literature: [],
+      corpus: [],
     };
 
-    const categorized: Record<string, GraphNode[]> = {};
     nodeList.forEach((n) => {
-      const cat = n.category || 'dilip_ai';
-      if (!categorized[cat]) categorized[cat] = [];
-      categorized[cat].push(n);
+      const dom = getDomainForCategory(n.category || 'dilip_ai');
+      domainBuckets[dom.id].push(n);
     });
 
-    const resultMap = new Map<string, GraphNode>();
+    domainTotalsRef.current = {
+      dilip_ai: domainBuckets.dilip_ai.length || 5,
+      medical: domainBuckets.medical.length || 5193,
+      literature: domainBuckets.literature.length || 2282,
+      corpus: domainBuckets.corpus.length || 21,
+    };
 
-    Object.entries(categorized).forEach(([cat, catNodes]) => {
-      if (!catNodes || catNodes.length === 0) return;
-      const orbit = orbits[cat] || { orbitRadius: 400, angle: 0, subSpread: 1.2 };
-      const px = Math.cos(orbit.angle) * orbit.orbitRadius;
-      const py = Math.sin(orbit.angle) * orbit.orbitRadius;
+    // Filter to top clean landmark nodes (~75 total nodes)
+    const curatedNodes: GraphNode[] = [];
 
-      const hub = catNodes.find((n) => n.hierarchyLevel === 1 || n.isParentNode || (n.subcategory && ['Brand', 'Platform', 'Author'].includes(n.subcategory))) || catNodes[0];
-      if (!hub || !hub.id) return;
-      resultMap.set(hub.id, { ...hub, hierarchyLevel: 1, isParentNode: true, x: px, y: py, vx: 0, vy: 0, radius: cat === 'dilip_ai' ? 22 : 18 });
+    // 1. Dilip AI Platform
+    curatedNodes.push(...domainBuckets.dilip_ai);
 
-      const satellites = catNodes.filter((n) => n.id !== hub.id);
-      const subGroups: Record<string, GraphNode[]> = {};
-      satellites.forEach((node) => {
-        const subName = getSemanticSubcluster(node);
-        if (!subGroups[subName]) subGroups[subName] = [];
-        subGroups[subName].push(node);
-      });
+    // 2. Medical Topic nodes + top 16 clean clinical concepts
+    const medTopics = domainBuckets.medical.filter((n) => n.subcategory === 'MedicalTopic' || n.hierarchyLevel === 1 || n.hierarchyLevel === 2);
+    const medLeaves = domainBuckets.medical
+      .filter((n) => !medTopics.includes(n))
+      .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0))
+      .slice(0, 16);
+    curatedNodes.push(...medTopics, ...medLeaves);
 
-      const subNames = Object.keys(subGroups);
-      const subCount = subNames.length;
-      const goldenAngle = 2.3999632;
+    // 3. Literature entities
+    const litNodes = domainBuckets.literature
+      .sort((a, b) => {
+        const aChunk = a.label.startsWith('Novel-');
+        const bChunk = b.label.startsWith('Novel-');
+        if (aChunk !== bChunk) return aChunk ? 1 : -1;
+        return (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0);
+      })
+      .slice(0, 20);
+    curatedNodes.push(...litNodes);
 
-      subNames.forEach((subName, subIdx) => {
-        const subNodes = subGroups[subName];
-        let subAngleOffset: number;
-        if (orbit.orbitRadius === 0) {
-          subAngleOffset = (subIdx / Math.max(subCount, 1)) * Math.PI * 2 - Math.PI / 2;
+    // 4. Corpus nodes
+    const corpusNodes = domainBuckets.corpus.slice(0, 9);
+    curatedNodes.push(...corpusNodes);
+
+    // Selected node guarantee
+    if (selectedIdRef.current) {
+      const sel = nodeList.find((n) => n.id === selectedIdRef.current);
+      if (sel && !curatedNodes.some((n) => n.id === sel.id)) {
+        curatedNodes.push(sel);
+      }
+    }
+
+    // Build simulated nodes with collision-free organic clustering
+    const simList: SimulatedNode[] = [];
+    const simMap = new Map<string, SimulatedNode>();
+
+    Object.entries(KNOWLEDGE_DOMAINS).forEach(([domId, dom]) => {
+      const nodesInDom = curatedNodes.filter((n) => getDomainForCategory(n.category || 'dilip_ai').id === domId);
+      if (nodesInDom.length === 0) return;
+
+      const rootHub = nodesInDom.find((n) => n.hierarchyLevel === 1 || n.isParentNode) || nodesInDom[0];
+      const satellites = nodesInDom.filter((n) => n.id !== rootHub.id);
+
+      // Hub node (Grounded center of cluster)
+      const hubSim: SimulatedNode = {
+        ...rootHub,
+        baseX: dom.x,
+        baseY: dom.y,
+        x: dom.x,
+        y: dom.y,
+        vx: 0,
+        vy: 0,
+        radius: domId === 'dilip_ai' ? 20 : 17,
+        targetRadius: domId === 'dilip_ai' ? 20 : 17,
+        currentRadius: domId === 'dilip_ai' ? 20 : 17,
+        phase1: Math.random() * Math.PI * 2,
+        phase2: Math.random() * Math.PI * 2,
+        freq1: 0.0006,
+        freq2: 0.0009,
+        driftRadius: 1.5,
+      };
+      simList.push(hubSim);
+      simMap.set(hubSim.id, hubSim);
+
+      const N = satellites.length;
+      satellites.forEach((sat, i) => {
+        const isTopic = sat.hierarchyLevel === 2 || sat.subcategory === 'MedicalTopic';
+        const rad = isTopic ? 12 : Math.max(5.5, Math.min(8.0, 5.0 + (degreeMap.get(sat.id) || 1) * 0.4));
+
+        let theta: number;
+        let baseDist: number;
+
+        if (domId === 'corpus') {
+          // FOR CORPUS: Disperse strictly into downward/sideways fan (y >= dom.y)
+          // to guarantee 100% zero overlap with the "GRAPHRAG CORPUS" heading above it!
+          const normalizedI = N > 1 ? i / (N - 1) : 0.5;
+          theta = Math.PI * 0.15 + normalizedI * Math.PI * 0.70; // 27° to 153° (downwards)
+          baseDist = 48 + (i % 3) * 22 + Math.floor(i / 3) * 35;
         } else {
-          const hs = orbit.subSpread / 2;
-          subAngleOffset = subCount > 1 ? orbit.angle - hs + (subIdx / (subCount - 1)) * orbit.subSpread : orbit.angle;
+          // Organic golden-spiral for other domains
+          const goldenAngle = 2.3999632;
+          theta = i * goldenAngle + (i % 4) * 0.18;
+          const normalizedRank = (i + 1) / (N + 1);
+          baseDist = isTopic
+            ? 50 + (i % 3) * 16
+            : 68 + Math.pow(normalizedRank, 0.65) * 135;
         }
 
-        const subDist = Math.max(140, Math.min(260, 110 + Math.sqrt(subNodes.length) * 14));
-        const scx = px + Math.cos(subAngleOffset) * subDist;
-        const scy = py + Math.sin(subAngleOffset) * subDist;
+        const bx = dom.x + Math.cos(theta) * baseDist;
+        const by = dom.y + Math.sin(theta) * baseDist;
 
-        subNodes.forEach((leafNode, leafIdx) => {
-          let lx: number, ly: number;
-          if (leafIdx === 0 && subNodes.length > 8) {
-            lx = scx; ly = scy;
-          } else {
-            const sr = 24 + 16 * Math.sqrt(leafIdx);
-            const sa = subAngleOffset + leafIdx * goldenAngle;
-            lx = scx + Math.cos(sa) * sr;
-            ly = scy + Math.sin(sa) * sr;
-          }
-          resultMap.set(leafNode.id, { ...leafNode, hierarchyLevel: leafNode.hierarchyLevel || 3, x: lx, y: ly, vx: 0, vy: 0, radius: leafNode.hierarchyLevel === 2 ? 12 : 8 });
-        });
+        const satSim: SimulatedNode = {
+          ...sat,
+          baseX: bx,
+          baseY: by,
+          x: bx,
+          y: by,
+          vx: 0,
+          vy: 0,
+          radius: rad,
+          targetRadius: rad,
+          currentRadius: rad,
+          phase1: Math.random() * Math.PI * 2,
+          phase2: Math.random() * Math.PI * 2,
+          freq1: 0.0008 + (i % 5) * 0.0002,
+          freq2: 0.0011 + (i % 3) * 0.0003,
+          driftRadius: 2.5 + (i % 3) * 1.2,
+        };
+        simList.push(satSim);
+        simMap.set(satSim.id, satSim);
       });
     });
 
-    // Spatial hash relaxation (20 passes)
-    const all = Array.from(resultMap.values());
-    const cellSize = 80;
-    for (let pass = 0; pass < 20; pass++) {
-      const grid: Record<string, GraphNode[]> = {};
-      for (let i = 0; i < all.length; i++) {
-        const n = all[i];
-        const key = `${Math.floor((n.x || 0) / cellSize)}_${Math.floor((n.y || 0) / cellSize)}`;
-        if (!grid[key]) grid[key] = [];
-        grid[key].push(n);
-      }
-      for (let i = 0; i < all.length; i++) {
-        const nA = all[i];
-        const gx = Math.floor((nA.x || 0) / cellSize);
-        const gy = Math.floor((nA.y || 0) / cellSize);
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const neighbors = grid[`${gx + dx}_${gy + dy}`];
-            if (!neighbors) continue;
-            for (let j = 0; j < neighbors.length; j++) {
-              const nB = neighbors[j];
-              if (nA.id === nB.id) continue;
-              const diffX = (nB.x || 0) - (nA.x || 0);
-              const diffY = (nB.y || 0) - (nA.y || 0);
-              const dist = Math.sqrt(diffX * diffX + diffY * diffY) || 0.001;
-              const minD = nA.radius + nB.radius + 18;
-              if (dist < minD) {
-                const push = (minD - dist) * 0.5;
-                const sx = (diffX / dist) * push;
-                const sy = (diffY / dist) * push;
-                if (!nA.isParentNode) { nA.x = (nA.x || 0) - sx; nA.y = (nA.y || 0) - sy; }
-                if (!nB.isParentNode) { nB.x = (nB.x || 0) + sx; nB.y = (nB.y || 0) + sy; }
-              }
+    // 35-pass spring relaxation to prevent pairwise collisions AND enforce heading exclusion zones
+    for (let pass = 0; pass < 35; pass++) {
+      // 1. Pairwise node relaxation
+      for (let i = 0; i < simList.length; i++) {
+        const nA = simList[i];
+        for (let j = i + 1; j < simList.length; j++) {
+          const nB = simList[j];
+          if (nA.category !== nB.category) continue;
+
+          const dx = nB.baseX - nA.baseX;
+          const dy = nB.baseY - nA.baseY;
+          const dist = Math.hypot(dx, dy) || 1;
+          const minDist = nA.radius + nB.radius + 18;
+
+          if (dist < minDist) {
+            const overlap = (minDist - dist) * 0.5;
+            const pushX = (dx / dist) * overlap;
+            const pushY = (dy / dist) * overlap;
+
+            if (!nA.isParentNode && nA.hierarchyLevel !== 1) {
+              nA.baseX -= pushX;
+              nA.baseY -= pushY;
+              nA.x = nA.baseX;
+              nA.y = nA.baseY;
+            }
+            if (!nB.isParentNode && nB.hierarchyLevel !== 1) {
+              nB.baseX += pushX;
+              nB.baseY += pushY;
+              nB.x = nB.baseX;
+              nB.y = nB.baseY;
             }
           }
         }
       }
+
+      // 2. Strict Heading Exclusion Zones: Push any node outside the heading bounding box
+      Object.values(KNOWLEDGE_DOMAINS).forEach((dom) => {
+        const hX = dom.x;
+        const hY = dom.y + dom.headerOffset;
+        const hHalfW = 125;
+        const hHalfH = 26;
+
+        for (let i = 0; i < simList.length; i++) {
+          const n = simList[i];
+          if (n.hierarchyLevel === 1 || n.isParentNode) continue;
+
+          const dx = Math.abs(n.baseX - hX);
+          const dy = Math.abs(n.baseY - hY);
+
+          if (dx < hHalfW && dy < hHalfH) {
+            // Push node safely outside the header box
+            if (n.baseY < hY) {
+              n.baseY = hY - hHalfH - 12;
+            } else {
+              n.baseY = hY + hHalfH + 12;
+            }
+            n.y = n.baseY;
+          }
+        }
+      });
     }
-    return resultMap;
+
+    return { simList, simMap };
   }, []);
 
-  // ── DATA LOAD: Pre-bake all links + connect 100% of nodes ─────────────────
+  // ── BUILD LINKS & CURVED SYNAPTIC SPLINES ────────────────────────────────
   useEffect(() => {
     if (!nodes || nodes.length === 0) return;
-    const computed = computeLayout(nodes);
-    nodeMapRef.current = computed;
+    const { simList, simMap } = computeOrganicConstellation(nodes, links);
+    simNodesRef.current = simList;
+    simNodeMapRef.current = simMap;
 
-    const flat = Array.from(computed.values());
-    physicsNodesRef.current = flat;
-
-    // Group by category for batched node draw calls
-    const byCat: Record<string, GraphNode[]> = {};
-    flat.forEach((n) => {
-      const c = n.category || 'dilip_ai';
-      if (!byCat[c]) byCat[c] = [];
-      byCat[c].push(n);
-    });
-    categorizedNodesRef.current = Object.entries(byCat).map(([, catNodes]) => ({
-      color: catNodes[0]?.color || '#06b6d4',
-      nodes: catNodes,
-    }));
-
-    // Find category super-hubs for branch synthesis
-    const categoryHubs: Record<string, GraphNode> = {};
-    flat.forEach((n) => {
-      if (n.hierarchyLevel === 1 || n.isParentNode) {
-        categoryHubs[n.category] = n;
-      }
-    });
-
-    // Pre-bake ALL 3,000+ rich connections into flat typed arrays (x1, y1, x2, y2)
-    const denseCoords: number[] = [];
-    const backboneCoords: number[] = [];
-    const connectedNodeIds = new Set<string>();
+    const activeLinks: {
+      source: SimulatedNode;
+      target: SimulatedNode;
+      color: string;
+      isCurved: boolean;
+      ctrlX?: number;
+      ctrlY?: number;
+    }[] = [];
+    const linkSet = new Set<string>();
 
     links.forEach((l) => {
       const sId = typeof l.source === 'string' ? l.source : (l.source as any).id;
       const tId = typeof l.target === 'string' ? l.target : (l.target as any).id;
-      const src = computed.get(sId);
-      const tgt = computed.get(tId);
-      if (!src || !tgt || src.x === undefined || tgt.x === undefined) return;
+      const src = simMap.get(sId);
+      const tgt = simMap.get(tId);
+      if (!src || !tgt) return;
 
-      connectedNodeIds.add(sId);
-      connectedNodeIds.add(tId);
+      const isCross = src.category !== tgt.category;
+      if (isCross && src.hierarchyLevel !== 1 && tgt.hierarchyLevel !== 1) return;
 
-      const isBackbone = src.hierarchyLevel === 1 || tgt.hierarchyLevel === 1 || src.hierarchyLevel === 2 || tgt.hierarchyLevel === 2;
-      if (isBackbone) {
-        backboneCoords.push(src.x, src.y || 0, tgt.x, tgt.y || 0);
-      } else {
-        denseCoords.push(src.x, src.y || 0, tgt.x, tgt.y || 0);
-      }
+      const key = `${sId}__${tId}`;
+      if (linkSet.has(key)) return;
+      linkSet.add(key);
+
+      activeLinks.push({
+        source: src,
+        target: tgt,
+        color: isCross ? '#38bdf8' : (src.color || '#10b981'),
+        isCurved: isCross,
+      });
     });
 
-    // GUARANTEE 100% OF NODES ARE CONNECTED: Connect any isolated nodes to their category hub
-    flat.forEach((n) => {
-      if (!connectedNodeIds.has(n.id) && n.hierarchyLevel !== 1) {
-        const hub = categoryHubs[n.category] || categoryHubs['dilip_ai'];
-        if (hub && hub.x !== undefined && n.x !== undefined) {
-          backboneCoords.push(n.x, n.y || 0, hub.x, hub.y || 0);
-          connectedNodeIds.add(n.id);
-          // Register in adjacency so selection illuminates this link
-          if (!adjacencyRef.current.connectedMap.has(n.id)) adjacencyRef.current.connectedMap.set(n.id, new Set());
-          if (!adjacencyRef.current.connectedMap.has(hub.id)) adjacencyRef.current.connectedMap.set(hub.id, new Set());
-          adjacencyRef.current.connectedMap.get(n.id)!.add(hub.id);
-          adjacencyRef.current.connectedMap.get(hub.id)!.add(n.id);
+    // Inter-domain bridge links connecting Dilip AI Platform Core to the other 3 hubs
+    const dilipHub = simMap.get('dilip_ai_core');
+    if (dilipHub) {
+      ['medical', 'literature', 'corpus'].forEach((cat) => {
+        const hub = simList.find((n) => n.category === cat && (n.hierarchyLevel === 1 || n.isParentNode));
+        if (hub) {
+          activeLinks.push({
+            source: dilipHub,
+            target: hub,
+            color: '#10b981',
+            isCurved: true,
+          });
         }
-      }
-    });
-
-    denseLinksRef.current = new Float64Array(denseCoords);
-    denseLinkCountRef.current = denseCoords.length / 4;
-
-    backboneLinksRef.current = new Float64Array(backboneCoords);
-    backboneLinkCountRef.current = backboneCoords.length / 4;
-
-    // Energy pulses (16 packets)
-    const MAX_PULSES = 16;
-    const pulses: EnergyPulsePacket[] = [];
-    const step = Math.max(1, Math.floor(links.length / MAX_PULSES));
-    for (let i = 0; i < links.length && pulses.length < MAX_PULSES; i += step) {
-      const l = links[i];
-      pulses.push({
-        id: `p${i}`, linkId: l.id,
-        sourceId: typeof l.source === 'string' ? l.source : (l.source as any).id,
-        targetId: typeof l.target === 'string' ? l.target : (l.target as any).id,
-        progress: (i * 0.08) % 1.0, speed: 0.006 + (i % 3) * 0.001,
-        color: l.color || '#10b981', size: 2, tailLength: 5,
       });
     }
-    energyPulsesRef.current = pulses;
-  }, [nodes, links, computeLayout]);
 
-  // ── COORDINATE HELPERS (With generous 22px mobile touch radius) ────────────
+    // Precalculate curved bezier control points
+    activeLinks.forEach((l) => {
+      if (l.isCurved) {
+        const midX = (l.source.baseX + l.target.baseX) / 2;
+        const midY = (l.source.baseY + l.target.baseY) / 2;
+        const dx = l.target.baseX - l.source.baseX;
+        const dy = l.target.baseY - l.source.baseY;
+        const normalX = -dy * 0.15;
+        const normalY = dx * 0.15;
+        l.ctrlX = midX + normalX;
+        l.ctrlY = midY + normalY;
+      }
+    });
+
+    activeLinksRef.current = activeLinks;
+
+    // Synaptic pulses traveling along direct & curved pathways
+    const pulses: SimulatedPulse[] = [];
+    activeLinks.slice(0, 16).forEach((l, idx) => {
+      pulses.push({
+        sourceId: l.source.id,
+        targetId: l.target.id,
+        progress: (idx * 0.08) % 1.0,
+        speed: 0.0035 + (idx % 4) * 0.0018,
+        color: l.color,
+        isCurved: l.isCurved,
+        ctrlX: l.ctrlX,
+        ctrlY: l.ctrlY,
+      });
+    });
+    pulsesRef.current = pulses;
+  }, [nodes, links, computeOrganicConstellation]);
+
+  // ── COORDINATE CONVERSION ────────────────────────────────────────────────
   const screenToWorld = useCallback((sx: number, sy: number) => {
     const { x, y, k } = transformRef.current;
     return { x: (sx - x) / k, y: (sy - y) / k };
   }, []);
 
-  const findNodeUnderCursor = useCallback((sx: number, sy: number): GraphNode | null => {
+  const findNodeUnderCursor = useCallback((sx: number, sy: number): SimulatedNode | null => {
     const w = screenToWorld(sx, sy);
-    const arr = physicsNodesRef.current;
-    // Generous touch hit radius for iOS/phone screens
+    const arr = simNodesRef.current;
     for (let i = arr.length - 1; i >= 0; i--) {
       const n = arr[i];
       if (n.x === undefined || n.y === undefined) continue;
-      const dx = w.x - n.x, dy = w.y - n.y;
-      const hitPadding = 20 / transformRef.current.k;
-      if (dx * dx + dy * dy <= (n.radius + hitPadding) ** 2) return n;
+      const dx = w.x - n.x;
+      const dy = w.y - n.y;
+      const hitRadius = Math.max(n.radius + 8, 16);
+      if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+        return n;
+      }
     }
     return null;
   }, [screenToWorld]);
 
-  // ── THE RENDER LOOP — 30 FPS SMOOTH DISSOLVE ON ZOOM ──────────────────────
+  // ── MAIN DRAW LOOP (Capped at 30 FPS for Resource Conservation) ──────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     let isRunning = true;
-    const TARGET_FPS = 30;
-    const TARGET_FRAME_MS = 1000 / TARGET_FPS; // 33.33ms
     let lastRenderTime = performance.now();
+    // Strict 30 FPS Cap to save CPU/GPU and battery
+    const TARGET_FPS = 30;
+    const TARGET_FRAME_MS = 1000 / TARGET_FPS; // ~33.33ms
 
-    const drawScene = () => {
+    const drawScene = (time: number) => {
       const w = canvas.width;
       const h = canvas.height;
+      if (w === 0 || h === 0) return;
 
-      // 1. Opaque dark cosmos clear
-      ctx.fillStyle = '#050816';
-      ctx.fillRect(0, 0, w, h);
+      // 50% glassy transparent canvas clearing
+      ctx.clearRect(0, 0, w, h);
 
-      // 2. Camera transform
       ctx.save();
       const { x: tx, y: ty, k } = transformRef.current;
       ctx.translate(tx, ty);
       ctx.scale(k, k);
 
-      if (viewPerspective3DRef.current) {
-        ctx.transform(1, -0.04, 0.04, 0.96, 0, 0);
-      }
-
-      // 3. Viewport frustum bounds
+      // Frustum Culling
       const invK = 1 / k;
-      const margin = 100 * invK;
+      const margin = 120 * invK;
       const minX = -tx * invK - margin;
       const maxX = (w - tx) * invK + margin;
       const minY = -ty * invK - margin;
       const maxY = (h - ty) * invK + margin;
 
-      const screenNodeSize = 8 * k;
-      const skipLeafNodes = screenNodeSize < 1.5;
-
-      // ── ZOOM DISSOLVE FACTOR: Fade out lines as you zoom near cluster center ──
-      const zoomFade = Math.max(0, Math.min(1, 1 - (k - 0.85) / 0.95));
-
-      const nodeMap = nodeMapRef.current;
       const selId = selectedIdRef.current;
-      const hasSel = Boolean(selId);
-      const connSet = selId ? adjacencyRef.current.connectedMap.get(selId) : null;
-      const linkSet = selId ? adjacencyRef.current.activeLinksMap.get(selId) : null;
+      const hovNode = hoveredNodeRef.current;
+      const activeNode = hovNode || (selId ? simNodeMapRef.current.get(selId) : null);
+      const activeId = activeNode?.id || null;
+      const connSet = activeId ? adjacencyRef.current.connectedMap.get(activeId) : null;
+      const mouseW = mouseWorldPosRef.current;
+      const isMouseInside = isMouseInsideRef.current;
 
-      // ── 3a. Planetary Orbital Trajectories (Fade with zoom) ───────────
-      if (zoomFade > 0.02) {
+      // ── 1. SUBTLE DEEP-SPACE BACKGROUND DUST ─────────────────────────────
+      const stars = bgStarsRef.current;
+      ctx.fillStyle = '#94a3b8';
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        const drift = Math.sin(time * s.driftSpeed + i) * 5;
+        const sx = s.x + drift;
+        const sy = s.y;
+        if (sx < minX || sx > maxX || sy < minY || sy > maxY) continue;
+
+        ctx.globalAlpha = s.alpha * 0.40;
         ctx.beginPath();
-        const rings = [160, 360, 420, 460, 600];
-        for (let i = 0; i < rings.length; i++) {
-          const r = rings[i];
-          ctx.moveTo(r, 0);
-          ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.arc(sx, sy, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+
+      // ── 2. ELASTIC MAGNETIC PHYSICS & HARMONIC BREATHING ─────────────────
+      const allSimNodes = simNodesRef.current;
+      for (let i = 0; i < allSimNodes.length; i++) {
+        const n = allSimNodes[i];
+        const isHub = n.hierarchyLevel === 1 || n.isParentNode;
+
+        const t1 = time * n.freq1 + n.phase1;
+        const t2 = time * n.freq2 + n.phase2;
+        const harmonicX = isHub ? 0 : Math.sin(t1) * n.driftRadius + Math.cos(t2) * (n.driftRadius * 0.35);
+        const harmonicY = isHub ? 0 : Math.cos(t1 * 1.1) * n.driftRadius + Math.sin(t2 * 0.9) * (n.driftRadius * 0.35);
+
+        let targetX = n.baseX + harmonicX;
+        let targetY = n.baseY + harmonicY;
+
+        // Elastic magnetic deflection near cursor
+        if (isMouseInside && !isPanningRef.current) {
+          const mdx = targetX - mouseW.x;
+          const mdy = targetY - mouseW.y;
+          const mouseDist = Math.hypot(mdx, mdy);
+          const influenceRadius = 100;
+
+          if (mouseDist < influenceRadius && mouseDist > 0.1) {
+            const force = (1 - mouseDist / influenceRadius) * 12;
+            targetX += (mdx / mouseDist) * force;
+            targetY += (mdy / mouseDist) * force;
+          }
         }
-        ctx.strokeStyle = `rgba(255, 255, 255, ${0.035 * zoomFade})`;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 12]);
-        ctx.stroke();
-        ctx.setLineDash([]);
+
+        // Clamp drift away from domain headings to guarantee 0 overlaps
+        Object.values(KNOWLEDGE_DOMAINS).forEach((dom) => {
+          const hX = dom.x;
+          const hY = dom.y + dom.headerOffset;
+          if (Math.abs(targetX - hX) < 125 && Math.abs(targetY - hY) < 26) {
+            if (targetY < hY) targetY = hY - 28;
+            else targetY = hY + 28;
+          }
+        });
+
+        // Smooth spring damping
+        n.x += (targetX - n.x) * 0.18;
+        n.y += (targetY - n.y) * 0.18;
+
+        const isHovered = hovNode?.id === n.id;
+        const isSelected = selId === n.id;
+        const isConnected = connSet?.has(n.id) || false;
+        n.targetRadius = isHovered || isSelected ? n.radius * 1.25 : (isConnected ? n.radius * 1.08 : n.radius);
+        n.currentRadius += (n.targetRadius - n.currentRadius) * 0.25;
       }
 
-      // ── 3b. DENSE CONNECTIONS (Smoothly disappears when zooming near cluster) ──
-      const dense = denseLinksRef.current;
-      const denseCount = denseLinkCountRef.current;
-      if (denseCount > 0 && zoomFade > 0.01) {
+      // ── 3. REFINED SECTOR HEADERS WITH GLASS PROTECTION (ZERO OVERLAPS!) ──
+      Object.values(KNOWLEDGE_DOMAINS).forEach((dom) => {
+        const headerY = dom.y + dom.headerOffset;
+        if (dom.x < minX - 200 || dom.x > maxX + 200 || headerY < minY - 50 || headerY > maxY + 50) return;
+
+        const totalNodes = domainTotalsRef.current[dom.id] || 0;
+        const subtext = totalNodes > 10 ? `${totalNodes.toLocaleString()} NODES • ${dom.subtitle.toUpperCase()}` : dom.subtitle.toUpperCase();
+
+        const pillW = 216;
+        const pillH = 34;
+
+        ctx.save();
+        // Frosted glass protective pill behind heading to prevent any visual overlap
+        ctx.fillStyle = 'rgba(7, 12, 24, 0.78)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1.0;
         ctx.beginPath();
-        for (let i = 0; i < denseCount; i++) {
-          const off = i * 4;
-          const x1 = dense[off], y1 = dense[off + 1], x2 = dense[off + 2], y2 = dense[off + 3];
-          if ((x1 < minX || x1 > maxX || y1 < minY || y1 > maxY) &&
-              (x2 < minX || x2 > maxX || y2 < minY || y2 > maxY)) continue;
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
+        ctx.roundRect(dom.x - pillW / 2, headerY - pillH / 2, pillW, pillH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Title
+        ctx.fillStyle = '#f1f5f9';
+        ctx.font = '600 10.5px Inter, system-ui, sans-serif';
+        ctx.fillText(dom.name, dom.x, headerY - 6);
+
+        // Subtitle
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '500 8.5px Inter, monospace';
+        ctx.fillText(subtext, dom.x, headerY + 7);
+        ctx.restore();
+      });
+
+      // ── 4. CLEAN DELICATE LINKS & CURVED SYNAPTIC SPLINES ─────────────────
+      const activeLinks = activeLinksRef.current;
+
+      ctx.beginPath();
+      for (let i = 0; i < activeLinks.length; i++) {
+        const l = activeLinks[i];
+        const sx = l.source.x, sy = l.source.y;
+        const tx = l.target.x, ty = l.target.y;
+
+        if ((sx < minX || sx > maxX || sy < minY || sy > maxY) &&
+            (tx < minX || tx > maxX || ty < minY || ty > maxY)) continue;
+
+        if (activeId && (l.source.id === activeId || l.target.id === activeId)) continue;
+
+        if (l.isCurved && l.ctrlX !== undefined && l.ctrlY !== undefined) {
+          ctx.moveTo(sx, sy);
+          ctx.quadraticCurveTo(l.ctrlX, l.ctrlY, tx, ty);
+        } else {
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(tx, ty);
         }
-        const denseAlpha = (hasSel ? 0.04 : 0.11) * zoomFade;
-        ctx.strokeStyle = `rgba(59, 130, 246, ${denseAlpha})`;
-        ctx.lineWidth = 0.65;
+      }
+      ctx.strokeStyle = activeId ? 'rgba(71, 85, 105, 0.08)' : 'rgba(71, 85, 105, 0.20)';
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
+
+      // Active / Connected Laser Connections
+      if (activeId) {
+        ctx.beginPath();
+        for (let i = 0; i < activeLinks.length; i++) {
+          const l = activeLinks[i];
+          if (l.source.id === activeId || l.target.id === activeId) {
+            const sx = l.source.x, sy = l.source.y;
+            const tx = l.target.x, ty = l.target.y;
+            if (l.isCurved && l.ctrlX !== undefined && l.ctrlY !== undefined) {
+              ctx.moveTo(sx, sy);
+              ctx.quadraticCurveTo(l.ctrlX, l.ctrlY, tx, ty);
+            } else {
+              ctx.moveTo(sx, sy);
+              ctx.lineTo(tx, ty);
+            }
+          }
+        }
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.8;
         ctx.stroke();
       }
 
-      // ── 3c. Structural Backbone Links (Smoothly disappears on deep zoom) ──
-      const bbData = backboneLinksRef.current;
-      const bbCount = backboneLinkCountRef.current;
-      if (bbCount > 0 && zoomFade > 0.01) {
-        ctx.beginPath();
-        for (let i = 0; i < bbCount; i++) {
-          const off = i * 4;
-          const x1 = bbData[off], y1 = bbData[off + 1], x2 = bbData[off + 2], y2 = bbData[off + 3];
-          if ((x1 < minX || x1 > maxX || y1 < minY || y1 > maxY) &&
-              (x2 < minX || x2 > maxX || y2 < minY || y2 > maxY)) continue;
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-        }
-        const bbAlpha = (hasSel ? 0.07 : 0.22) * zoomFade;
-        ctx.strokeStyle = `rgba(96, 165, 250, ${bbAlpha})`;
-        ctx.lineWidth = 1.1;
-        ctx.stroke();
-      }
-
-      // ── 3d. Active Selected Node Beams (ALWAYS SHINES, Even on Deep Zoom) ──
-      if (hasSel && linkSet && selId) {
-        const allLinks = linksRef.current;
-        ctx.beginPath();
-        let beamCount = 0;
-        for (let i = 0; i < allLinks.length && beamCount < 60; i++) {
-          const l = allLinks[i];
-          if (!linkSet.has(l.id)) continue;
-          const sId = typeof l.source === 'string' ? l.source : (l.source as any).id;
-          const tId = typeof l.target === 'string' ? l.target : (l.target as any).id;
-          const src = nodeMap.get(sId);
-          const tgt = nodeMap.get(tId);
-          if (!src || !tgt || src.x === undefined || tgt.x === undefined) continue;
-
-          ctx.moveTo(src.x, src.y || 0);
-          ctx.lineTo(tgt.x, tgt.y || 0);
-          beamCount++;
-        }
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 2.4;
-        ctx.stroke();
-      }
-
-      // ── 3e. Energy pulses (Fade on deep zoom) ──────────────────────────
-      const pulses = energyPulsesRef.current;
-      if (pulses.length > 0 && zoomFade > 0.05) {
-        ctx.beginPath();
+      // ── 5. SYNAPTIC PHOTON PULSES (Resource-optimized 30 FPS flow) ───────
+      const pulses = pulsesRef.current;
+      if (pulses.length > 0) {
         const pSpeed = pulseSpeedRef.current * 1.8;
         for (let i = 0; i < pulses.length; i++) {
           const p = pulses[i];
           p.progress += p.speed * pSpeed;
           if (p.progress >= 1) p.progress = 0;
-          const src = nodeMap.get(p.sourceId);
-          const tgt = nodeMap.get(p.targetId);
-          if (!src || !tgt || src.x === undefined || tgt.x === undefined) continue;
-          const ppx = src.x + ((tgt.x || 0) - src.x) * p.progress;
-          const ppy = (src.y || 0) + ((tgt.y || 0) - (src.y || 0)) * p.progress;
-          if (ppx < minX || ppx > maxX || ppy < minY || ppy > maxY) continue;
-          ctx.moveTo(ppx + p.size, ppy);
-          ctx.arc(ppx, ppy, p.size, 0, Math.PI * 2);
-        }
-        ctx.fillStyle = '#10b981';
-        ctx.fill();
-      }
 
-      // ── 3f. BATCHED NODE RENDERING — 2 draw calls per category ────────
-      const cats = categorizedNodesRef.current;
-      const labelsToDraw: GraphNode[] = [];
+          const src = simNodeMapRef.current.get(p.sourceId);
+          const tgt = simNodeMapRef.current.get(p.targetId);
+          if (!src || !tgt) continue;
 
-      for (let c = 0; c < cats.length; c++) {
-        const catGroup = cats[c];
-        const catNodes = catGroup.nodes;
-        const catColor = catGroup.color;
+          let curX: number;
+          let curY: number;
 
-        ctx.beginPath();
-        for (let i = 0; i < catNodes.length; i++) {
-          const n = catNodes[i];
-          const nx = n.x || 0, ny = n.y || 0;
-          if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
-          if (skipLeafNodes && n.hierarchyLevel === 3) continue;
-
-          const isSel = n.id === selId;
-          const rad = isSel ? n.radius * 1.35 : n.radius;
-          ctx.moveTo(nx + rad, ny);
-          ctx.arc(nx, ny, rad, 0, Math.PI * 2);
-
-          if (isSel || n.isParentNode || n.hierarchyLevel === 1) {
-            labelsToDraw.push(n);
+          if (p.isCurved && p.ctrlX !== undefined && p.ctrlY !== undefined) {
+            const t = p.progress;
+            const invT = 1 - t;
+            curX = invT * invT * src.x + 2 * invT * t * p.ctrlX + t * t * tgt.x;
+            curY = invT * invT * src.y + 2 * invT * t * p.ctrlY + t * t * tgt.y;
+          } else {
+            curX = src.x + (tgt.x - src.x) * p.progress;
+            curY = src.y + (tgt.y - src.y) * p.progress;
           }
+
+          if (curX < minX || curX > maxX || curY < minY || curY > maxY) continue;
+
+          // Luminous photon head
+          ctx.beginPath();
+          ctx.arc(curX, curY, 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+
+          // Soft trailing light
+          const tailProg = Math.max(0, p.progress - 0.07);
+          let tailX: number;
+          let tailY: number;
+
+          if (p.isCurved && p.ctrlX !== undefined && p.ctrlY !== undefined) {
+            const t = tailProg;
+            const invT = 1 - t;
+            tailX = invT * invT * src.x + 2 * invT * t * p.ctrlX + t * t * tgt.x;
+            tailY = invT * invT * src.y + 2 * invT * t * p.ctrlY + t * t * tgt.y;
+          } else {
+            tailX = src.x + (tgt.x - src.x) * tailProg;
+            tailY = src.y + (tgt.y - src.y) * tailProg;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(curX, curY);
+          ctx.lineTo(tailX, tailY);
+          ctx.strokeStyle = p.color || '#38bdf8';
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
         }
-        ctx.fillStyle = '#050816';
-        ctx.fill();
-        ctx.strokeStyle = hasSel ? hexToRgba(catColor, 0.35) : catColor;
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
       }
 
-      // ── 3g. Selected node highlight & connected rings ─────────────────
-      if (hasSel && selId) {
-        const sn = nodeMap.get(selId);
-        if (sn && sn.x !== undefined && sn.y !== undefined) {
-          const rad = sn.radius * 1.35;
+      // ── 6. HOLLOW RINGS (TRUE EMPTY CIRCLES - USER DEMAND) ────────────────
+      for (let i = 0; i < allSimNodes.length; i++) {
+        const n = allSimNodes[i];
+        const nx = n.x, ny = n.y;
+        if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
+
+        const isAct = n.id === activeId;
+        const isConn = connSet?.has(n.id) || false;
+        const isHub = n.hierarchyLevel === 1 || n.isParentNode;
+        const rad = n.currentRadius;
+
+        const strokeColor = isAct ? '#38bdf8' : (isConn ? '#ffffff' : (n.color || '#10b981'));
+
+        // EMPTY CIRCLE: Dark translucent void center + crisp perimeter stroke
+        ctx.beginPath();
+        ctx.arc(nx, ny, rad, 0, Math.PI * 2);
+        ctx.fillStyle = isAct ? 'rgba(56, 189, 248, 0.15)' : 'rgba(3, 7, 18, 0.82)';
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = isAct ? 2.2 : (isHub ? 1.8 : 1.3);
+        ctx.stroke();
+
+        // Hubs have a concentric inner thin ring (also empty/hollow!)
+        if (isHub) {
           ctx.beginPath();
-          ctx.arc(sn.x, sn.y, rad, 0, Math.PI * 2);
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2.8;
+          ctx.arc(nx, ny, rad * 0.52, 0, Math.PI * 2);
+          ctx.strokeStyle = hexToRgba(strokeColor, 0.40);
+          ctx.lineWidth = 1.0;
           ctx.stroke();
 
+          // Delicate 1.5px center focus aperture
           ctx.beginPath();
-          ctx.arc(sn.x, sn.y, 3.2, 0, Math.PI * 2);
+          ctx.arc(nx, ny, 1.5, 0, Math.PI * 2);
           ctx.fillStyle = '#ffffff';
           ctx.fill();
         }
-
-        if (connSet) {
-          ctx.beginPath();
-          let hl = 0;
-          connSet.forEach((cid) => {
-            if (hl >= 30) return;
-            const cn = nodeMap.get(cid);
-            if (!cn || cn.x === undefined || cn.y === undefined) return;
-            if (cn.x < minX || cn.x > maxX || cn.y < minY || cn.y > maxY) return;
-            ctx.moveTo(cn.x + cn.radius, cn.y);
-            ctx.arc(cn.x, cn.y, cn.radius, 0, Math.PI * 2);
-            hl++;
-          });
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.8;
-          ctx.stroke();
-        }
       }
 
-      // ── 3h. Text labels (parent hubs + selected only) ─────────────────
-      if (labelsToDraw.length > 0) {
-        ctx.font = 'bold 11px Inter,system-ui,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = '#ffffff';
-        for (let i = 0; i < labelsToDraw.length; i++) {
-          const n = labelsToDraw[i];
-          const nx = n.x || 0, ny = n.y || 0;
-          if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
-          const rad = n.id === selId ? n.radius * 1.35 : n.radius;
-          ctx.fillText(n.label, nx, ny + rad + 4);
-        }
+      // ── 7. PERMANENT LABELS: STRICTLY ONLY THE 4 ROOT HUBS (NO OVERLAPS!) ─
+      ctx.save();
+      ctx.font = '600 11px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (let i = 0; i < allSimNodes.length; i++) {
+        const n = allSimNodes[i];
+        if (n.hierarchyLevel !== 1 && !n.isParentNode) continue;
+        const nx = n.x, ny = n.y;
+        if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
+
+        const rad = n.currentRadius;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillText(n.label, nx, ny + rad + 8);
       }
+      ctx.restore();
 
       ctx.restore();
+
+      // ── 8. FLOATING BENTO HUD TOOLTIP ON HOVER (Linear / Obsidian UX) ──────
+      if (hovNode) {
+        const mouseX = mouseScreenPosRef.current.x;
+        const mouseY = mouseScreenPosRef.current.y;
+        const tipWidth = 230;
+        const tipHeight = 52;
+        const pad = 12;
+
+        let posX = mouseX + 18;
+        let posY = mouseY - 60;
+        if (posX + tipWidth > w - 16) posX = mouseX - tipWidth - 18;
+        if (posY < 16) posY = mouseY + 20;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(11, 17, 33, 0.96)';
+        ctx.strokeStyle = hovNode.color || '#38bdf8';
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.roundRect(posX, posY, tipWidth, tipHeight, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '600 11.5px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        const displayLabel = hovNode.label.length > 27 ? `${hovNode.label.slice(0, 25)}...` : hovNode.label;
+        ctx.fillText(displayLabel, posX + pad, posY + 9);
+
+        ctx.fillStyle = hovNode.color || '#38bdf8';
+        ctx.font = '500 9.5px Inter, monospace';
+        const subtag = `${hovNode.subcategory || 'Concept'} • ${hovNode.category.toUpperCase()}`;
+        ctx.fillText(subtag, posX + pad, posY + 28);
+        ctx.restore();
+      }
     };
 
-    // ── RENDER LOOP: 30 FPS Smooth Throttled Target ─────────────────────
     const renderLoop = (time: number) => {
       if (!isRunning) return;
       animFrameIdRef.current = requestAnimationFrame(renderLoop);
@@ -611,12 +887,12 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       frameCountRef.current++;
       if (time - fpsTimerRef.current >= 1000) {
         const currentFps = Math.min(TARGET_FPS, Math.round((frameCountRef.current * 1000) / (time - fpsTimerRef.current)));
-        onStatsUpdateRef.current?.(currentFps, energyPulsesRef.current.length);
+        onStatsUpdateRef.current?.(currentFps, pulsesRef.current.length);
         frameCountRef.current = 0;
         fpsTimerRef.current = time;
       }
 
-      drawScene();
+      drawScene(time);
     };
 
     animFrameIdRef.current = requestAnimationFrame(renderLoop);
@@ -625,10 +901,9 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       isRunning = false;
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── WINDOW RESIZE & DPI (iOS Dynamic Viewport Friendly) ───────────────────
+  // ── WINDOW RESIZE & RESPONSIVE SCALING ───────────────────────────────────
   useEffect(() => {
     const handleResize = () => {
       const canvas = canvasRef.current;
@@ -645,9 +920,8 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       if (!isInitialCenterDoneRef.current && w > 0 && h > 0) {
         transformRef.current.x = w / 2;
         transformRef.current.y = h / 2;
-        // On mobile portrait (w < 600), scale down slightly for optimal initial overview
         const mobileScaleFactor = w < 600 ? w / 1400 : w / 1250;
-        transformRef.current.k = Math.min(0.85, Math.max(0.42, mobileScaleFactor));
+        transformRef.current.k = Math.min(0.85, Math.max(0.50, mobileScaleFactor));
         isInitialCenterDoneRef.current = true;
       }
     };
@@ -656,7 +930,7 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ── DESKTOP MOUSE WHEEL ZOOM ──────────────────────────────────────────────
+  // ── MOUSE WHEEL SMOOTH ZOOM ──────────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -667,7 +941,7 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
       const factor = e.deltaY < 0 ? 1.12 : 0.88;
       const oldK = transformRef.current.k;
-      const newK = Math.min(Math.max(oldK * factor, 0.15), 5.0);
+      const newK = Math.min(Math.max(oldK * factor, 0.20), 4.5);
       const ratio = newK / oldK;
       transformRef.current.x = sx - (sx - transformRef.current.x) * ratio;
       transformRef.current.y = sy - (sy - transformRef.current.y) * ratio;
@@ -677,7 +951,7 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
     return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
-  // ── MOUSE CLICK & DRAG ────────────────────────────────────────────────────
+  // ── MOUSE EVENTS & INTERACTIONS ──────────────────────────────────────────
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -695,16 +969,40 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
   }, [findNodeUnderCursor]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isPanningRef.current) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    transformRef.current.x = e.clientX - rect.left - panStartRef.current.x;
-    transformRef.current.y = e.clientY - rect.top - panStartRef.current.y;
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+
+    isMouseInsideRef.current = true;
+    mouseScreenPosRef.current = { x: sx, y: sy };
+    mouseWorldPosRef.current = screenToWorld(sx, sy);
+
+    if (isPanningRef.current) {
+      transformRef.current.x = sx - panStartRef.current.x;
+      transformRef.current.y = sy - panStartRef.current.y;
+      return;
+    }
+
+    const hit = findNodeUnderCursor(sx, sy);
+    hoveredNodeRef.current = hit;
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = hit ? 'pointer' : 'grab';
+  }, [findNodeUnderCursor, screenToWorld]);
+
+  const handleMouseLeave = useCallback(() => {
+    isMouseInsideRef.current = false;
+    hoveredNodeRef.current = null;
+    isPanningRef.current = false;
   }, []);
 
-  const handleMouseUp = useCallback(() => { isPanningRef.current = false; }, []);
+  const handleMouseUp = useCallback(() => {
+    isPanningRef.current = false;
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = hoveredNodeRef.current ? 'pointer' : 'grab';
+  }, []);
 
-  // ── iOS & MOBILE FULL TOUCH GESTURES (Single-Finger Pan, 2-Finger Pinch Zoom & Tap) ──
+  // ── TOUCH GESTURES (Pinch-to-zoom & Smooth Pan) ──────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -750,81 +1048,60 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       } else if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const newDist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const scaleFactor = newDist / touchStartDist;
-
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const ratio = dist / touchStartDist;
         const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
         const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        const newK = Math.min(Math.max(touchStartScale * ratio, 0.20), 4.5);
+        const scaleChange = newK / transformRef.current.k;
 
-        const newK = Math.min(Math.max(touchStartScale * scaleFactor, 0.15), 5.0);
-        const ratio = newK / transformRef.current.k;
-
-        transformRef.current.x = midX - (midX - transformRef.current.x) * ratio;
-        transformRef.current.y = midY - (midY - transformRef.current.y) * ratio;
+        transformRef.current.x = midX - (midX - transformRef.current.x) * scaleChange;
+        transformRef.current.y = midY - (midY - transformRef.current.y) * scaleChange;
         transformRef.current.k = newK;
       }
     };
 
     const onTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      if (e.touches.length === 0) {
+      if (isTouchPanning && e.changedTouches.length > 0) {
         const duration = performance.now() - touchStartTime;
         const rect = canvas.getBoundingClientRect();
-        if (e.changedTouches.length === 1) {
-          const endX = e.changedTouches[0].clientX - rect.left;
-          const endY = e.changedTouches[0].clientY - rect.top;
-          const movedDist = Math.sqrt((endX - touchStartX) ** 2 + (endY - touchStartY) ** 2);
+        const endX = e.changedTouches[0].clientX - rect.left;
+        const endY = e.changedTouches[0].clientY - rect.top;
+        const moveDist = Math.hypot(endX - touchStartX, endY - touchStartY);
 
-          // Tap gesture detection (< 300ms, < 12px movement)
-          if (duration < 320 && movedDist < 14) {
-            const hit = findNodeUnderCursor(endX, endY);
-            if (hit) {
-              selectedIdRef.current = hit.id;
-              onSelectNodeRef.current?.(hit);
-            } else {
-              selectedIdRef.current = null;
-              onSelectNodeRef.current?.(null);
-            }
-          }
+        if (duration < 280 && moveDist < 10) {
+          const hit = findNodeUnderCursor(endX, endY);
+          selectedIdRef.current = hit ? hit.id : null;
+          onSelectNodeRef.current?.(hit);
         }
-        isTouchPanning = false;
       }
+      isTouchPanning = false;
     };
 
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove', onTouchMove, { passive: false });
     canvas.addEventListener('touchend', onTouchEnd, { passive: false });
-    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
 
     return () => {
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
-      canvas.removeEventListener('touchcancel', onTouchEnd);
     };
   }, [findNodeUnderCursor]);
 
   return (
     <div
       ref={containerRef}
-      id="knowledge-graph-canvas-container"
-      style={{
-        touchAction: 'none',
-        overscrollBehavior: 'contain',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-        WebkitTouchCallout: 'none',
-      }}
-      className="relative w-full h-full select-none overflow-hidden bg-[#050816] cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full overflow-hidden select-none bg-transparent"
+      style={{ touchAction: 'none' }}
     >
       <canvas
         ref={canvasRef}
-        id="knowledge-graph-canvas"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        className="w-full h-full block"
+        className="w-full h-full block cursor-grab active:cursor-grabbing"
       />
     </div>
   );

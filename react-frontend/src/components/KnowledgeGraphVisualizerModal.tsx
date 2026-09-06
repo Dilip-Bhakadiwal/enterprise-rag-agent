@@ -121,52 +121,24 @@ export const KnowledgeGraphVisualizerModal: React.FC<KnowledgeGraphVisualizerMod
             userSelect: "none",
             WebkitTouchCallout: "none",
           }}
-          className="fixed inset-0 h-[100dvh] w-full z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm select-none font-inter overflow-hidden"
+          className="fixed inset-0 h-[100dvh] w-full z-50 flex items-center justify-center bg-black/50 backdrop-blur-xl select-none font-inter overflow-hidden"
         >
           {/* ── 1. Fullscreen Canvas (Unmounted when closed -> 0% CPU, 0 loops) ── */}
-          <div className="absolute inset-0 w-full h-full z-10">
+          <div className="absolute inset-0 w-full h-full z-10 bg-transparent">
             <KnowledgeGraphCanvas
               nodes={liveNodes}
               links={liveLinks}
               selectedNodeId={selectedNode?.id || null}
               viewPerspective3D={false}
               onSelectNode={(node) => setSelectedNode(node)}
-              onStatsUpdate={(calculatedFps) => {
-                if (fpsRef.current) {
-                  fpsRef.current.innerText = `${calculatedFps} FPS`;
-                }
-              }}
             />
           </div>
 
-          {/* ── 2. Top Minimalist Floating Status Bar (iOS Safe-Area Aware) ── */}
-          <div className="absolute top-4 sm:top-6 inset-x-4 sm:inset-x-8 z-30 flex items-center justify-between pointer-events-none">
-            {/* Top-Left: Live Status Badge & FPS */}
-            <div className="pointer-events-auto flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-black/75 border border-white/15 backdrop-blur-md text-[11px] sm:text-xs shadow-2xl">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-emerald-500"></span>
-                </span>
-                <span className="font-bold text-white tracking-wide truncate max-w-[140px] sm:max-w-none">
-                  {isNeo4jLive ? "Neo4j AuraDB Live" : "Streaming Neo4j AuraDB..."}
-                </span>
-              </div>
-              <span className="text-white/20">|</span>
-              <div className="flex items-center gap-1.5 text-slate-300 font-mono text-[10px] sm:text-[11px]">
-                <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
-                <span ref={fpsRef} className="text-emerald-400 font-semibold">30 FPS</span>
-                <span className="text-white/30">•</span>
-                <span className="font-medium text-slate-200">{liveNodes.length} Nodes</span>
-                <span className="text-white/30">•</span>
-                <span className="font-medium text-emerald-300/90">{liveLinks.length >= 1000 ? `${(liveLinks.length / 1000).toFixed(1)}K` : liveLinks.length} Edges</span>
-              </div>
-            </div>
-
-            {/* Top-Right: Sleek Glass Close Button */}
+          {/* ── 2. Sleek Glass Close Button (Top-Right) ── */}
+          <div className="absolute top-4 sm:top-6 right-4 sm:right-8 z-30 pointer-events-auto">
             <button
               onClick={onClose}
-              className="pointer-events-auto p-2.5 sm:p-3 rounded-full bg-black/75 hover:bg-black/90 border border-white/20 hover:border-white/50 text-white transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md shadow-2xl touch-manipulation"
+              className="p-2.5 sm:p-3 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 hover:border-white/40 text-white transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md shadow-2xl touch-manipulation"
               aria-label="Close Knowledge Graph"
             >
               <X className="w-5 h-5" />

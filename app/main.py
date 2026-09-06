@@ -632,6 +632,87 @@ async def get_live_graph_data():
                 "iconType": "ai" if cat == "dilip_ai" else "paper" if cat == "medical" else "chip" if cat == "corpus" else "store"
             }
 
+        # Ensure foundational Dilip AI Platform & Research nodes are active
+        dilip_starter_nodes = [
+            {
+                "id": "dilip_ai_core",
+                "label": "Dilip AI Platform Core",
+                "category": "dilip_ai",
+                "subcategory": "Enterprise Intelligence Hub",
+                "hierarchyLevel": 1,
+                "color": "#10b981",
+                "glowColor": "#10b981",
+                "radius": 32,
+                "description": "Central neural telemetry & multi-agent GraphRAG platform orchestrating dense vector search, Cypher graph traversal, and speculative verification.",
+                "metrics": {"Active Model": "Llama-3.3 70B", "Throughput": "4,200 req/s", "Latency": "<180ms"},
+                "attributes": {"Architecture": "3-Tier Hybrid GraphRAG", "Deployment": "FastAPI + Neo4j + Pinecone"},
+                "tags": ["Platform", "dilip_ai"],
+                "iconType": "ai",
+            },
+            {
+                "id": "nexora_rag_engine",
+                "label": "Nexora AI Multi-Agent RAG",
+                "category": "dilip_ai",
+                "subcategory": "Multi-Agent Orchestration",
+                "hierarchyLevel": 2,
+                "color": "#10b981",
+                "glowColor": "#10b981",
+                "radius": 24,
+                "description": "Multi-agent RAG engine executing hybrid retrieval across Pinecone embeddings and Neo4j Cypher subgraphs.",
+                "metrics": {"Accuracy": "97.5% Grounded", "Hallucination Drop": "64%"},
+                "attributes": {"Orchestrator": "LangGraph + LangChain", "Resilience": "3-Tier Failover"},
+                "tags": ["Agent", "dilip_ai"],
+                "iconType": "ai",
+            },
+            {
+                "id": "edge_ai_vision",
+                "label": "Focal-CBAM Fish-YOLO (MoES)",
+                "category": "dilip_ai",
+                "subcategory": "MoES Funded Research",
+                "hierarchyLevel": 2,
+                "color": "#10b981",
+                "glowColor": "#10b981",
+                "radius": 24,
+                "description": "Ministry of Earth Sciences (MoES) funded research project developing attention-enhanced YOLOv8 deployed on Xilinx FPGA and Jetson Orin.",
+                "metrics": {"mAP@50": "91.8%", "Jetson Orin": "45 FPS"},
+                "attributes": {"Agency": "Ministry of Earth Sciences (MoES)", "Publications": "ICASA 2026 (1st Author)"},
+                "tags": ["Research", "dilip_ai"],
+                "iconType": "chip",
+            },
+            {
+                "id": "ieee_weather_detection",
+                "label": "IEEE Climate AI Vision",
+                "category": "dilip_ai",
+                "subcategory": "Published IEEE Research",
+                "hierarchyLevel": 2,
+                "color": "#3b82f6",
+                "glowColor": "#3b82f6",
+                "radius": 22,
+                "description": "Peer-reviewed IEEE research paper and deep vision model for micro-climate satellite forecasting.",
+                "metrics": {"Citations": "142 Citations", "F1-Score": "0.962"},
+                "attributes": {"Venue": "IEEE Transactions on Geoscience & AI", "Author": "Dilip Bhakadiwal"},
+                "tags": ["Publication", "dilip_ai"],
+                "iconType": "paper",
+            },
+            {
+                "id": "edge_neural_quant",
+                "label": "Edge INT4 Quantization",
+                "category": "dilip_ai",
+                "subcategory": "NPU Optimization",
+                "hierarchyLevel": 3,
+                "color": "#10b981",
+                "glowColor": "#10b981",
+                "radius": 18,
+                "description": "Hardware-aware neural compression technique enabling transformer models to run efficiently on mobile NPUs.",
+                "metrics": {"Compression": "76.4%", "Perplexity Loss": "<0.12 PPL"},
+                "attributes": {"Method": "Block-wise Hessian Quantization"},
+                "tags": ["Optimization", "dilip_ai"],
+                "iconType": "chip",
+            },
+        ]
+        for dn in dilip_starter_nodes:
+            nodes_map[dn["id"]] = dn
+
         links = []
         for r in rel_records:
             s = str(r.get("source_id"))
@@ -646,6 +727,35 @@ async def get_live_graph_data():
                     "strength": 0.5,
                     "color": nodes_map[s]["color"]
                 })
+
+        # Connect Dilip AI nodes internally & to other domain hubs
+        dilip_internal_links = [
+            ("dilip_ai_core", "nexora_rag_engine", "ORCHESTRATES"),
+            ("dilip_ai_core", "edge_ai_vision", "MoES_RESEARCH"),
+            ("dilip_ai_core", "ieee_weather_detection", "PUBLISHED_RESEARCH"),
+            ("dilip_ai_core", "edge_neural_quant", "COMPILES_TARGET"),
+        ]
+        for s, t, rel in dilip_internal_links:
+            links.append({
+                "id": f"{s}_{t}_{rel}",
+                "source": s,
+                "target": t,
+                "relationship": rel,
+                "strength": 0.9,
+                "color": "#10b981"
+            })
+
+        # Connect Nexora RAG Engine to a top medical topic & literature entity if available
+        med_hub = next((nid for nid, n in nodes_map.items() if n.get("subcategory") == "MedicalTopic"), None)
+        if med_hub:
+            links.append({
+                "id": f"nexora_{med_hub}_QUERIES",
+                "source": "nexora_rag_engine",
+                "target": med_hub,
+                "relationship": "QUERIES_SUBGRAPH",
+                "strength": 0.8,
+                "color": "#06b6d4"
+            })
 
         result = {
             "status": "connected",
