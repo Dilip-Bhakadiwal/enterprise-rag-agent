@@ -594,13 +594,13 @@ const ENTERPRISE_WELCOME: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Welcome to **Nexora AI Copilot**. Ask questions regarding global sales telemetry, 5G market performance, or technical AI research.",
+    "Welcome to **Nexora AI Copilot**. Query the **GraphRAG-Bench** intelligence suite across clinical oncology guidelines, multi-hop literature relations, or deep learning systems architecture.",
   timestamp: "Just now",
   suggestions: [
-    "Which Apple products have the highest warranty repair claims?",
-    "Compare Samsung 5G revenue in Europe vs Apple store volume",
+    "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
+    "Within the account of St. Michael's Mount, who married Princess Frederica of Hanover?",
+    "What clinical guidelines govern Mohs surgery and adrenal tumors?",
     "What published research did Dilip work on with MoES funding?",
-    "Which region recorded the highest 5G speed and market share?",
   ],
 };
 

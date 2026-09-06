@@ -1,0 +1,122 @@
+[
+  {
+    "id": "med_001",
+    "question": "What is the most common type of skin cancer?",
+    "ground_truth": "Basal cell carcinoma (BCC) is the most common type of skin cancer.",
+    "intent": "medical_fact"
+  },
+  {
+    "id": "med_002",
+    "question": "What is the primary risk factor for basal cell carcinoma?",
+    "ground_truth": "UV radiation exposure is a primary risk factor for BCC.",
+    "intent": "medical_fact"
+  },
+  {
+    "id": "med_003",
+    "question": "Which anatomical locations are most commonly affected by basal cell carcinoma?",
+    "ground_truth": "BCC most commonly develops in sun-exposed areas such as the face, head, and neck.",
+    "intent": "medical_fact"
+  },
+  {
+    "id": "med_004",
+    "question": "What is the most common treatment for basal cell carcinoma?",
+    "ground_truth": "Surgery is the most common treatment for BCC.",
+    "intent": "medical_fact"
+  },
+  {
+    "id": "med_005",
+    "question": "What are common symptoms of basal cell carcinoma?",
+    "ground_truth": "BCC presents as flat, pale or yellow areas, red patches, shiny bumps, open sores, or brown or black bumps with rolled borders.",
+    "intent": "medical_fact"
+  },
+  {
+    "id": "med_006",
+    "question": "What is the rationale for recommending surgery as the most common treatment for BCC lesions on sun-exposed areas?",
+    "ground_truth": "Because BCC most commonly develops on sun-exposed areas and surgery is the most effective treatment.",
+    "intent": "medical_reasoning"
+  },
+  {
+    "id": "med_007",
+    "question": "Which symptoms and risk factors together would most strongly indicate the need for biopsy to rule out BCC?",
+    "ground_truth": "A flat pale area on sun-exposed skin in a fair-skinned patient with a history of sun exposure strongly indicates the need for biopsy.",
+    "intent": "medical_reasoning"
+  },
+  {
+    "id": "med_008",
+    "question": "How do immune suppression and prior radiation therapy interact to affect BCC risk and management?",
+    "ground_truth": "Both are risk factors that increase BCC risk and may necessitate more aggressive management.",
+    "intent": "medical_reasoning"
+  },
+  {
+    "id": "med_009",
+    "question": "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
+    "ground_truth": "UV radiation, fair skin, older age, radiation therapy, and immune suppression are primary risk factors. Diagnosis involves biopsy, physical exam, and sometimes imaging.",
+    "intent": "medical_summarization"
+  },
+  {
+    "id": "med_010",
+    "question": "What does follow-up for BCC typically include?",
+    "ground_truth": "Follow-up includes full skin exams with a doctor at least once a year.",
+    "intent": "medical_fact"
+  },
+  {
+    "id": "lit_001",
+    "question": "Within the account of St. Michaels Mount, who married Princess Frederica of Hanover?",
+    "ground_truth": "Baron Von Pawel-Rammingen married Princess Frederica of Hanover.",
+    "intent": "literature_fact"
+  },
+  {
+    "id": "lit_002",
+    "question": "Which plant known scientifically as Erica vagans is also referred to by another common name, and what is that name?",
+    "ground_truth": "Cornish heath",
+    "intent": "literature_fact"
+  },
+  {
+    "id": "lit_003",
+    "question": "According to the narrative, in which region of France is Mont St. Michel located?",
+    "ground_truth": "Normandy",
+    "intent": "literature_fact"
+  },
+  {
+    "id": "lit_004",
+    "question": "What is the relationship between St. Michaels Mount and Marazion?",
+    "ground_truth": "St. Michaels Mount was opposite Marazion, which is in Cornwall.",
+    "intent": "literature_multihop"
+  },
+  {
+    "id": "lit_005",
+    "question": "In the historical account relating to St. Michaels Mount, which individual is said to have caused himself to be bled to death there?",
+    "ground_truth": "Henry de la Pomeroy caused himself to be bled to death at St. Michaels Mount.",
+    "intent": "literature_fact"
+  },
+  {
+    "id": "lit_006",
+    "question": "Within the Cornish legends, who was the figure doomed to empty Dozmare Pool as a punishment?",
+    "ground_truth": "Tregeagle was doomed to empty Dozmare Pool.",
+    "intent": "literature_fact"
+  },
+  {
+    "id": "ai_001",
+    "question": "What published research did Dilip work on with MoES funding?",
+    "ground_truth": "Focal-CBAM Fish-YOLO: Attention-Enhanced Deep Learning for Underwater Object Detection, published on IEEE Xplore and presented at ICASA, funded by the Ministry of Earth Sciences.",
+    "intent": "ai_portfolio"
+  },
+  {
+    "id": "ai_002",
+    "question": "How does Nexora AI achieve sub-180ms p95 latency with high faithfulness?",
+    "ground_truth": "By integrating Upstash Redis sub-millisecond semantic caching, parallel hybrid retrieval across Neo4j and Pinecone, AST validation guardrails, and a 3-tier LLM failover ladder.",
+    "intent": "ai_portfolio"
+  },
+  {
+    "id": "ai_003",
+    "question": "What hardware and quantization techniques are used in the Edge AI object detection system?",
+    "ground_truth": "INT8 post-training quantization on Xilinx FPGA and FP32 on NVIDIA Jetson Orin running YOLOv8n and a local quantized LLaMA 1B model.",
+    "intent": "ai_portfolio"
+  },
+  {
+    "id": "ai_004",
+    "question": "King Arthur is associated with which Cornish location said to be his birthplace?",
+    "ground_truth": "Tintagel is said to be the birthplace of King Arthur.",
+    "intent": "literature_multihop"
+  }
+]

@@ -220,6 +220,31 @@ async def health_check():
     return HealthResponse(status="ok")
 
 
+@app.get("/api/keepalive", tags=["system"])
+async def keepalive_ping():
+    """
+    Lightweight keepalive endpoint for external cron pingers (cron-job.org / UptimeRobot).
+    Pings Neo4j AuraDB with 'RETURN 1' so neither Render nor Neo4j sleep.
+    """
+    neo4j_status = "unconfigured"
+    try:
+        from app.agent.graph_retriever import query_neo4j_graph
+        res = query_neo4j_graph("RETURN 1 AS ping")
+        if res and res[0].get("ping") == 1:
+            neo4j_status = "alive"
+        else:
+            neo4j_status = "degraded"
+    except Exception as exc:
+        neo4j_status = f"error: {exc}"
+
+    return {
+        "status": "ok",
+        "render": "awake",
+        "neo4j": neo4j_status,
+        "timestamp": time.time(),
+    }
+
+
 @app.post("/ask", response_model=AskResponse, tags=["rag"])
 async def ask_question(request: AskRequest, req: Request):
     """
@@ -398,8 +423,8 @@ _LATENCY_HISTORY: list[float] = [178.0, 185.0, 162.0, 190.0, 175.0]
 class StatsResponse(BaseModel):
     vectors_indexed: str
     total_vectors: int
-    graph_nodes: int = 476
-    graph_relationships: int = 7614
+    graph_nodes: int = 7495
+    graph_relationships: int = 9291
     agentic_latency_ms: int
     latency_display: str
     failover_tier: str = "3-Tier"
@@ -444,22 +469,21 @@ async def get_live_stats():
         return StatsResponse(**_STATS_CACHE["data"], cached=True)
 
     # 1. Fetch vector count via Pinecone metadata description (0 search read units)
-    total_count = 61500
+    total_count = 197
     try:
         from app.agent.retriever import get_pinecone_index
         idx = get_pinecone_index()
         if idx:
             stats = idx.describe_index_stats()
-            # Verify connectivity without burning read/search quota
             live_count = getattr(stats, "total_vector_count", None) or (stats.get("total_vector_count") if isinstance(stats, dict) else None)
-            if live_count and live_count > 61500:
-                total_count = live_count
+            if live_count is not None:
+                total_count = int(live_count)
     except Exception as e:
         logger.debug(f"Pinecone stats describe fallback: {e}")
 
-    # 2. Fetch Neo4j Graph stats (476 live nodes / 7,614 relationships on AuraDB free tier)
-    graph_nodes = 476
-    graph_rels = 7614
+    # 2. Fetch Neo4j Graph stats (7,495 nodes / 9,291 relationships — GraphRAG-Bench on AuraDB)
+    graph_nodes = 7495
+    graph_rels = 9291
     graph_status = "connected"
     try:
         from app.agent.graph_retriever import query_neo4j_graph
@@ -473,7 +497,7 @@ async def get_live_stats():
         logger.debug(f"Neo4j stats query fallback: {e}")
         graph_status = "fallback"
 
-    vectors_display = f"{total_count / 1000:.1f}K+" if total_count >= 1000 else "61.5K+"
+    vectors_display = f"{total_count / 1000:.1f}K+" if total_count >= 1000 else f"{total_count}"
 
     # 3. Compute moving average latency
     avg_latency = int(sum(_LATENCY_HISTORY) / max(len(_LATENCY_HISTORY), 1))
@@ -533,20 +557,13 @@ async def get_live_graph_data():
         rel_records = query_neo4j_graph(rel_query) or []
 
         category_map = {
-            "Brand": "apple",
-            "Product": "apple",
-            "Category": "apple",
-            "Store": "stores",
-            "City": "stores",
-            "Country": "5g_regions",
-            "Region": "5g_regions",
-            "Quarter": "5g_regions",
-            "Model5G": "samsung",
-            "WarrantyAnalytics": "warranty",
-            "Defect": "warranty",
+            "Corpus": "corpus",
+            "MedicalTopic": "medical",
+            "MedicalFact": "medical",
+            "Entity": "literature",
             "Author": "dilip_ai",
             "Research": "dilip_ai",
-            "Platform": "dilip_ai"
+            "Platform": "dilip_ai",
         }
 
         nodes_map = {}
@@ -556,32 +573,39 @@ async def get_live_graph_data():
             ntype = str(rec.get("type", "Entity"))
             nprops = rec.get("props") or {}
             
-            # Smart brand category assignment
-            cat = category_map.get(ntype, "dilip_ai")
-            brand_val = str(nprops.get("brand", "")).lower()
-            if "samsung" in nname.lower() or "samsung" in brand_val or "galaxy" in nname.lower():
-                cat = "samsung"
-            elif "apple" in nname.lower() or "apple" in brand_val or "iphone" in nname.lower() or "macbook" in nname.lower() or "ipad" in nname.lower():
-                cat = "apple"
-            elif "dilip" in nname.lower() or "nexora" in nname.lower() or "ieee" in nname.lower() or "marketpulse" in nname.lower():
+            # Smart category assignment
+            cat = category_map.get(ntype, "literature")
+            if ntype in ["MedicalTopic", "MedicalFact"] or "medical" in nname.lower():
+                cat = "medical"
+            elif ntype == "Corpus":
+                cat = "corpus"
+            elif "dilip" in nname.lower() or "nexora" in nname.lower() or "yolo" in nname.lower():
                 cat = "dilip_ai"
 
             # Node sizing and colors based on entity role
-            if ntype in ["Brand", "Platform", "Author"]:
-                radius = 26
-                color = "#10b981" if cat == "dilip_ai" else "#06b6d4" if cat == "apple" else "#a855f7"
+            if ntype == "Corpus":
+                radius = 28
+                color = "#10b981"  # Emerald
                 h_level = 1
-            elif ntype in ["Category", "Region", "Store"]:
-                radius = 20
-                color = "#f59e0b" if cat == "stores" else "#3b82f6" if cat == "5g_regions" else "#06b6d4"
+            elif ntype == "MedicalTopic":
+                radius = 22
+                color = "#06b6d4"  # Cyan
                 h_level = 2
-            elif ntype in ["Product", "Model5G", "WarrantyAnalytics"]:
-                radius = 16
-                color = "#06b6d4" if cat == "apple" else "#a855f7" if cat == "samsung" else "#f43f5e"
+            elif ntype == "MedicalFact":
+                radius = 14
+                color = "#f43f5e"  # Rose
                 h_level = 3
+            elif ntype == "Entity":
+                radius = 16
+                color = "#a855f7"  # Purple
+                h_level = 3
+            elif ntype in ["Platform", "Author", "Research"]:
+                radius = 24
+                color = "#6366f1"  # Indigo
+                h_level = 1
             else:
-                radius = 13
-                color = "#3b82f6" if cat == "5g_regions" else "#f59e0b" if cat == "stores" else "#10b981"
+                radius = 14
+                color = "#3b82f6"
                 h_level = 3
 
             nodes_map[nid] = {
@@ -593,11 +617,11 @@ async def get_live_graph_data():
                 "color": color,
                 "glowColor": color,
                 "radius": radius,
-                "description": nprops.get("description") or f"Neo4j {ntype} entity '{nname}' in AuraDB graph.",
-                "metrics": {k: str(v) for k, v in nprops.items() if k in ["price", "claims", "total_units", "revenue", "market_share", "defect_rate", "units_sold", "q1_2024", "q2_2024", "q3_2024", "q4_2024"]},
-                "attributes": {k: str(v) for k, v in nprops.items() if k not in ["description", "price", "claims", "total_units", "revenue", "market_share", "defect_rate", "units_sold"]},
+                "description": nprops.get("description") or f"Neo4j {ntype} '{nname}' in GraphRAG-Bench.",
+                "metrics": {k: str(v) for k, v in nprops.items() if k in ["total_entities", "triples", "year", "domain"]},
+                "attributes": {k: str(v) for k, v in nprops.items() if k not in ["description", "total_entities", "triples"]},
                 "tags": [ntype, cat],
-                "iconType": "store" if cat == "stores" else "apple" if cat == "apple" else "samsung" if cat == "samsung" else "region" if cat == "5g_regions" else "warranty" if cat == "warranty" else "ai"
+                "iconType": "ai" if cat == "dilip_ai" else "paper" if cat == "medical" else "chip" if cat == "corpus" else "store"
             }
 
         links = []

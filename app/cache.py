@@ -23,9 +23,12 @@ _ANSWER_PREFIX = "rag:ans:"
 _EMBED_PREFIX = "rag:emb:"
 
 
-def _hash_key(text: str) -> str:
-    """Normalize and hash text to produce a deterministic, safe Redis key."""
+def _hash_key(text: str, history: list[dict] | None = None) -> str:
+    """Normalize and hash text and history to produce a deterministic, safe Redis key."""
     norm = " ".join(text.strip().lower().split())
+    if history:
+        hist_str = "|".join([f"{msg.get('role', '')}:{msg.get('content', '')}" for msg in history])
+        norm += "||" + hist_str
     return hashlib.sha256(norm.encode("utf-8")).hexdigest()[:32]
 
 
@@ -34,16 +37,16 @@ def is_redis_configured() -> bool:
     return bool(settings.upstash_redis_rest_url and settings.upstash_redis_rest_token)
 
 
-def get_cached_rag_response(query: str) -> dict[str, Any] | None:
+def get_cached_rag_response(query: str, history: list[dict] | None = None) -> dict[str, Any] | None:
     """
-    Look up a previously synthesized RAG response for the given query.
+    Look up a previously synthesized RAG response for the given query and history.
     Returns:
         dict containing answer, sources, intent, suggestions, etc. or None if cache miss.
     """
     if not is_redis_configured():
         return None
 
-    key = _ANSWER_PREFIX + _hash_key(query)
+    key = _ANSWER_PREFIX + _hash_key(query, history)
     try:
         url = f"{settings.upstash_redis_rest_url.rstrip('/')}/get/{key}"
         headers = {"Authorization": f"Bearer {settings.upstash_redis_rest_token}"}
@@ -56,8 +59,8 @@ def get_cached_rag_response(query: str) -> dict[str, Any] | None:
             if raw_val:
                 cached_data = json.loads(raw_val)
                 ans_str = cached_data.get("answer", "").lower()
-                # Bypass negative cache hits (e.g. "does not contain details") so live Graph/Vector retrieval runs
-                if any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any"]):
+                # Bypass negative cache hits (e.g. "does not contain details", "not explicitly stated") so live Graph/Vector retrieval runs
+                if any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any", "not explicitly stated", "not specified", "is not stated"]):
                     logger.info(f"🔄 [Upstash Redis] Bypassing stale negative cache for: \"{query[:50]}...\"")
                     try:
                         del_url = f"{settings.upstash_redis_rest_url.rstrip('/')}/del/{key}"
@@ -77,7 +80,7 @@ def get_cached_rag_response(query: str) -> dict[str, Any] | None:
     return None
 
 
-def set_cached_rag_response(query: str, data: dict[str, Any], ttl_seconds: int = 3600) -> bool:
+def set_cached_rag_response(query: str, data: dict[str, Any], ttl_seconds: int = 3600, history: list[dict] | None = None) -> bool:
     """
     Cache a synthesized RAG response with an expiration TTL (default 1 hour).
     """
@@ -89,7 +92,7 @@ def set_cached_rag_response(query: str, data: dict[str, Any], ttl_seconds: int =
     if not ans_str or any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any"]):
         return False
 
-    key = _ANSWER_PREFIX + _hash_key(query)
+    key = _ANSWER_PREFIX + _hash_key(query, history)
     try:
         # Prepare serializable payload
         payload = {

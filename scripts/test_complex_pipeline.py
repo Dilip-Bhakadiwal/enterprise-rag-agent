@@ -16,15 +16,15 @@ print("🚀 ENTERPRISE HYBRID GRAPHRAG PIPELINE TRACE (COMPLEX MULTI-HOP QUERY)"
 print("=" * 80 + "\n")
 
 complex_query = (
-    "Compare Samsung's top revenue-generating 5G models in Europe against "
-    "Apple's flagship smartphone pricing and highest warranty repair claims."
+    "According to the clinical oncology knowledge graph and medical corpus, what are the primary risk factors, diagnostic biopsy guidelines, and surgical approaches for Basal Cell Carcinoma (BCC)?"
 )
 
 print(f"📌 COMPLEX TEST QUERY:")
 print(f"   \"{complex_query}\"\n")
 
 t0 = time.perf_counter()
-response = ask(complex_query)
+# chat_history ensures it runs the full live agentic graph instead of returning static cache
+response = ask(complex_query, chat_history=[{"role": "user", "content": "hello"}])
 total_elapsed = time.perf_counter() - t0
 
 timings = response.get("timings", {})

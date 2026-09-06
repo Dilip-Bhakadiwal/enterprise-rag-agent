@@ -100,50 +100,29 @@ def _embed_queries(queries: list[str]) -> list[list[float]]:
         logger.debug(f"⚡ [Upstash Redis] All {len(queries)} embeddings served from cache!")
         return [r for r in results if r is not None]
 
-    # 3. Compute missing embeddings
+    # 3. Compute missing embeddings using OpenRouter (openai/text-embedding-3-small, 1024-dim)
     new_embeddings = []
-    if settings.embedding_provider == "nvidia":
-        try:
-            logger.info(f"Embedding batch of {len(missing_queries)} queries via NVIDIA NIM: {settings.embedding_model}")
-            response = httpx.post(
-                "https://integrate.api.nvidia.com/v1/embeddings",
-                headers={
-                    "Authorization": f"Bearer {settings.nvidia_api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "input": missing_queries if len(missing_queries) > 1 else missing_queries[0],
-                    "model": settings.embedding_model,
-                    "input_type": "query"
-                },
-                timeout=1.5
-            )
-            response.raise_for_status()
-            data = response.json().get("data", [])
+    try:
+        url = "https://openrouter.ai/api/v1/embeddings"
+        headers = {
+            "Authorization": f"Bearer {settings.openrouter_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "input": missing_queries,
+            "model": "openai/text-embedding-3-small",
+            "dimensions": 1024,
+        }
+        resp = httpx.post(url, headers=headers, json=payload, timeout=5.0)
+        if resp.status_code == 200:
+            data = resp.json().get("data", [])
             new_embeddings = [item["embedding"] for item in data]
-        except Exception as e:
-            logger.warning(f"⚠️ [Embedding Failover] NVIDIA NIM returned error ({e}). Using direct retrieval fallback.")
-            new_embeddings = [[0.0] * 1024 for _ in missing_queries]
-    else:
-        # Fallback to local FastEmbed
-        model = _get_embedding_model()
-        if model is not None:
-            try:
-                prefixed = [_QUERY_PREFIX + q for q in missing_queries]
-                embeddings = list(model.embed(prefixed))
-                new_embeddings = []
-                for e in embeddings:
-                    arr = e.tolist()
-                    if len(arr) < 1024:
-                        arr = arr + [0.0] * (1024 - len(arr))
-                    elif len(arr) > 1024:
-                        arr = arr[:1024]
-                    new_embeddings.append(arr)
-            except Exception as emb_err:
-                logger.warning(f"FastEmbed execution failed ({emb_err}) — using zero vector fallback.")
-                new_embeddings = [[0.0] * 1024 for _ in missing_queries]
         else:
+            logger.warning(f"OpenRouter embedding returned HTTP {resp.status_code}: {resp.text}")
             new_embeddings = [[0.0] * 1024 for _ in missing_queries]
+    except Exception as e:
+        logger.warning(f"⚠️ [Embedding Failover] OpenRouter embedding failed ({e}). Using zero vector fallback.")
+        new_embeddings = [[0.0] * 1024 for _ in missing_queries]
 
     # 4. Cache new embeddings in Upstash Redis and fill results array
     for orig_idx, q_text, emb in zip(missing_indices, missing_queries, new_embeddings):

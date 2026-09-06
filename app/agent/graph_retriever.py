@@ -31,11 +31,13 @@ def get_graph_driver() -> Driver | None:
                 settings.neo4j_uri,
                 auth=(settings.neo4j_username, settings.neo4j_password),
                 max_connection_lifetime=3600,
+                connection_timeout=3.0,
+                max_connection_pool_size=10,
             )
             _neo4j_driver.verify_connectivity()
             logger.info("Neo4j AuraDB Graph Driver connected successfully.")
         except Exception as exc:
-            logger.warning(f"Neo4j driver initialization fallback: {exc}")
+            logger.warning(f"Neo4j driver initialization fallback (AuraDB may be paused): {exc}")
             _neo4j_driver = None
     return _neo4j_driver
 
@@ -56,182 +58,94 @@ def query_neo4j_graph(cypher: str, params: dict[str, Any] | None = None) -> list
 
 # ── Specialized Graph Traversal Helpers ────────────────────────────────────
 
-def get_top_warranty_claims_graph_context() -> list[dict[str, Any]]:
-    """Fetch top products ranked by total warranty claims."""
-    cypher = """
-    MATCH (p:Product)
-    WHERE p.total_warranty_claims IS NOT NULL AND p.total_warranty_claims > 0
-    OPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)
-    RETURN p.name AS product, p.brand AS brand, c.name AS category, p.price AS price, p.total_warranty_claims AS claims
-    ORDER BY claims DESC
-    LIMIT 6
+# ── Specialized Graph Traversal Helpers for GraphRAG-Bench ──────────────────
+
+def get_medical_topic_graph_context(topic_name: str, query: str = "", limit: int = 10) -> list[dict[str, Any]]:
     """
-    return query_neo4j_graph(cypher)
-
-
-def get_top_stores_graph_context() -> list[dict[str, Any]]:
-    """Fetch top retail store locations ranked by aggregated sales volume and revenue."""
-    cypher = """
-    MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
-    OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
-    RETURN s.name AS store, c.name AS city, co.name AS country,
-           sum(r.total_units) AS total_units,
-           sum(r.revenue) AS total_revenue
-    ORDER BY total_units DESC
-    LIMIT 6
+    Fetch clinical facts, symptoms, and guidelines for a specific medical topic.
+    Ranks candidates by relevance to the query tokens so specific facts (e.g. surgery, rationale,
+    diagnostic tests, hormones) are prioritized over arbitrary default facts.
     """
-    return query_neo4j_graph(cypher)
-
-
-def get_top_selling_products_graph_context() -> list[dict[str, Any]]:
-    """Fetch top selling products across all global stores."""
     cypher = """
-    MATCH (s:Store)-[r:SOLD_PRODUCT]->(p:Product)
-    OPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)
-    RETURN p.name AS product, c.name AS category, p.price AS price,
-           sum(r.total_units) AS total_units,
-           sum(r.revenue) AS total_revenue
-    ORDER BY total_units DESC
-    LIMIT 6
+    MATCH (t:MedicalTopic)
+    WHERE toLower(t.name) CONTAINS toLower($topic)
+    OPTIONAL MATCH (t)-[:HAS_FACT]->(f:MedicalFact)
+    RETURN t.name AS topic, f.text AS fact, f.question AS question, f.type AS type
+    LIMIT 200
     """
-    return query_neo4j_graph(cypher)
+    records = query_neo4j_graph(cypher, {"topic": topic_name})
+    if not records:
+        return []
 
-
-def get_product_graph_context(product_name: str) -> list[dict[str, Any]]:
-    """Traverse graph for a product: Category, price, launch date, warranty claims, stores sold."""
-    cypher = """
-    MATCH (p:Product)
-    WHERE toLower(p.name) CONTAINS toLower($name)
-    OPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)
-    OPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)
-    OPTIONAL MATCH (p)-[perf:PERFORMED_IN]->(reg:Region)
-    RETURN p.name AS product,
-           p.brand AS brand,
-           p.price AS price,
-           p.launch_date AS launch_date,
-           p.total_warranty_claims AS warranty_claims,
-           c.name AS category,
-           count(DISTINCT s) AS store_count,
-           sum(r.total_units) AS total_units_sold,
-           avg(perf.market_share) AS avg_samsung_market_share,
-           avg(perf.avg_5g_speed) AS avg_5g_speed
-    LIMIT 5
-    """
-    return query_neo4j_graph(cypher, {"name": product_name})
-
-
-def get_regional_sales_graph_context(region_or_country: str) -> list[dict[str, Any]]:
-    """Traverse regional performance and store locations with geographic alias expansion."""
-    loc_lower = region_or_country.lower()
-    
-    if any(k in loc_lower for k in ["north america", "usa", "us", "america", "united states", "canada"]):
-        cypher = """
-        MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
-        WHERE co.name IN ['United States', 'Canada']
-        OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
-        RETURN s.name AS store, c.name AS city, co.name AS country,
-               count(DISTINCT p) AS products_stocked,
-               sum(r.total_units) AS total_store_units,
-               sum(r.revenue) AS total_store_revenue
-        ORDER BY total_store_units DESC
-        LIMIT 6
-        """
-        return query_neo4j_graph(cypher)
+    # If query is provided, score and rank facts by keyword match
+    if query:
+        stop_words = {"what", "is", "the", "for", "and", "in", "on", "a", "an", "as", "of", "to", "with", "are"}
+        tokens = [w for w in re.findall(r"[a-zA-Z]{3,}", query.lower()) if w not in stop_words]
+        high_weight_keywords = {
+            "surgery", "rationale", "treatment", "sun-exposed", "lesion", "lesions",
+            "diagnostic", "diagnosis", "test", "tests", "biopsy", "hormone", "hormones",
+            "evaluation", "imaging", "exam", "exams", "risk", "factors", "blood", "biochemical"
+        }
         
-    if any(k in loc_lower for k in ["europe", "eu", "uk", "france", "germany", "italy", "spain", "london", "paris"]):
-        cypher = """
-        MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
-        WHERE co.name IN ['United Kingdom', 'France', 'Germany', 'Italy', 'Spain', 'Netherlands', 'Sweden', 'Switzerland', 'Austria']
-           OR c.name IN ['London', 'Paris', 'Berlin', 'Munich', 'Rome', 'Madrid', 'Amsterdam', 'Zurich']
-        OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
-        RETURN s.name AS store, c.name AS city, co.name AS country,
-               count(DISTINCT p) AS products_stocked,
-               sum(r.total_units) AS total_store_units,
-               sum(r.revenue) AS total_store_revenue
-        ORDER BY total_store_units DESC
-        LIMIT 6
-        """
-        return query_neo4j_graph(cypher)
+        def score_fact(r: dict[str, Any]) -> int:
+            txt = (str(r.get("fact") or "") + " " + str(r.get("question") or "")).lower()
+            score = 0
+            for tok in tokens:
+                if tok in txt:
+                    # Give higher weight to substantive clinical keywords
+                    score += 3 if tok in high_weight_keywords else 1
+            return score
 
+        scored = [(score_fact(r), r) for r in records if r.get("fact")]
+        scored.sort(key=lambda x: x[0], reverse=True)
+        # Deduplicate facts by unique text
+        unique_results = []
+        seen_facts = set()
+        for _, r in scored:
+            f_txt = (r.get("fact") or "").strip().lower()
+            if f_txt and f_txt not in seen_facts:
+                seen_facts.add(f_txt)
+                unique_results.append(r)
+            if len(unique_results) >= limit:
+                break
+        return unique_results
+
+    return records[:limit]
+
+
+def get_entity_knowledge_graph_context(entity_name: str) -> list[dict[str, Any]]:
+    """Traverse bidirectional multi-hop relationships for literature and named entities."""
     cypher = """
-    MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
-    WHERE toLower(co.name) CONTAINS toLower($loc) OR toLower(c.name) CONTAINS toLower($loc)
-    OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
-    RETURN s.name AS store, c.name AS city, co.name AS country,
-           count(DISTINCT p) AS products_stocked,
-           sum(r.total_units) AS total_store_units,
-           sum(r.revenue) AS total_store_revenue
-    ORDER BY total_store_units DESC
-    LIMIT 6
-    """
-    return query_neo4j_graph(cypher, {"loc": region_or_country})
-
-
-def get_samsung_model_graph_context(model_name: str, region: str | None = None) -> list[dict[str, Any]]:
-    """Traverse Samsung model performance across regions or a specific region."""
-    if region:
-        cypher = """
-        MATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(reg:Region)
-        WHERE toLower(p.name) CONTAINS toLower($model) AND toLower(reg.name) CONTAINS toLower($region)
-        RETURN p.name AS model, reg.name AS region,
-               avg(perf.market_share) AS avg_share,
-               sum(perf.revenue) AS total_revenue,
-               avg(perf.revenue) AS avg_quarterly_revenue,
-               sum(perf.units_sold) AS total_units,
-               count(perf) AS quarters
-        LIMIT 5
-        """
-        return query_neo4j_graph(cypher, {"model": model_name, "region": region})
-    else:
-        cypher = """
-        MATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(reg:Region)
-        WHERE toLower(p.name) CONTAINS toLower($model)
-        RETURN p.name AS model, reg.name AS region,
-               avg(perf.market_share) AS avg_share,
-               sum(perf.revenue) AS total_revenue,
-               avg(perf.revenue) AS avg_quarterly_revenue,
-               sum(perf.units_sold) AS total_units,
-               count(perf) AS quarters
-        ORDER BY total_revenue DESC
-        LIMIT 5
-        """
-        return query_neo4j_graph(cypher, {"model": model_name})
-
-
-def get_samsung_5g_comparison() -> list[dict[str, Any]]:
-    """Fetch 5G vs 4G aggregated market share and revenue comparison."""
-    cypher = """
-    MATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(r:Region)
-    RETURN p.five_g_capable AS is_5g,
-           r.name AS region,
-           avg(perf.market_share) AS avg_market_share,
-           sum(perf.units_sold) AS total_units,
-           sum(perf.revenue) AS total_revenue,
-           avg(perf.avg_5g_speed) AS avg_speed
-    ORDER BY total_revenue DESC
+    MATCH (e:Entity)
+    WHERE toLower(e.name) CONTAINS toLower($name)
+    OPTIONAL MATCH (s:Entity)-[r:RELATED_TO]->(t:Entity)
+    WHERE s = e OR t = e
+    OPTIONAL MATCH (e)-[:MENTIONED_IN]->(c:Corpus)
+    RETURN s.name AS subject, r.relation AS relation, t.name AS target, c.name AS corpus
     LIMIT 10
     """
+    return query_neo4j_graph(cypher, {"name": entity_name})
+
+
+def get_general_medical_facts(limit: int = 5) -> list[dict[str, Any]]:
+    """Fetch representative clinical oncology and dermatology facts from AuraDB."""
+    cypher = """
+    MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)
+    RETURN t.name AS topic, f.text AS fact, f.question AS question
+    LIMIT $lim
+    """
+    return query_neo4j_graph(cypher, {"lim": limit})
+
+
+def get_corpus_overview_graph_context() -> list[dict[str, Any]]:
+    """Fetch corpus domain counts and knowledge graph volume."""
+    cypher = """
+    MATCH (c:Corpus)
+    OPTIONAL MATCH (e:Entity)-[:MENTIONED_IN]->(c)
+    RETURN c.name AS corpus, c.domain AS domain, count(DISTINCT e) AS entity_count
+    LIMIT 8
+    """
     return query_neo4j_graph(cypher)
-
-
-def get_brand_comparison_graph_context() -> list[dict[str, Any]]:
-    """Fetch high-level comparison between Apple total retail sales and Samsung mobile sales."""
-    cypher_apple = """
-    MATCH (s:Store)-[r:SOLD_PRODUCT]->(p:Product)
-    RETURN 'Apple' AS brand, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue, count(DISTINCT s) AS total_stores, count(DISTINCT p) AS total_products
-    """
-    cypher_samsung = """
-    MATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(r:Region)
-    RETURN 'Samsung' AS brand, sum(perf.units_sold) AS total_units, sum(perf.revenue) AS total_revenue, count(DISTINCT p) AS total_models, count(DISTINCT r) AS total_regions
-    """
-    apple_data = query_neo4j_graph(cypher_apple)
-    samsung_data = query_neo4j_graph(cypher_samsung)
-    results = []
-    if apple_data:
-        results.append(apple_data[0])
-    if samsung_data:
-        results.append(samsung_data[0])
-    return results
 
 
 # ── Hybrid Graph + Vector Search Orchestrator ──────────────────────────────
@@ -251,307 +165,96 @@ def retrieve_hybrid_graph_chunks(query: str, top_k: int = 5) -> tuple[list[dict[
     graph_facts: list[dict[str, Any]] = []
     clean_q = query.lower().replace("'", "").replace('"', "")
 
-    # ── Universal Knowledge Graph Entity Resolver (City & Location Deep-Dive) ──
-    city_nodes = query_neo4j_graph(
-        "MATCH (c:City) WHERE $clean_q CONTAINS toLower(c.name) RETURN c.name AS city LIMIT 3",
+    # ── GraphRAG-Bench: Medical Clinical Topic & Facts Resolver ──
+    # Map query intents to actual MedicalTopic names in Neo4j
+    topic_kw = None
+    if re.search(r"\b(bcc|basal cell|basal)\b", query, re.IGNORECASE):
+        topic_kw = "Basal Cell Carcinoma"
+    elif re.search(r"\b(cscc|squamous cell|squamous)\b", query, re.IGNORECASE):
+        topic_kw = "Squamous Cell Carcinoma"
+    elif re.search(r"\b(melanoma)\b", query, re.IGNORECASE):
+        topic_kw = "Melanoma"
+    elif re.search(r"\b(adrenal|adenoma|aldosterone|cushing|pheochromocytoma)\b", query, re.IGNORECASE):
+        topic_kw = "Adrenal"
+    elif re.search(r"\b(cancer|carcinoma|tumor|tumors|biopsy|radiation|surgery|mohs|skin|lesion|lesions)\b", query, re.IGNORECASE):
+        topic_kw = "Oncology"
+
+    if topic_kw:
+        med_records = get_medical_topic_graph_context(topic_kw, query=query, limit=10)
+        if not med_records:
+            med_records = get_general_medical_facts(limit=4)
+        for idx, m in enumerate(med_records, 1):
+            t_name = m.get("topic", "Clinical Oncology")
+            fact_txt = m.get("fact", "")
+            q_txt = m.get("question", "")
+            graph_facts.append({
+                "doc_id": f"neo4j_medical_{idx}_{t_name.lower().replace(' ', '_')}",
+                "chunk_text": (
+                    f"### Neo4j Knowledge Graph Fact: {t_name}\n"
+                    f"- **Topic**: {t_name}\n"
+                    f"- **Clinical Fact**: {fact_txt}\n"
+                    f"- **Associated Question**: {q_txt}"
+                ),
+                "source_type": "neo4j_graph",
+                "category": "Medical Intelligence",
+                "authority": 10,
+                "score": 0.99,
+                "is_graph": True,
+                "cypher_preview": f"MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('{topic_kw}')\nRETURN t.name, f.text LIMIT 5;",
+            })
+
+    # ── GraphRAG-Bench: Literature Entity Triples Resolver ──
+    # Match entities whose name is at least 3 characters and exists as a whole word/phrase
+    ent_nodes = query_neo4j_graph(
+        "MATCH (e:Entity) WHERE size(e.name) >= 3 AND $clean_q CONTAINS toLower(e.name) RETURN e.name AS entity LIMIT 3",
         params={"clean_q": clean_q},
     )
-    if city_nodes:
-        for c_entry in city_nodes:
-            c_name = c_entry.get("city")
-            if not c_name:
+    if ent_nodes:
+        for e_entry in ent_nodes:
+            e_name = e_entry.get("entity")
+            if not e_name:
                 continue
-            stores_in_city = query_neo4j_graph("""
-                MATCH (c:City)<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)
-                WHERE c.name = $city_name
-                OPTIONAL MATCH (c)-[:IN_COUNTRY]->(co:Country)
-                RETURN c.name AS city, co.name AS country, s.name AS store,
-                       sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue,
-                       count(DISTINCT p) AS products_count
-                ORDER BY total_revenue DESC
-            """, params={"city_name": c_name})
-            top_prods_city = query_neo4j_graph("""
-                MATCH (c:City)<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)
-                WHERE c.name = $city_name
-                RETURN s.name AS store, p.name AS product, p.price AS price, sum(r.total_units) AS units, sum(r.revenue) AS revenue
-                ORDER BY revenue DESC LIMIT 5
-            """, params={"city_name": c_name})
-            
-            if stores_in_city:
-                country_name = stores_in_city[0].get("country", "United States")
-                tot_city_units = sum(s.get("total_units", 0) for s in stores_in_city)
-                tot_city_rev = sum(s.get("total_revenue", 0.0) for s in stores_in_city)
-                
-                stores_bullet = "\n".join(
-                    f"  - **{s.get('store')}**: {s.get('total_units', 0):,} units sold | ${s.get('total_revenue', 0):,.2f} USD Revenue ({s.get('products_count', 0)} product SKUs)"
-                    for s in stores_in_city
+            e_context = get_entity_knowledge_graph_context(e_name)
+            if e_context:
+                relations_bullets = "\n".join(
+                    f"  - **{ec.get('subject')}** -[{ec.get('relation')}]-> **{ec.get('target')}** (Corpus: {ec.get('corpus', 'Literature')})"
+                    for ec in e_context if ec.get("target")
                 )
-                top_prods_bullet = "\n".join(
-                    f"  {idx}. **{tp.get('product')}** (${tp.get('price', 0):,.2f} MSRP) — {tp.get('units', 0):,} units (${tp.get('revenue', 0):,.2f} USD revenue) at {tp.get('store')}"
-                    for idx, tp in enumerate(top_prods_city, 1)
-                ) if top_prods_city else "  - Data aggregated across all store SKUs."
-
                 graph_facts.append({
-                    "doc_id": f"neo4j_city_{c_name.lower().replace(' ', '_')}",
+                    "doc_id": f"neo4j_entity_{e_name.lower().replace(' ', '_')}",
                     "chunk_text": (
-                        f"### Neo4j Knowledge Graph Fact: City Market Intelligence — {c_name} ({country_name})\n"
-                        f"- **City**: {c_name}\n"
-                        f"- **Country**: {country_name}\n"
-                        f"- **Flagship Retail Stores in {c_name} ({len(stores_in_city)})**:\n{stores_bullet}\n"
-                        f"- **Total Aggregated City Revenue**: ${tot_city_rev:,.2f} USD\n"
-                        f"- **Total Units Sold across {c_name} Stores**: {tot_city_units:,} units\n"
-                        f"- **Top Revenue-Generating Products in {c_name}**:\n{top_prods_bullet}"
+                        f"### Neo4j Knowledge Graph Fact: Literature Entity — {e_name}\n"
+                        f"- **Entity Name**: {e_name}\n"
+                        f"- **Connected Triples & Relationships**:\n{relations_bullets or '  - Mentioned in literature corpus.'}"
                     ),
                     "source_type": "neo4j_graph",
-                    "category": "City Intelligence",
+                    "category": "Literature Knowledge Graph",
                     "authority": 10,
                     "score": 0.99,
                     "is_graph": True,
-                    "cypher_preview": f"MATCH (c:City {{name: '{c_name}'}})<-[:LOCATED_IN]-(s:Store)-[r:SOLD_PRODUCT]->(p:Product)\nOPTIONAL MATCH (c)-[:IN_COUNTRY]->(co:Country)\nRETURN c.name AS city, co.name AS country, s.name AS store, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue, count(DISTINCT p) AS products_count\nORDER BY total_revenue DESC;",
+                    "cypher_preview": f"MATCH (s:Entity {{name: '{e_name}'}})-[r:RELATED_TO]->(o:Entity)\nRETURN s.name, r.relation, o.name LIMIT 5;",
                 })
 
-    # ── Universal Knowledge Graph Store Deep-Dive ──
-    store_nodes = query_neo4j_graph(
-        "MATCH (s:Store) WHERE $clean_q CONTAINS toLower(s.name) RETURN s.name AS store LIMIT 2",
-        params={"clean_q": clean_q},
-    )
-    if store_nodes:
-        for s_entry in store_nodes:
-            s_name = s_entry.get("store")
-            if not s_name:
-                continue
-            store_details = query_neo4j_graph("""
-                MATCH (s:Store {name: $store_name})-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)
-                OPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)
-                RETURN s.name AS store, c.name AS city, co.name AS country,
-                       sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue, count(DISTINCT p) AS products_count
-            """, params={"store_name": s_name})
-            top_prods_store = query_neo4j_graph("""
-                MATCH (s:Store {name: $store_name})-[r:SOLD_PRODUCT]->(p:Product)
-                RETURN p.name AS product, p.price AS price, r.total_units AS units, r.revenue AS revenue
-                ORDER BY revenue DESC LIMIT 5
-            """, params={"store_name": s_name})
-            if store_details:
-                sd = store_details[0]
-                prods_bullet = "\n".join(
-                    f"  {idx}. **{tp.get('product')}** (${tp.get('price', 0):,.2f}) — {tp.get('units', 0):,} units (${tp.get('revenue', 0):,.2f} USD)"
-                    for idx, tp in enumerate(top_prods_store, 1)
-                ) if top_prods_store else "  - All products stocked."
-                graph_facts.append({
-                    "doc_id": f"neo4j_store_detail_{s_name.lower().replace(' ', '_')}",
-                    "chunk_text": (
-                        f"### Neo4j Knowledge Graph Fact: Retail Store Deep-Dive — {s_name}\n"
-                        f"- **Store Location**: {sd.get('city')}, {sd.get('country')}\n"
-                        f"- **Total Aggregated Revenue**: ${sd.get('total_revenue', 0):,.2f} USD\n"
-                        f"- **Total Units Sold**: {sd.get('total_units', 0):,} units\n"
-                        f"- **Distinct Product SKUs**: {sd.get('products_count', 0)} products\n"
-                        f"- **Top Selling Products**:\n{prods_bullet}"
-                    ),
-                    "source_type": "neo4j_graph",
-                    "category": "Store Analytics",
-                    "authority": 10,
-                    "score": 0.99,
-                    "is_graph": True,
-                    "cypher_preview": f"MATCH (s:Store {{name: '{s_name}'}})-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)\nOPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN s.name, c.name, co.name, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue;",
-                })
-
-    # ── Universal Knowledge Graph Category Resolver ──
-    cat_nodes = query_neo4j_graph(
-        "MATCH (cat:Category) WHERE $clean_q CONTAINS toLower(cat.name) RETURN cat.name AS category LIMIT 2",
-        params={"clean_q": clean_q},
-    )
-    if cat_nodes:
-        for cat_entry in cat_nodes:
-            cat_name = cat_entry.get("category")
-            if not cat_name:
-                continue
-            cat_details = query_neo4j_graph("""
-                MATCH (cat:Category {name: $cat_name})<-[:BELONGS_TO]-(p:Product)
-                OPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)
-                RETURN cat.name AS category, count(DISTINCT p) AS product_count,
-                       avg(p.price) AS avg_price, sum(p.total_warranty_claims) AS total_warranty_claims,
-                       sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue
-            """, params={"cat_name": cat_name})
-            if cat_details:
-                cd = cat_details[0]
-                graph_facts.append({
-                    "doc_id": f"neo4j_cat_{cat_name.lower().replace(' ', '_')}",
-                    "chunk_text": (
-                        f"### Neo4j Knowledge Graph Fact: Category Intelligence — {cat_name}\n"
-                        f"- **Category**: {cat_name}\n"
-                        f"- **Products in Category**: {cd.get('product_count', 0)} product models\n"
-                        f"- **Average MSRP**: ${cd.get('avg_price', 0):,.2f} USD\n"
-                        f"- **Recorded Warranty Claims**: {cd.get('total_warranty_claims', 0):,} claims\n"
-                        f"- **Total Aggregated Revenue**: ${cd.get('total_revenue', 0):,.2f} USD"
-                    ),
-                    "source_type": "neo4j_graph",
-                    "category": "Category Analytics",
-                    "authority": 10,
-                    "score": 0.99,
-                    "is_graph": True,
-                    "cypher_preview": f"MATCH (cat:Category {{name: '{cat_name}'}})<-[:BELONGS_TO]-(p:Product)\nOPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)\nRETURN cat.name, count(DISTINCT p) AS product_count, avg(p.price) AS avg_price, sum(r.revenue) AS total_revenue;",
-                })
-    
-    # Check for Brand comparison queries (Apple vs Samsung)
-    if re.search(r"\b(apple.*samsung|samsung.*apple|which company.*sell.*more|who sell.*more|more sell|which company do more sell)\b", query, re.IGNORECASE):
-        brand_facts = get_brand_comparison_graph_context()
-        for b in brand_facts:
-            brand_name = b.get("brand", "Brand")
+    # ── GraphRAG-Bench: General Corpus Statistics Resolver ──
+    if re.search(r"\b(corpus|dataset|benchmark|novels|books|medicine|overview|graph)\b", query, re.IGNORECASE) and not graph_facts:
+        overview_records = get_corpus_overview_graph_context()
+        if overview_records:
+            stats_bullet = "\n".join(
+                f"  - **{ov.get('corpus')}** ({ov.get('domain')}): {ov.get('entity_count', 0):,} connected graph entities"
+                for ov in overview_records
+            )
             graph_facts.append({
-                "doc_id": f"neo4j_brand_summary_{brand_name.lower()}",
+                "doc_id": "neo4j_corpus_overview",
                 "chunk_text": (
-                    f"### Neo4j Knowledge Graph Fact: {brand_name} Global Sales Overview\n"
-                    f"- **Company**: {brand_name}\n"
-                    f"- **Total Units Sold**: {b.get('total_units', 0):,} units\n"
-                    f"- **Total Aggregated Revenue**: ${b.get('total_revenue', 0):,.2f} USD\n"
-                    f"- **Coverage**: {b.get('total_stores', b.get('total_regions', 0))} {('Global Stores' if brand_name == 'Apple' else 'Global Regions')}\n"
-                    f"- **Portfolio Size**: {b.get('total_products', b.get('total_models', 0))} {('Products' if brand_name == 'Apple' else 'Mobile Models')}"
+                    f"### Neo4j Knowledge Graph Fact: Corpus & Benchmark Distribution\n"
+                    f"{stats_bullet}"
                 ),
                 "source_type": "neo4j_graph",
-                "category": "Brand Analytics",
-                "authority": 10,
-                "score": 0.99,
-                "is_graph": True,
-                "cypher_preview": "MATCH (s:Store)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN 'Apple' AS brand, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue;\n\nMATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(r:Region)\nRETURN 'Samsung' AS brand, sum(perf.units_sold) AS total_units, sum(perf.revenue) AS total_revenue;",
-            })
-    
-    # Check for Samsung keywords / models
-    samsung_match = re.search(r"\b(galaxy|s23|s22|s21|s20|s10|note20|note10|z fold|z flip|a14|a32|a52|a73|5g|samsung)\b", query, re.IGNORECASE)
-    if samsung_match:
-        model_term = samsung_match.group(1)
-        reg_match = re.search(r"\b(north america|europe|asia-pacific|asia|latin america|middle east|africa)\b", query, re.IGNORECASE)
-        reg_term = reg_match.group(1) if reg_match else None
-        
-        sam_model_facts = get_samsung_model_graph_context(model_term, reg_term)
-        for idx, sf in enumerate(sam_model_facts, 1):
-            graph_facts.append({
-                "doc_id": f"neo4j_samsung_{idx}_{sf.get('model', 'model').replace(' ', '_')}_{sf.get('region', 'reg').replace(' ', '_')}",
-                "chunk_text": (
-                    f"### Neo4j Knowledge Graph: Samsung {sf.get('model')} Performance in {sf.get('region')}\n"
-                    f"- **Model**: {sf.get('model')}\n"
-                    f"- **Region**: {sf.get('region')}\n"
-                    f"- **Average Regional Market Share**: {sf.get('avg_share', 0):.2f}%\n"
-                    f"- **Average Quarterly Revenue**: ${sf.get('avg_quarterly_revenue', 0):,.2f} USD\n"
-                    f"- **Total Aggregated Revenue**: ${sf.get('total_revenue', 0):,.2f} USD\n"
-                    f"- **Total Units Sold**: {sf.get('total_units', 0):,} units\n"
-                    f"- **Quarterly Reports Recorded**: {sf.get('quarters', 0)} quarters"
-                ),
-                "source_type": "neo4j_graph",
-                "category": "Market Intelligence",
-                "authority": 10,
-                "score": 0.99,
-                "is_graph": True,
-                "cypher_preview": f"MATCH (p:Product)-[perf:PERFORMED_IN]->(r:Region)\nWHERE toLower(p.name) CONTAINS toLower('{model_term}')\nRETURN p.name AS model, r.name AS region, avg(perf.market_share) AS avg_share, sum(perf.revenue) AS total_revenue\nORDER BY total_revenue DESC LIMIT 5;",
-            })
-            
-        if not sam_model_facts:
-            sam_facts = get_samsung_5g_comparison()
-            if sam_facts:
-                top_sam = sam_facts[0]
-                graph_facts.append({
-                    "doc_id": "graph_samsung_5g_summary",
-                    "chunk_text": (
-                        f"### Neo4j Knowledge Graph: Samsung Regional Intelligence\n"
-                        f"- **Top Region**: {top_sam.get('region')}\n"
-                        f"- **5G Capability**: {'5G Enabled' if top_sam.get('is_5g') else '4G Standard'}\n"
-                        f"- **Average Regional Market Share**: {top_sam.get('avg_market_share', 0):.2f}%\n"
-                        f"- **Total Regional Revenue**: ${top_sam.get('total_revenue', 0):,.2f} USD\n"
-                        f"- **Average 5G Network Speed**: {top_sam.get('avg_speed', 0):.1f} Mbps"
-                    ),
-                    "source_type": "neo4j_graph",
-                    "category": "Graph Analytics",
-                    "authority": 10,
-                    "score": 0.99,
-                    "is_graph": True,
-                    "cypher_preview": "MATCH (p:Product {brand: 'Samsung'})-[perf:PERFORMED_IN]->(reg:Region)\nRETURN reg.name AS region, avg(perf.market_share) AS avg_market_share, sum(perf.revenue) AS total_revenue, avg(perf.avg_5g_speed) AS avg_speed\nORDER BY total_revenue DESC LIMIT 5;",
-                })
-
-    # Check for Regional / Store queries (if not already purely Samsung model query)
-    if not samsung_match and re.search(r"\b(north america|usa|us|america|europe|eu|uk|france|germany|asia|store|stores|retail|location|flagship)\b", query, re.IGNORECASE):
-        reg_match = re.search(r"\b(north america|usa|us|america|europe|eu|uk|france|germany|asia|japan|china)\b", query, re.IGNORECASE)
-        loc_str = reg_match.group(1) if reg_match else "global"
-        store_facts = get_regional_sales_graph_context(loc_str) if reg_match else get_top_stores_graph_context()
-        for idx, s in enumerate(store_facts, 1):
-            graph_facts.append({
-                "doc_id": f"neo4j_store_{idx}_{s.get('store', 'store').replace(' ', '_')}",
-                "chunk_text": (
-                    f"### Neo4j Knowledge Graph Fact: Retail Store Performance - {s.get('store')}\n"
-                    f"- **Store**: {s.get('store')}\n"
-                    f"- **Location**: {s.get('city')}, {s.get('country')}\n"
-                    f"- **Total Units Sold**: {s.get('total_store_units', s.get('total_units', 0)):,} units\n"
-                    f"- **Total Aggregated Revenue**: ${s.get('total_store_revenue', s.get('revenue', 0)):,.2f} USD"
-                ),
-                "source_type": "neo4j_graph",
-                "category": "Store Analytics",
-                "authority": 10,
-                "score": 0.99,
-                "is_graph": True,
-                "cypher_preview": "MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)\nOPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN s.name AS store, c.name AS city, co.name AS country, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue\nORDER BY total_units DESC LIMIT 6;",
-            })
-    
-    # Check for Warranty claims queries
-    if re.search(r"\b(warranty|repair|claims|defect|broken)\b", query, re.IGNORECASE):
-        w_facts = get_top_warranty_claims_graph_context()
-        for idx, item in enumerate(w_facts, 1):
-            graph_facts.append({
-                "doc_id": f"neo4j_warranty_{idx}_{item.get('product', 'prod').replace(' ', '_')}",
-                "chunk_text": (
-                    f"### Neo4j Knowledge Graph Fact: Warranty Claims for {item.get('product')}\n"
-                    f"- **Product**: {item.get('product')}\n"
-                    f"- **Category**: {item.get('category', 'Hardware')}\n"
-                    f"- **Price**: ${item.get('price', 0):,.2f} USD\n"
-                    f"- **Total Recorded Warranty Claims**: {item.get('claims', 0):,} claims"
-                ),
-                "source_type": "neo4j_graph",
-                "category": "Warranty Analytics",
-                "authority": 10,
-                "score": 0.99,
-                "is_graph": True,
-                "cypher_preview": "MATCH (p:Product)\nWHERE p.total_warranty_claims > 0\nOPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)\nRETURN p.name AS product, c.name AS category, p.price AS price, p.total_warranty_claims AS claims\nORDER BY claims DESC LIMIT 6;",
-            })
-
-    # Check for Top Retail Stores queries
-    if re.search(r"\b(store|retail|location|flagship|cities|stores)\b", query, re.IGNORECASE):
-        store_facts = get_top_stores_graph_context()
-        for idx, s in enumerate(store_facts, 1):
-            graph_facts.append({
-                "doc_id": f"neo4j_store_{idx}_{s.get('store', 'store').replace(' ', '_')}",
-                "chunk_text": (
-                    f"### Neo4j Knowledge Graph Fact: Retail Store Performance - {s.get('store')}\n"
-                    f"- **Store**: {s.get('store')}\n"
-                    f"- **Location**: {s.get('city')}, {s.get('country')}\n"
-                    f"- **Total Units Sold**: {s.get('total_units', 0):,} units\n"
-                    f"- **Total Aggregated Revenue**: ${s.get('total_revenue', 0):,.2f} USD"
-                ),
-                "source_type": "neo4j_graph",
-                "category": "Store Analytics",
+                "category": "Corpus Analytics",
                 "authority": 10,
                 "score": 0.98,
                 "is_graph": True,
-                "cypher_preview": "MATCH (s:Store)-[:LOCATED_IN]->(c:City)-[:IN_COUNTRY]->(co:Country)\nOPTIONAL MATCH (s)-[r:SOLD_PRODUCT]->(p:Product)\nRETURN s.name AS store, c.name AS city, co.name AS country, sum(r.total_units) AS total_units, sum(r.revenue) AS total_revenue\nORDER BY total_units DESC LIMIT 6;",
-            })
-
-    # Check for specific Apple products / keywords
-    apple_match = re.search(r"\b(macbook|airpods|iphone|ipad|apple watch|vision pro|beats)\b", query, re.IGNORECASE)
-    if apple_match:
-        prod_facts = get_product_graph_context(apple_match.group(1))
-        for fact in prod_facts:
-            graph_facts.append({
-                "doc_id": f"graph_apple_{fact.get('product', 'prod').replace(' ', '_')}",
-                "chunk_text": (
-                    f"### Neo4j Knowledge Graph Fact: {fact.get('product')}\n"
-                    f"- **Category**: {fact.get('category', 'N/A')}\n"
-                    f"- **MSRP**: ${fact.get('price', 0):,.2f} | **Launch**: {fact.get('launch_date', 'N/A')}\n"
-                    f"- **Global Stores Stocking**: {fact.get('store_count', 0)} stores\n"
-                    f"- **Total Aggregated Units Sold**: {fact.get('total_units_sold', 0):,.0f}\n"
-                    f"- **Warranty Claims Recorded**: {fact.get('warranty_claims', 0)} claims"
-                ),
-                "source_type": "neo4j_graph",
-                "category": "Graph Analytics",
-                "authority": 10,
-                "score": 0.98,
-                "is_graph": True,
-                "cypher_preview": f"MATCH (p:Product)\nWHERE toLower(p.name) CONTAINS toLower('{apple_match.group(1)}')\nOPTIONAL MATCH (p)-[:BELONGS_TO]->(c:Category)\nOPTIONAL MATCH (s:Store)-[r:SOLD_PRODUCT]->(p)\nRETURN p.name, p.price, p.launch_date, p.total_warranty_claims, count(DISTINCT s) AS store_count LIMIT 5;",
+                "cypher_preview": "MATCH (c:Corpus)\nOPTIONAL MATCH (e:Entity)-[:MENTIONED_IN]->(c)\nRETURN c.name, count(e);",
             })
 
     # 3. Merge Graph Facts with Pinecone Vector Chunks

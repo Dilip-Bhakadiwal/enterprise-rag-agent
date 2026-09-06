@@ -30,7 +30,20 @@ INTENT_SOURCE_MAP: dict[str, list[str]] = {
     "basic": [],  # empty = no filter applied
     "project_related": ["jira", "github", "confluence"],
     "conflicting_info": [],  # search all sources for conflicts
+    "chitchat": [],  # fast conversational greeting / casual chit-chat
 }
+
+CHITCHAT_PATTERNS = [
+    r"^(hi|hello|hey|heya|howdy|sup|yo|hola|greetings)[!.,\s]*$",
+    r"^(hi|hello|hey)\s+(there|nexora|copilot|assistant|bot|friend)[!.,\s]*$",
+    r"^(how are you|how are you doing|how's it going|how are things|how do you do)[?!\s]*$",
+    r"^(who are you|what are you|what is your name|tell me about yourself)[?!\s]*$",
+    r"^(what can you do|how can you help|what are your capabilities|help me)[?!\s]*$",
+    r"^(good morning|good afternoon|good evening|good day)[!.,\s]*$",
+    r"^(thank you|thanks|thx|thanks a lot|thank you so much)[!.,\s]*$",
+    r"^(bye|goodbye|see you|cya|take care)[!.,\s]*$",
+]
+_CHITCHAT_REGEX = re.compile("|".join(CHITCHAT_PATTERNS), re.IGNORECASE)
 
 _ROUTER_SYSTEM_PROMPT = """\
 You are an intent classifier for an enterprise knowledge base search system.
@@ -40,9 +53,10 @@ Classify the user's question into EXACTLY ONE of these intents:
 - "project_related" : Questions about code, pull requests, tasks, tickets, sprints, bugs, features
 - "conflicting_info": Questions explicitly asking about disagreements, conflicts, inconsistencies,
                       or comparing information from different sources
+- "chitchat"        : Conversational greetings, politeness, casual small talk ("hi", "how are you", "who are you")
 
 Respond with ONLY a valid JSON object and nothing else:
-{"intent": "<basic|project_related|conflicting_info>", "reason": "<one sentence explanation>"}
+{"intent": "<basic|project_related|conflicting_info|chitchat>", "reason": "<one sentence explanation>"}
 """
 
 
@@ -65,6 +79,8 @@ def _extract_intent_from_response(raw: str) -> tuple[str, str]:
 
     # Fallback: keyword-based classification
     raw_lower = raw.lower()
+    if any(k in raw_lower for k in ["chitchat", "greeting", "hello", "small talk"]):
+        return "chitchat", "keyword fallback"
     if any(k in raw_lower for k in ["project_related", "jira", "github", "ticket", "pull request"]):
         return "project_related", "keyword fallback"
     if any(k in raw_lower for k in ["conflicting", "conflict", "inconsisten", "disagree"]):
@@ -81,19 +97,27 @@ def classify_intent(query: str) -> tuple[str, list[str], str]:
 
     Returns:
         (intent, source_filter, provider_used)
-        - intent:        One of "basic", "project_related", "conflicting_info"
+        - intent:        One of "basic", "project_related", "conflicting_info", "chitchat"
         - source_filter: List of source_type strings to filter (empty = no filter)
         - provider_used: Which LLM provider answered the classification
     """
-    q_lower = query.lower()
+    q_stripped = query.strip()
 
-    # Hardware, retail, pricing, location, graph, and portfolio queries must search ALL sources (no restrictive Jira filter)
+    # 1. Immediate zero-latency fast-path for conversational greetings and small talk
+    if _CHITCHAT_REGEX.match(q_stripped):
+        logger.info(f"Router → intent='chitchat' (fast conversational rule) | query='{q_stripped}'")
+        return "chitchat", [], "fast_rule"
+
+    q_lower = q_stripped.lower()
+
+    # Medical, literature, novel, knowledge graph, and AI systems queries must search ALL sources (no restrictive Jira filter)
     is_open_domain = any(
         k in q_lower
         for k in [
-            "apple", "samsung", "iphone", "galaxy", "store", "price", "expensive", "cost",
-            "msrp", "warranty", "defect", "5g", "dilip", "research", "nexora", "fpga", "jetson",
-            "neo4j", "graph", "knowledge graph", "breakdown", "city", "location", "angeles", "york", "tokyo", "london", "paris"
+            "medical", "cancer", "carcinoma", "bcc", "cscc", "melanoma", "adrenal", "tumor", "tumors",
+            "biopsy", "radiation", "chemotherapy", "surgery", "mohs", "skin", "lesion", "symptom", "treatment",
+            "novel", "literature", "book", "author", "character", "triples", "cornwall", "erica vagans",
+            "neo4j", "graph", "knowledge graph", "entity", "entities", "dilip", "nexora", "yolo", "fpga", "research"
         ]
     )
 

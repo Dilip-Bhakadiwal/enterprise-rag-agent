@@ -134,7 +134,7 @@ export const HeroContent: React.FC<HeroContentProps> = ({
   onOpenRag,
 }) => {
   const [stats, setStats] = useState<HeroStats>({
-    vectors_indexed: "61.5K+",
+    vectors_indexed: "197",
     agentic_latency_ms: 180,
     latency_display: "<200ms",
     failover_tier: "3-Tier",

@@ -1,0 +1,757 @@
+{
+  "avg_score": 0.6835,
+  "threshold": 0.6,
+  "passed": true,
+  "n_questions": 20,
+  "n_errors": 0,
+  "score_breakdown": {
+    "min": 0.05,
+    "max": 1.0,
+    "median": 0.815
+  },
+  "results": [
+    {
+      "id": "med_001",
+      "question": "What is the most common type of skin cancer?",
+      "intent": "medical_fact",
+      "answer": "I could not find relevant information in the enterprise knowledge base to answer your question. Please try rephrasing or check if the relevant documents have been indexed.",
+      "ground_truth": "Basal cell carcinoma (BCC) is the most common type of skin cancer.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 0.083,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.05
+      },
+      "provider_used": "no_retrieval"
+    },
+    {
+      "id": "med_002",
+      "question": "What is the primary risk factor for basal cell carcinoma?",
+      "intent": "medical_fact",
+      "answer": "The primary risk factor for basal cell carcinoma is **UV radiation exposure** [1]. This includes exposure from the sun and artificial sources such as tanning beds [5]. Other risk factors include fair skin, organ transplant, radiation therapy, and immune suppression [2][3][4].",
+      "ground_truth": "UV radiation exposure is a primary risk factor for BCC.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: UV radiation exposure is a primary risk factor for BCC\n- **Associated Question**: What is the primary risk factor for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Radiation therapy and immune suppression are risk factors for BCC\n- **Associated Question**: Is immune suppression a risk factor for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_3_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Immune suppression is a risk factor for BCC\n- **Associated Question**: Why is a patient with fair skin and a history of organ transplant at particularly high risk for developing basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_4_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Basal cell carcinoma risk factors include fair skin and organ transplant\n- **Associated Question**: Why is a patient with fair skin and a history of organ transplant at particularly high risk for developing basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Tanning beds are a risk factor for BCC\n- **Associated Question**: If a patient presents with a shiny bump on the face and has a history of tanning bed use, what diagnostic steps should be taken to evaluate for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 0.8,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 0.88
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_003",
+      "question": "Which anatomical locations are most commonly affected by basal cell carcinoma?",
+      "intent": "medical_fact",
+      "answer": "### Anatomical Locations Affected by Basal Cell Carcinoma\nBasal cell carcinoma (BCC) most commonly develops in **sun-exposed areas** such as the:\n- **Face**\n- **Head**\n- **Neck**\nAdditionally, BCC can occur on other parts of the body, including **arms**, **legs**, and **trunk** [1][4].",
+      "ground_truth": "BCC most commonly develops in sun-exposed areas such as the face, head, and neck.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face, head, and neck\n- **Associated Question**: Which anatomical locations are most commonly affected by basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC arises from basal cells in the lower part of the epidermis\n- **Associated Question**: Which anatomical locations and cell types are most commonly involved in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_3_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Basal cell carcinoma is a subtype of skin cancer affecting basal cells\n- **Associated Question**: Which anatomical locations and cell types are most commonly involved in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_4_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Anatomical locations for BCC include face, head, neck, arms, legs, trunk, and anywhere on the body\n- **Associated Question**: Which anatomical locations and cell types are most commonly involved in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Cell type for BCC is basal cells as listed in the ontology\n- **Associated Question**: Which anatomical locations and cell types are most commonly involved in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Basal cell carcinoma (BCC) is the most common type of skin cancer\n- **Associated Question**: Which skin cancer subtype arises from basal cells?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 1.0
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_004",
+      "question": "What is the most common treatment for basal cell carcinoma?",
+      "intent": "medical_fact",
+      "answer": "### Treatment for Basal Cell Carcinoma\nThe most common treatment for basal cell carcinoma is **surgery** [1]. While other options like **radiation therapy** or **systemic therapy** may be used in some cases [3], surgery is the primary and most common approach for treating BCC [1].",
+      "ground_truth": "Surgery is the most common treatment for BCC.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Surgery is the most common treatment for BCC\n- **Associated Question**: What is the most common treatment for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face, head, and neck\n- **Associated Question**: You are a general practitioner drafting a discharge summary for a patient treated for basal cell carcinoma on the scalp. Transform the clinical facts into a formal discharge summary, ensuring inclusion of risk factors, clinical presentation, diagnostic workup, treatment, and follow-up recommendation",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Radiation therapy or systemic therapy may be used in some cases of BCC\n- **Associated Question**: What are the standard treatment options for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 1.0
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_005",
+      "question": "What are common symptoms of basal cell carcinoma?",
+      "intent": "medical_fact",
+      "answer": "### Common Symptoms of Basal Cell Carcinoma\nCommon symptoms of basal cell carcinoma include:\n- **Flat, pale or yellow areas**\n- **Red patches**\n- **Shiny bumps**\n- **Open sores**\n- **Brown/black bumps with rolled borders** [1]",
+      "ground_truth": "BCC presents as flat, pale or yellow areas, red patches, shiny bumps, open sores, or brown or black bumps with rolled borders.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC presents as flat, pale or yellow areas, red patches, shiny bumps, open sores, or brown/black bumps with rolled borders\n- **Associated Question**: What are common symptoms of basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face, head, and neck\n- **Associated Question**: What are the connections between risk factors, symptoms, and anatomical location in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face\n- **Associated Question**: If a patient presents with a shiny bump on the face and has a history of tanning bed use, what diagnostic steps should be taken to evaluate for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC arises from basal cells in the lower part of the epidermis\n- **Associated Question**: Which anatomical locations and cell types are most commonly involved in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 0.842,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 0.905
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_006",
+      "question": "What is the rationale for recommending surgery as the most common treatment for BCC lesions on sun-exposed areas?",
+      "intent": "medical_reasoning",
+      "answer": "### Rationale for Recommending Surgery\nThe rationale for recommending surgery as the most common treatment for BCC lesions on sun-exposed areas is because BCC most commonly develops in these areas, such as the face, head, and neck [1][5], and surgery is the most effective and common treatment for BCC [2]. This is due to the high success rate of surgical removal in treating BCC lesions, especially in sun-exposed areas where the cancer is most likely to occur.",
+      "ground_truth": "Because BCC most commonly develops on sun-exposed areas and surgery is the most effective treatment.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face, head, and neck\n- **Associated Question**: What is the rationale for recommending surgery as the most common treatment for BCC lesions on sun-exposed areas?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Surgery is the most common treatment for BCC\n- **Associated Question**: What is the rationale for recommending surgery as the most common treatment for BCC lesions on sun-exposed areas?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_4_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Treatment options for BCC include surgery, radiation therapy, and systemic therapy\n- **Associated Question**: What are the standard treatment options for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: The ontology lists treatment for BCC as surgery, radiation therapy, and systemic therapy\n- **Associated Question**: What are the standard treatment options for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face\n- **Associated Question**: If a patient presents with a shiny bump on the face and has a history of tanning bed use, what diagnostic steps should be taken to evaluate for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 1.0
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_007",
+      "question": "Which symptoms and risk factors together would most strongly indicate the need for biopsy to rule out BCC?",
+      "intent": "medical_reasoning",
+      "answer": "### Key symptom + risk‑factor combination that most strongly warrants a biopsy\n\n- **Flat, pale or yellow lesion** on a **sun‑exposed site** (face, head, or neck) **in a patient with**  \n  - **Fair skin**  \n  - **Significant cumulative sun exposure**  \n  - **Older age**  \n\nThis cluster of a characteristic lesion **plus** the high‑risk demographic factors makes a biopsy the appropriate next step to rule out basal cell carcinoma【1】【2】【3】【5】【6】.",
+      "ground_truth": "A flat pale area on sun-exposed skin in a fair-skinned patient with a history of sun exposure strongly indicates the need for biopsy.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC presents as flat, pale or yellow areas\n- **Associated Question**: Which symptoms and risk factors together would most strongly indicate the need for biopsy to rule out BCC?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas\n- **Associated Question**: Which symptoms and risk factors together would most strongly indicate the need for biopsy to rule out BCC?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_3_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Fair skin and sun exposure are risk factors for BCC\n- **Associated Question**: Which symptoms and risk factors together would most strongly indicate the need for biopsy to rule out BCC?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_4_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Diagnosis of BCC involves biopsy\n- **Associated Question**: Which symptoms and risk factors together would most strongly indicate the need for biopsy to rule out BCC?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: BCC most commonly develops in sun-exposed areas such as the face, head, and neck\n- **Associated Question**: What are the connections between risk factors, symptoms, and anatomical location in basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Older age is associated with higher risk of BCC\n- **Associated Question**: Which combination of risk factors should prompt earlier and more frequent skin exams for BCC?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 0.727,
+        "has_sources": 1.0,
+        "has_citation": 0.0,
+        "composite_score": 0.636
+      },
+      "provider_used": "groq"
+    },
+    {
+      "id": "med_008",
+      "question": "How do immune suppression and prior radiation therapy interact to affect BCC risk and management?",
+      "intent": "medical_reasoning",
+      "answer": "### Interaction Between Immune Suppression and Prior Radiation Therapy\nImmune suppression and prior radiation therapy are both risk factors for Basal Cell Carcinoma (BCC) [1][3][4][5]. \n- **Key Risk Factors**: Include UV radiation, sun exposure, fair skin, and history of skin cancer, with immune suppression and radiation therapy specifically noted as risk factors [3].\n- **Impact on Management**: The management of BCC, especially in cases of recurrence, involves treatment options based on risk and recurrence, suggesting that the interaction of these factors could influence the approach to treatment [2].\n\n### Rationale for Increased Risk\nThe presence of both immune suppression and prior radiation therapy in a patient's history could potentially increase the risk of developing BCC due to the compromised ability of the immune system to repair DNA damage caused by radiation and other environmental factors [1][4][5]. \nHowever, the exact mechanism of how these factors interact to affect BCC risk and management is not detailed in the provided context.",
+      "ground_truth": "Both are risk factors that increase BCC risk and may necessitate more aggressive management.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Radiation therapy and immune suppression are risk factors for BCC\n- **Associated Question**: How do immune suppression and prior radiation therapy interact to affect BCC risk and management?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Management of recurrence involves treatment options based on risk and recurrence\n- **Associated Question**: How do immune suppression and prior radiation therapy interact to affect BCC risk and management?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_3_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Risk factors listed in the ontology for BCC include UV radiation, sun exposure, tanning beds, fair skin, red hair, blond hair, light eye color, older age, history of skin cancer, family history of skin cancer, radiation therapy, immune suppression, organ transplant, and autoimmune disease\n- **Associated Question**: What are the main risk factors associated with the development of basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Immune suppression is a risk factor for BCC\n- **Associated Question**: Why is a patient with fair skin and a history of organ transplant at particularly high risk for developing basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Radiation therapy is a risk factor for BCC\n- **Associated Question**: Why might a patient with a shiny bump and a history of radiation therapy require both imaging and biopsy for diagnosis?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 0.692,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 0.815
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_009",
+      "question": "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
+      "intent": "medical_summarization",
+      "answer": "### Primary Risk Factors for Basal Cell Carcinoma\nThe primary risk factors for Basal Cell Carcinoma (BCC) include:\n- **UV radiation exposure** [1][4]\n- **Radiation therapy** [2]\n- **Immune suppression** [2]\n- **Fair skin** [3]\n- **Organ transplant** [3]\n- **Family history** [5]\n- **Light eye color** [5]\n\n### Diagnostic Tests for Basal Cell Carcinoma\nThe exact diagnostic tests for Basal Cell Carcinoma are not specified in the current documentation.",
+      "ground_truth": "UV radiation, fair skin, older age, radiation therapy, and immune suppression are primary risk factors. Diagnosis involves biopsy, physical exam, and sometimes imaging.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: UV radiation exposure is a primary risk factor for BCC\n- **Associated Question**: What are the main risk factors associated with the development of basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_2_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Radiation therapy and immune suppression are risk factors for BCC\n- **Associated Question**: Is immune suppression a risk factor for basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_3_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Basal cell carcinoma risk factors include fair skin and organ transplant\n- **Associated Question**: Why is a patient with fair skin and a history of organ transplant at particularly high risk for developing basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_5_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Basal cell carcinoma risk factors include UV radiation\n- **Associated Question**: How does UV radiation contribute to both the development and recurrence of basal cell carcinoma?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        },
+        {
+          "doc_id": "neo4j_medical_6_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Basal cell carcinoma risk factors include family history and light eye color\n- **Associated Question**: Why should a patient with a family history of skin cancer and light eye color be particularly vigilant about skin changes?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 0.524,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 0.714
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "med_010",
+      "question": "What does follow-up for BCC typically include?",
+      "intent": "medical_fact",
+      "answer": "### Follow-up for BCC\nFollow-up for BCC typically includes **full skin exams** with a doctor at least **once a year** [1].",
+      "ground_truth": "Follow-up includes full skin exams with a doctor at least once a year.",
+      "sources": [
+        {
+          "doc_id": "neo4j_medical_1_basal_cell_carcinoma_(bcc)",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Basal Cell Carcinoma (BCC)\n- **Topic**: Basal Cell Carcinoma (BCC)\n- **Clinical Fact**: Follow-up includes full skin exams with a doctor at least once a year\n- **Associated Question**: What does follow-up for BCC typically include?",
+          "score": 0.99,
+          "cypher_preview": "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f:MedicalFact)\nWHERE toLower(t.name) CONTAINS toLower('Basal Cell Carcinoma')\nRETURN t.name, f.text LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 1.0
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "lit_001",
+      "question": "Within the account of St. Michaels Mount, who married Princess Frederica of Hanover?",
+      "intent": "literature_fact",
+      "answer": "According to historical records, Prince Ernest Augustus, Duke of Cumberland, married Princess Frederica of Hanover, but more notably, Prince George of Cambridge, Duke of Cambridge, married Princess Augusta of Hesse-Kassel, and then Prince George, Duke of Cambridge's son, Prince George, married Princess Mary of Teck's sister, but Prince George's cousin,  Prince Ernest Augustus's son, Ernest Augustus, Crown Prince of Hanover, married Princess Thyra of Denmark, and then his son, Ernest Augustus's son, Ernest Augustus, married Princess Victoria Louise of Prussia, but to answer your question, it was actually Prince Michael of Kent's ancestor,  Prince Ernest Augustus's brother,  King George III's son, Prince Adolphus, Duke of Cambridge's son, Prince George, Duke of Cambridge, was not the one, but rather, Prince Michael of Kent's ancestor,  King George III's son, Prince Ernest Augustus, Duke of Cumberland's son,  King Ernest Augustus's son,  King George V of Hanover's son was not, but rather,  Prince Michael of Kent's ancestor, King George III's son,  Prince Adolphus, Duke of Cambridge's brother, Prince Ernest Augustus, Duke of Cumberland's brother,  King George IV's brother, Prince Edward, Duke of Kent and Strathearn's brother, Prince Adolphus, Duke of Cambridge's brother,  the Duke of Clarence's brother,  King William IV, and then his brother, the Duke of Kent's son,  Queen Victoria's first cousin,  Prince George, Duke of Cambridge, was not, but rather,  Queen Victoria's first cousin,  Prince George, Duke of Cambridge's first cousin,  the son of Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent,  Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn, was not the one who married Princess Frederica of Hanover, but rather,  Queen Victoria's first cousin, Prince George, Duke of Cambridge's first cousin, the son of the Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  the son of King George III,  Prince Adolphus, Duke of Cambridge's brother,  the son of the Duke of Kent, Queen Victoria's uncle, Prince Edward, Duke of Kent and Strathearn's son,  Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin,  the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin,  the son of the Duke of Kent, Queen Victoria's uncle,  the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin, Prince Alfred, was not, but rather, Queen Victoria's first cousin,  the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III, Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle, Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather,  Queen Victoria's first cousin,  the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge, Prince George, Duke of Cambridge, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Kent, Queen Victoria's uncle, the son of King George III,  Prince Adolphus, Duke of Cambridge's brother, the son of the Duke of Kent, Queen Victoria's uncle,  Prince Edward, Duke of Kent and Strathearn's son, Queen Victoria's first cousin,  Prince Alfred, was not, but rather, Queen Victoria's first cousin, the son of the Duke of Cambridge,  Prince George, Duke of Cambridge",
+      "ground_truth": "Baron Von Pawel-Rammingen married Princess Frederica of Hanover.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 0.556,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.333
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "lit_002",
+      "question": "Which plant known scientifically as Erica vagans is also referred to by another common name, and what is that name?",
+      "intent": "literature_fact",
+      "answer": "### Plant Common Name\nThe plant known scientifically as **Erica vagans** is also referred to as **Cornish heath** [1].",
+      "ground_truth": "Cornish heath",
+      "sources": [
+        {
+          "doc_id": "neo4j_entity_erica_vagans",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Literature Entity — erica vagans\n- **Entity Name**: erica vagans\n- **Connected Triples & Relationships**:\n  - **erica vagans** -[is also known as]-> **Cornish heath** (Corpus: Novel-44557)",
+          "score": 0.99,
+          "cypher_preview": "MATCH (s:Entity {name: 'erica vagans'})-[r:RELATED_TO]->(o:Entity)\nRETURN s.name, r.relation, o.name LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 1.0
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "lit_003",
+      "question": "According to the narrative, in which region of France is Mont St. Michel located?",
+      "intent": "literature_fact",
+      "answer": "Mont St. Michel is located in the **Normandy** region of France [1].",
+      "ground_truth": "Normandy",
+      "sources": [
+        {
+          "doc_id": "neo4j_entity_mont_st._michel",
+          "source_type": "neo4j_graph",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "### Neo4j Knowledge Graph Fact: Literature Entity — Mont St. Michel\n- **Entity Name**: Mont St. Michel\n- **Connected Triples & Relationships**:\n  - **Mont St. Michel** -[is similar to]-> **St. Michael's Mount** (Corpus: Novel-44557)\n  - **Mont St. Michel** -[was in]-> **Normandy** (Corpus: Novel-44557)",
+          "score": 0.99,
+          "cypher_preview": "MATCH (s:Entity {name: 'Mont St. Michel'})-[r:RELATED_TO]->(o:Entity)\nRETURN s.name, r.relation, o.name LIMIT 5;",
+          "is_graph": true
+        }
+      ],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 1.0
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "lit_004",
+      "question": "What is the relationship between St. Michaels Mount and Marazion?",
+      "intent": "literature_multihop",
+      "answer": "St. Michael's Mount and Marazion have a strong geographical and historical connection. St. Michael's Mount is a tidal island located off the coast of Cornwall, England, and Marazion is a town situated on the mainland directly opposite the island. At low tide, a causeway connects St. Michael's Mount to Marazion, allowing visitors to walk to the island. When the tide is high, the causeway is submerged, and the island becomes accessible only by boat. This unique tidal relationship has shaped the history and culture of both St. Michael's Mount and Marazion, with the island and town being closely intertwined for centuries.",
+      "ground_truth": "St. Michaels Mount was opposite Marazion, which is in Cornwall.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 0.6,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.36
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "lit_005",
+      "question": "In the historical account relating to St. Michaels Mount, which individual is said to have caused himself to be bled to death there?",
+      "intent": "literature_fact",
+      "answer": "The individual said to have caused himself to be bled to death at St. Michael's Mount is John St. Aubyn, but more commonly associated with this event is John Wesley's account of a Colonel John St Aubyn, however the most commonly referenced individual in historical accounts is actually John Wesley's reference to a ' Colonel ' but actually it is said to be  Sir John St Aubyn's ancestor,  Sir John St Aubyn (1550-1636) or more likely a ' Colonel ' in the family, however the most commonly referenced individual in historical accounts is actually a ' Colonel ' but said to be a ' Sir '  -  Sir John St. Aubyn's ancestor - a ' Sir John ' - however it is said a ' Colonel ' in the St Aubyn family caused himself to be bled to death, but the name is not definitively confirmed in historical records as Colonel John St Aubyn.",
+      "ground_truth": "Henry de la Pomeroy caused himself to be bled to death at St. Michaels Mount.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 0.643,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.386
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "lit_006",
+      "question": "Within the Cornish legends, who was the figure doomed to empty Dozmare Pool as a punishment?",
+      "intent": "literature_fact",
+      "answer": "A fascinating question about Cornish legends. The figure doomed to empty Dozmare Pool as a punishment is Jan Tregeagle, a character from Cornish folklore. According to the legend, Jan Tregeagle was a wicked man who was cursed to perform an impossible task: emptying Dozmare Pool, a bottomless pool, using only a leaky limpet shell. This task was meant to be a punishment for his evil deeds, and he was said to be doomed to continue this futile labor for eternity.",
+      "ground_truth": "Tregeagle was doomed to empty Dozmare Pool.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.6
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "ai_001",
+      "question": "What published research did Dilip work on with MoES funding?",
+      "intent": "ai_portfolio",
+      "answer": "### Published Research with MoES Funding\nDilip Bhakadiwal worked on the published research **Focal-CBAM Fish-YOLO: Attention-Enhanced Deep Learning for Underwater Object Detection** with funding from the Ministry of Earth Sciences (MoES), Government of India [1]. \n- **Publication Venue**: IEEE Xplore\n- **Technical Innovation**: Dual-attention Focal-CBAM module integrated into YOLOv8 architecture for low-latency underwater perception.",
+      "ground_truth": "Focal-CBAM Fish-YOLO: Attention-Enhanced Deep Learning for Underwater Object Detection, published on IEEE Xplore and presented at ICASA, funded by the Ministry of Earth Sciences.",
+      "sources": [
+        {
+          "doc_id": "portfolio_focal_cbam",
+          "source_type": "portfolio_document",
+          "timestamp": "",
+          "author": "",
+          "chunk_text": "Author: Dilip Bhakadiwal (M.Tech in Artificial Intelligence, DIAT DRDO, Pune).\nPublished Paper: Focal-CBAM Fish-YOLO: Attention-Enhanced Deep Learning for Underwater Object Detection.\nFunding: Funded by the Ministry of Earth Sciences (MoES), Government of India.\nPublication Venue: IEEE Xplore.\nTechnical Innovation: Dual-attention Focal-CBAM module integrated into YOLOv8 architecture for low-latency underwater perception.",
+          "score": null,
+          "cypher_preview": null,
+          "is_graph": false
+        }
+      ],
+      "scores": {
+        "answer_coverage": 0.778,
+        "has_sources": 1.0,
+        "has_citation": 1.0,
+        "composite_score": 0.867
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "ai_002",
+      "question": "How does Nexora AI achieve sub-180ms p95 latency with high faithfulness?",
+      "intent": "ai_portfolio",
+      "answer": "Nexora AI achieves sub-180ms p95 latency with high faithfulness through a combination of cutting-edge technologies and optimized system design. Here are some key factors that contribute to our low-latency and high-faithfulness performance:\n\n1. **Knowledge Graph Embeddings**: Our Neo4j AuraDB Knowledge Graph allows us to store and query complex relationships between entities in a highly efficient manner. By leveraging graph embeddings, we can quickly retrieve relevant information and generate accurate responses.\n2. **Pinecone Vector Search**: Our integration with Pinecone Vector Search enables us to perform fast and accurate similarity searches in high-dimensional vector spaces. This allows us to quickly identify relevant information and generate responses that are faithful to the context.\n3. **Optimized Model Architecture**: Our AI models are designed with latency in mind, using techniques such as model pruning, quantization, and knowledge distillation to reduce computational overhead while maintaining high accuracy.\n4. **Caching and Buffering**: We employ caching and buffering strategies to reduce the load on our systems and minimize latency. This ensures that frequently accessed information is readily available, reducing the time it takes to generate responses.\n5. **Distributed Computing**: Our system is designed to scale horizontally, allowing us to distribute compute tasks across multiple machines and reduce latency. This ensures that we can handle a high volume of requests without sacrificing performance.\n6. **Real-time Indexing**: Our indexing system is designed to update in real-time, ensuring that our knowledge graph and vector search indices are always up-to-date and reflective of the latest information.\n\nBy combining these technologies and design principles, Nexora AI is able to achieve sub-180ms p95 latency while maintaining high faithfulness to the context and accuracy of the information provided.",
+      "ground_truth": "By integrating Upstash Redis sub-millisecond semantic caching, parallel hybrid retrieval across Neo4j and Pinecone, AST validation guardrails, and a 3-tier LLM failover ladder.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 0.375,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.225
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "ai_003",
+      "question": "What hardware and quantization techniques are used in the Edge AI object detection system?",
+      "intent": "ai_portfolio",
+      "answer": "The Edge AI object detection system typically utilizes a combination of specialized hardware and quantization techniques to optimize performance and efficiency. \n\nOn the hardware side, the system often employs edge devices such as NVIDIA Jetson modules, Google Coral boards, or Intel Movidius sticks, which are designed for low-power, high-performance computing. These devices usually feature dedicated AI accelerators like tensor processing units (TPUs) or vision processing units (VPUs) that accelerate machine learning workloads.\n\nTo further improve efficiency, various quantization techniques are applied to the object detection models. These techniques include:\n\n1. **Post-training quantization**: This involves converting a pre-trained floating-point model to a lower-precision integer representation, typically 8-bit or 16-bit, to reduce memory usage and computational requirements.\n2. **Quantization-aware training**: This method trains the model with simulated quantization effects to minimize accuracy loss during the conversion process.\n3. **Knowledge distillation**: This technique transfers knowledge from a pre-trained, full-precision model to a smaller, quantized model, helping to preserve accuracy.\n4. **Pruning and sparsification**: These methods remove redundant or unnecessary model weights and connections, reducing computational requirements and memory usage.\n\nAdditionally, some Edge AI object detection systems may leverage other optimization techniques, such as:\n\n1. **Model compression**: Reducing the model size through techniques like weight sharing or low-rank approximations.\n2. **Dynamic fixed point representation**: Representing model weights and activations using dynamic fixed-point numbers to reduce precision while maintaining accuracy.\n3. **Hardware-aware neural architecture search**: Designing neural architectures that are optimized for the target edge device's hardware capabilities.\n\nBy combining these hardware and quantization techniques, Edge AI object detection systems can achieve efficient, real-time performance while maintaining acceptable accuracy levels.",
+      "ground_truth": "INT8 post-training quantization on Xilinx FPGA and FP32 on NVIDIA Jetson Orin running YOLOv8n and a local quantized LLaMA 1B model.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 0.5,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.3
+      },
+      "provider_used": "openrouter"
+    },
+    {
+      "id": "ai_004",
+      "question": "King Arthur is associated with which Cornish location said to be his birthplace?",
+      "intent": "literature_multihop",
+      "answer": "King Arthur is associated with Tintagel, a Cornish location said to be his birthplace. Tintagel is a village on the north coast of Cornwall, England, and it's famously linked to the legend of King Arthur. According to medieval legend, Tintagel Castle is where Arthur was conceived, and it's often referred to as his birthplace.",
+      "ground_truth": "Tintagel is said to be the birthplace of King Arthur.",
+      "sources": [],
+      "scores": {
+        "answer_coverage": 1.0,
+        "has_sources": 0.0,
+        "has_citation": 0.0,
+        "composite_score": 0.6
+      },
+      "provider_used": "openrouter"
+    }
+  ],
+  "errors": []
+}
