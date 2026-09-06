@@ -32,41 +32,40 @@ const getSemanticSubcluster = (node: GraphNode): string => {
   const sub = (node.subcategory || '').toLowerCase();
   const cat = node.category;
 
-  if (cat === 'apple') {
-    if (label.includes('macbook') || label.includes('mac ') || label.includes('imac') || label.includes('studio') || label.includes('pro display')) return 'Mac & Compute';
-    if (label.includes('iphone') || label.includes('bionic')) return 'iPhone Ecosystem';
-    if (label.includes('ipad')) return 'iPad & Tablets';
-    if (label.includes('airpods') || label.includes('homepod') || label.includes('audio') || label.includes('beat')) return 'Audio & Acoustics';
-    if (label.includes('watch') || label.includes('vision') || label.includes('wearable')) return 'Wearables & Vision';
-    return 'Apple Hardware';
+  if (cat === 'dilip_ai') {
+    if (label.includes('yolo') || label.includes('vision') || label.includes('fpga') || label.includes('jetson') || label.includes('moes')) return 'Edge Vision & MoES';
+    if (label.includes('rag') || label.includes('engine') || label.includes('nexora')) return 'Autonomous Engines & RAG';
+    if (label.includes('ieee') || label.includes('climate') || label.includes('weather')) return 'IEEE Climate AI';
+    if (label.includes('quant') || label.includes('npu') || label.includes('int4')) return 'Neural Quantization';
+    return 'Dilip AI Research';
   }
-  if (cat === 'samsung') {
-    if (label.includes('fold') || label.includes('flip')) return 'Foldables & Flex';
-    if (label.includes('ultra') || label.includes('s23') || label.includes('s24') || label.includes('s22')) return 'Galaxy S Series';
-    if (label.includes('watch') || label.includes('buds') || label.includes('ring')) return 'Galaxy Wearables';
-    if (label.includes('5g') || label.includes('modem') || label.includes('telecom')) return '5G Telemetry';
-    return 'Samsung Galaxy';
+  if (cat === 'medical') {
+    if (label.includes('checkpoint') || label.includes('immunotherapy') || label.includes('pd-1') || label.includes('t-cell')) return 'Immunotherapy & Checkpoints';
+    if (label.includes('kinase') || label.includes('inhibitor') || label.includes('egfr') || label.includes('targeted')) return 'Kinase & Targeted Therapy';
+    if (label.includes('genom') || label.includes('biomarker') || label.includes('mutation') || label.includes('ngs')) return 'Genomics & Biomarkers';
+    if (label.includes('trial') || label.includes('patient') || label.includes('survival') || label.includes('clinical')) return 'Clinical Trials & Outcomes';
+    if (sub.includes('topic')) return 'Medical Topics';
+    if (sub.includes('fact')) return 'Clinical Evidence Facts';
+    return 'Clinical Oncology KG';
   }
-  if (cat === 'stores') {
-    if (label.includes('york') || label.includes('fifth') || label.includes('chicago') || label.includes('san francisco') || label.includes('usa') || label.includes('america')) return 'North America Stores';
-    if (label.includes('london') || label.includes('regent') || label.includes('paris') || label.includes('berlin') || label.includes('europe') || label.includes('uk')) return 'European Stores';
-    if (label.includes('ginza') || label.includes('tokyo') || label.includes('seoul') || label.includes('shanghai') || label.includes('asia') || label.includes('singapore')) return 'Asia-Pacific Stores';
-    if (sub.includes('city')) return 'Global Cities';
-    if (sub.includes('country')) return 'Sovereign Markets';
-    return 'Retail Flagships';
+  if (cat === 'literature') {
+    if (label.includes('entity') || label.includes('coreference') || label.includes('link')) return 'Cross-Doc Entity Linking';
+    if (label.includes('hop') || label.includes('path') || label.includes('traversal')) return 'Multi-Hop Path Reasoning';
+    if (label.includes('triple') || label.includes('relation')) return 'Scientific Triples';
+    return 'Literature QA Graph';
   }
-  if (cat === '5g_regions') {
-    if (label.includes('q1') || label.includes('q2') || label.includes('q3') || label.includes('q4')) return 'Quarterly Timelines';
-    if (sub.includes('region')) return 'Continental Jurisdictions';
-    return '5G Telemetry Hubs';
+  if (cat === 'corpus') {
+    if (label.includes('vector') || label.includes('pinecone') || label.includes('embed')) return 'Dense Vector Substrate';
+    if (label.includes('graph') || label.includes('neo4j') || label.includes('auradb')) return 'Neo4j Graph Store';
+    return 'Benchmark Corpora';
   }
-  if (cat === 'warranty') {
-    if (label.includes('oled') || label.includes('display')) return 'Display & Screen Claims';
-    if (label.includes('hinge') || label.includes('flex')) return 'Mechanical & Hinge Durability';
-    if (label.includes('battery') || label.includes('power')) return 'Battery Lifecycle Analytics';
-    return 'Defect Telemetry';
-  }
-  return 'Research & Innovation';
+  if (cat === 'apple') return 'Apple Hardware';
+  if (cat === 'samsung') return 'Samsung Galaxy';
+  if (cat === 'stores') return 'Retail Flagships';
+  if (cat === '5g_regions') return '5G Telemetry';
+  if (cat === 'warranty') return 'Defect Telemetry';
+
+  return 'Knowledge Entity';
 };
 
 export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
@@ -144,6 +143,9 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
   const computeLayout = useCallback((nodeList: GraphNode[]) => {
     const orbits: Record<string, { orbitRadius: number; angle: number; subSpread: number }> = {
       dilip_ai: { orbitRadius: 0, angle: 0, subSpread: Math.PI * 2 },
+      medical: { orbitRadius: 420, angle: -Math.PI * 0.7, subSpread: 1.4 },
+      literature: { orbitRadius: 420, angle: -Math.PI * 0.3, subSpread: 1.4 },
+      corpus: { orbitRadius: 440, angle: Math.PI * 0.5, subSpread: 1.6 },
       apple: { orbitRadius: 420, angle: -Math.PI * 0.75, subSpread: 1.3 },
       samsung: { orbitRadius: 420, angle: -Math.PI * 0.25, subSpread: 1.3 },
       stores: { orbitRadius: 460, angle: Math.PI * 0.75, subSpread: 1.4 },

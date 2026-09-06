@@ -1,5 +1,8 @@
 export type EntityCategory =
   | 'dilip_ai'
+  | 'medical'
+  | 'literature'
+  | 'corpus'
   | 'apple'
   | 'samsung'
   | 'stores'

@@ -8,11 +8,14 @@ import { GraphNode, GraphLink } from "../types/graph";
 const API_BASE_URL =
   ((import.meta as any).env?.VITE_API_BASE_URL as string) || "";
 
-// ── Persistent Module-Level Cache (Lazy on-demand only) ─────────────────────
+// ── Persistent Module-Level Cache & Eager Background Prefetch ───────────────
 let _cachedGraphData: { nodes: GraphNode[]; links: GraphLink[] } | null = null;
+let _isPrefetching = false;
 
 const fetchGraphDataOnDemand = async () => {
   if (_cachedGraphData) return _cachedGraphData;
+  if (_isPrefetching) return null;
+  _isPrefetching = true;
   try {
     const response = await fetch(`${API_BASE_URL}/api/graph/data`);
     if (!response.ok) return null;
@@ -26,9 +29,23 @@ const fetchGraphDataOnDemand = async () => {
     }
   } catch (err) {
     console.debug("Graph fetch:", err);
+  } finally {
+    _isPrefetching = false;
   }
   return null;
 };
+
+// Eager background prefetch so data is instantly warm
+if (typeof window !== "undefined") {
+  const prefetch = () => {
+    fetchGraphDataOnDemand().catch(() => {});
+  };
+  if ("requestIdleCallback" in window) {
+    (window as any).requestIdleCallback(prefetch, { timeout: 2000 });
+  } else {
+    setTimeout(prefetch, 800);
+  }
+}
 
 interface KnowledgeGraphVisualizerModalProps {
   isOpen: boolean;
@@ -62,7 +79,7 @@ export const KnowledgeGraphVisualizerModal: React.FC<KnowledgeGraphVisualizerMod
     };
   }, [isOpen]);
 
-  // ── Lazy Fetch: ONLY runs when Modal is opened (Zero resource use when closed) ──
+  // ── Sync with live Neo4j graph data ──
   useEffect(() => {
     if (!isOpen) return;
 
@@ -131,8 +148,8 @@ export const KnowledgeGraphVisualizerModal: React.FC<KnowledgeGraphVisualizerMod
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-emerald-500"></span>
                 </span>
-                <span className="font-bold text-white tracking-wide truncate max-w-[120px] sm:max-w-none">
-                  {isNeo4jLive ? "Neo4j AuraDB Live" : "Solar Constellation"}
+                <span className="font-bold text-white tracking-wide truncate max-w-[140px] sm:max-w-none">
+                  {isNeo4jLive ? "Neo4j AuraDB Live" : "Streaming Neo4j AuraDB..."}
                 </span>
               </div>
               <span className="text-white/20">|</span>
@@ -140,9 +157,9 @@ export const KnowledgeGraphVisualizerModal: React.FC<KnowledgeGraphVisualizerMod
                 <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
                 <span ref={fpsRef} className="text-emerald-400 font-semibold">30 FPS</span>
                 <span className="text-white/30">•</span>
-                <span className="font-medium text-slate-200">{liveNodes.length || 476} Nodes</span>
+                <span className="font-medium text-slate-200">{liveNodes.length} Nodes</span>
                 <span className="text-white/30">•</span>
-                <span className="font-medium text-emerald-300/90">{liveLinks.length ? (liveLinks.length >= 1000 ? `${(liveLinks.length / 1000).toFixed(1)}K` : liveLinks.length) : "7.6K"} Edges</span>
+                <span className="font-medium text-emerald-300/90">{liveLinks.length >= 1000 ? `${(liveLinks.length / 1000).toFixed(1)}K` : liveLinks.length} Edges</span>
               </div>
             </div>
 
@@ -155,6 +172,17 @@ export const KnowledgeGraphVisualizerModal: React.FC<KnowledgeGraphVisualizerMod
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Syncing pill indicator during initial cold stream */}
+          {!isNeo4jLive && (
+            <div className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/80 border border-emerald-500/30 text-emerald-400 text-[11px] font-mono backdrop-blur-md shadow-xl animate-pulse">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Syncing 7,495 Neo4j AuraDB Entities...</span>
+            </div>
+          )}
 
           {/* ── 3. Floating Node Inspector Card (Bottom-sheet on mobile, top-right on desktop) ── */}
           {selectedNode && (

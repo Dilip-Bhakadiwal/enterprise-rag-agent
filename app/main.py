@@ -523,16 +523,24 @@ async def get_live_stats():
     return StatsResponse(**data, cached=False)
 
 
+_LIVE_GRAPH_CACHE = {"data": None, "expires_at": 0.0}
+
+
 @app.get("/api/graph/data", tags=["graph"])
 async def get_live_graph_data():
     """
-    Fetches real-time Knowledge Graph: ALL 476 nodes & relationships directly from Neo4j AuraDB.
-    Returns { nodes: [...], links: [...] }.
+    Fetches real-time Knowledge Graph: ALL nodes & relationships directly from Neo4j AuraDB.
+    Returns { nodes: [...], links: [...] }. Cached in-memory for instant <5ms responses.
     """
+    global _LIVE_GRAPH_CACHE
+    now = time.time()
+    if _LIVE_GRAPH_CACHE.get("data") and now < _LIVE_GRAPH_CACHE.get("expires_at", 0):
+        return _LIVE_GRAPH_CACHE["data"]
+
     try:
         from app.agent.graph_retriever import query_neo4j_graph
         
-        # 1. Fetch ALL 476 Nodes from Neo4j AuraDB
+        # 1. Fetch ALL Nodes from Neo4j AuraDB
         node_query = """
         MATCH (n)
         RETURN 
@@ -545,7 +553,7 @@ async def get_live_graph_data():
         if not node_records:
             return {"status": "fallback", "nodes": [], "links": []}
 
-        # 2. Fetch all structural relationships connecting nodes (all 7,614 edges)
+        # 2. Fetch all structural relationships connecting nodes
         rel_query = """
         MATCH (n)-[r]->(m)
         RETURN 
@@ -639,13 +647,16 @@ async def get_live_graph_data():
                     "color": nodes_map[s]["color"]
                 })
 
-        return {
+        result = {
             "status": "connected",
             "nodes": list(nodes_map.values()),
             "links": links,
             "count": len(nodes_map),
             "relationships_count": len(links)
         }
+        _LIVE_GRAPH_CACHE["data"] = result
+        _LIVE_GRAPH_CACHE["expires_at"] = now + 3600.0  # 1 hour cache
+        return result
     except Exception as exc:
         logger.error(f"Error fetching live Neo4j graph data: {exc}")
         return {"status": "error", "nodes": [], "links": [], "error": "Graph data temporarily unavailable."}
