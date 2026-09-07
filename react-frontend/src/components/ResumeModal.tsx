@@ -189,6 +189,12 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
               <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs font-medium ${
                 isDarkMode ? "text-slate-300" : "text-slate-700"
               }`}>
+                <span className="flex items-center gap-1">
+                  <Phone className={`w-3 h-3 ${isDarkMode ? "text-sky-400" : "text-slate-500"}`} />
+                  <span>+91-8003046831</span>
+                </span>
+                <span className="opacity-40">|</span>
+
                 <button
                   onClick={handleCopyEmail}
                   className="hover:text-sky-600 flex items-center gap-1 cursor-pointer"
@@ -224,13 +230,22 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
 
                 <span className="flex items-center gap-1">
                   <MapPin className={`w-3 h-3 ${isDarkMode ? "text-sky-400" : "text-slate-500"}`} />
-                  <span>Pune, Maharashtra, India</span>
+                  <span>Jaipur, Rajasthan (Open to Remote)</span>
                 </span>
               </div>
             </div>
 
+            {/* Professional Summary */}
+            <div className={`mt-4 p-3.5 rounded-xl text-xs sm:text-[13px] leading-relaxed border ${
+              isDarkMode 
+                ? "bg-slate-900/60 border-white/10 text-slate-200" 
+                : "bg-slate-50 border-slate-200 text-slate-800"
+            }`}>
+              AI/ML Engineer specializing in Agentic workflows, GraphRAG, and high-performance LLM orchestration. Proven experience architecting scalable multi-agent systems, deploying open-source models locally (Llama 3.3, Qwen), and optimizing retrieval pipelines for enterprise-grade, sub-second inference.
+            </div>
+
             {/* Section 1: TECHNICAL SKILLS */}
-            <div className="mt-6">
+            <div className="mt-5">
               <h2 className={`text-xs sm:text-sm font-bold tracking-wider uppercase border-b pb-1.5 mb-3 ${
                 isDarkMode ? "text-sky-400 border-white/15" : "text-slate-900 border-slate-300"
               }`}>
@@ -245,31 +260,31 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
                 </div>
                 <div>
                   <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Backend &amp; Cloud Pipelines: </span>
-                  <span>FastAPI, AWS (App Runner, S3, CloudFront), Docker, Render, GitHub Actions (CI/CD)</span>
+                  <span>FastAPI, AWS, Docker, Render, GitHub Actions (CI/CD)</span>
                 </div>
                 <div>
                   <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Data Processing &amp; Retrieval: </span>
-                  <span>Pinecone Serverless, PostgreSQL (Aiven), FastEmbed, GraphRAG, Neo4j, Hybrid Retrieval</span>
+                  <span>GraphRAG, Neo4j, Pinecone, PostgreSQL, FastEmbed, Redis</span>
                 </div>
                 <div>
                   <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>LLM Integration &amp; Evals: </span>
-                  <span>OpenRouter APIs, Pytest, LLM Evals, Prompting, Langsmith, Llamaindex</span>
+                  <span>LangSmith, Prompt Guardrails, PII Redaction</span>
                 </div>
                 <div>
                   <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Programming &amp; Tools: </span>
-                  <span>Python, Pydantic, Git, Pandas, NumPy, Scikit-learn</span>
+                  <span>Python, PyTorch, TypeScript, React, Git, Pandas, NumPy</span>
                 </div>
               </div>
             </div>
 
             {/* Section 2: EDUCATION */}
-            <div className="mt-6">
+            <div className="mt-5">
               <h2 className={`text-xs sm:text-sm font-bold tracking-wider uppercase border-b pb-1.5 mb-3 ${
                 isDarkMode ? "text-sky-400 border-white/15" : "text-slate-900 border-slate-300"
               }`}>
                 Education
               </h2>
-              <div className="space-y-3.5 text-xs sm:text-[13px]">
+              <div className="space-y-3 text-xs sm:text-[13px]">
                 <div>
                   <div className={`flex justify-between items-baseline font-bold ${
                     isDarkMode ? "text-white" : "text-slate-900"
@@ -280,7 +295,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
                   <div className={`flex justify-between items-baseline italic mt-0.5 ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <span>Master of Technology in Artificial Intelligence — CGPA: 7.33</span>
+                    <span>Master of Technology in Artificial Intelligence • CGPA: 7.33</span>
                     <span className="not-italic text-slate-500">Pune, Maharashtra</span>
                   </div>
                 </div>
@@ -295,7 +310,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
                   <div className={`flex justify-between items-baseline italic mt-0.5 ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <span>Bachelor of Engineering in Electronics and Computer Engineering</span>
+                    <span>Bachelor of Engineering in Electronics and Computer Engineering | GATE 2023 Qualified</span>
                     <span className="not-italic text-slate-500">Jodhpur, Rajasthan</span>
                   </div>
                 </div>
@@ -303,7 +318,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
             </div>
 
             {/* Section 3: KEY AI ENGINEERING PROJECTS */}
-            <div className="mt-6">
+            <div className="mt-5">
               <h2 className={`text-xs sm:text-sm font-bold tracking-wider uppercase border-b pb-1.5 mb-3 ${
                 isDarkMode ? "text-sky-400 border-white/15" : "text-slate-900 border-slate-300"
               }`}>
@@ -311,44 +326,44 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
               </h2>
               
               <div className="space-y-4 text-xs sm:text-[13px]">
-                {/* Nexora AI Enterprise RAG */}
+                {/* Nexora AI */}
                 <div>
                   <div className="flex justify-between items-baseline">
                     <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      Nexora AI: Enterprise Multi-Agent RAG &amp; Knowledge Graph | <span className="font-normal italic text-sky-600">LangGraph, Neo4j, Pinecone, Groq, FastEmbed</span>
+                      Nexora AI: Enterprise GraphRAG Platform | <span className="font-normal italic text-sky-600">LangGraph, Neo4j, Pinecone, Groq LPU</span>
                     </span>
                     <span className={isDarkMode ? "text-slate-400 font-semibold" : "text-slate-700 font-semibold"}>2026</span>
                   </div>
                   <ul className={`list-disc list-outside ml-4 mt-1.5 space-y-1 leading-relaxed ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <li>Architected a hybrid self-routing RAG pipeline combining Neo4j AuraDB graph traversal with Pinecone 1024-dim dense vector search.</li>
-                    <li>Integrated FastEmbed and Pinecone Serverless with a 3-Tier failover engine (Gemini 3.7, Groq Llama 3.3 70B, and deterministic local heuristics).</li>
-                    <li>Containerized the application via Docker with AST SQL validation guardrails, reducing hallucinations by 64% with sub-180ms p95 latency.</li>
+                    <li>Architected a multi-agent GraphRAG platform unifying Neo4j Cypher traversals with Pinecone semantic search, achieving 99.4% multi-hop retrieval accuracy.</li>
+                    <li>Engineered a sub-second (&lt;200ms) LPU inference pipeline using Groq with automated failover, deployed as a fully containerized React and FastAPI architecture on Render.</li>
+                    <li>Implemented an ephemeral memory engine with active PII redaction guardrails (stripping SSNs, API keys) and strict rate-limiting for enterprise-grade data security.</li>
                   </ul>
                 </div>
 
-                {/* Edge AI Vision on FPGA and Jetson */}
+                {/* AlignAI Engine */}
                 <div>
                   <div className="flex justify-between items-baseline">
                     <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      Edge AI Acceleration &amp; Vision Engine | <span className="font-normal italic text-sky-600">PyTorch, Xilinx FPGA, NVIDIA Jetson, INT8</span>
+                      AlignAI Engine: Autonomous Job Discovery | <span className="font-normal italic text-sky-600">LangGraph, Pinecone, Neo4j, FastEmbed</span>
                     </span>
-                    <span className={isDarkMode ? "text-slate-400 font-semibold" : "text-slate-700 font-semibold"}>2025 – 2026</span>
+                    <span className={isDarkMode ? "text-slate-400 font-semibold" : "text-slate-700 font-semibold"}>2026</span>
                   </div>
                   <ul className={`list-disc list-outside ml-4 mt-1.5 space-y-1 leading-relaxed ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <li>Designed lightweight YOLOv8n architecture optimized for embedded edge deployment and real-time object detection.</li>
-                    <li>Quantized models from FP32 to INT8 with custom acceleration on Xilinx FPGA (13 FPS) and NVIDIA Jetson Orin (45 FPS).</li>
-                    <li>Integrated lightweight local LLaMA 1B model to synthesize contextual natural-language descriptions of detected scenes in real-time.</li>
+                    <li>Developed a LangGraph-orchestrated multi-agent state machine to autonomously ingest and normalize API-sourced job postings, processing 100+ roles/minute and eliminating 85% of keyword-matching noise.</li>
+                    <li>Designed a 3-signal fit-ranking algorithm combining dense cosine similarity, Neo4j graph coverage, and LLM evaluation for explainable candidate-role alignment.</li>
+                    <li>Built a SHA-256 caching architecture utilizing RapidFuzz for continuous entity resolution, eliminating graph node duplication and automatically recomputing vectors on profile updates.</li>
                   </ul>
                 </div>
               </div>
             </div>
 
             {/* Section 4: RESEARCH EXPERIENCE */}
-            <div className="mt-6">
+            <div className="mt-5">
               <h2 className={`text-xs sm:text-sm font-bold tracking-wider uppercase border-b pb-1.5 mb-3 ${
                 isDarkMode ? "text-sky-400 border-white/15" : "text-slate-900 border-slate-300"
               }`}>
@@ -370,11 +385,8 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
                   <ul className={`list-disc list-outside ml-4 mt-1 space-y-1 leading-relaxed ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <li>Designed a custom lightweight YOLOv8n architecture optimized for embedded edge deployment and real-time object detection.</li>
-                    <li>Performed model quantization from FP32 to INT8, reducing model size significantly and improving inference efficiency on edge hardware.</li>
-                    <li>Deployed the quantized model on a Xilinx FPGA accelerator, achieving approximately 13 FPS real-time inference.</li>
-                    <li>Evaluated the FP32 model on an NVIDIA Jetson Orin (2048 CUDA cores), achieving 45 FPS real-time object detection.</li>
-                    <li>Integrated a lightweight LLaMA 1B model to generate contextual natural-language descriptions of detected objects in real time.</li>
+                    <li>Designed and quantized (FP32 to INT8) a lightweight YOLOv8n architecture, achieving 45 FPS on an NVIDIA Jetson Orin and 13 FPS on a Xilinx FPGA for edge deployment.</li>
+                    <li>Integrated a LLaMA 1B model to generate contextual natural-language descriptions of detected objects in real time.</li>
                   </ul>
                 </div>
 
@@ -392,17 +404,15 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
                   <ul className={`list-disc list-outside ml-4 mt-1 space-y-1 leading-relaxed ${
                     isDarkMode ? "text-slate-300" : "text-slate-700"
                   }`}>
-                    <li>Developed an attention-enhanced YOLOv8 detection architecture using a novel Focal-CBAM module to improve feature attention in underwater environments.</li>
-                    <li>Conducted experiments on the RUOD underwater object detection dataset, improving detection performance under low-visibility and noisy conditions.</li>
-                    <li>Optimized multi-scale detection heads and feature extraction pipelines; outperformed baseline YOLO architectures on underwater localization benchmarks.</li>
-                    <li>Manuscript accepted at the ICASA 2025 Conference (icasa-conf.co.uk); publication pending.</li>
+                    <li>Developed an attention-enhanced YOLOv8 detection architecture using a novel Focal-CBAM module to improve feature attention and accuracy in noisy underwater environments.</li>
+                    <li>Optimized multi-scale detection heads on the RUOD dataset, successfully outperforming baseline architectures on underwater localization benchmarks.</li>
                   </ul>
                 </div>
               </div>
             </div>
 
             {/* Section 5: PUBLICATIONS */}
-            <div className="mt-6">
+            <div className="mt-5">
               <h2 className={`text-xs sm:text-sm font-bold tracking-wider uppercase border-b pb-1.5 mb-3 ${
                 isDarkMode ? "text-sky-400 border-white/15" : "text-slate-900 border-slate-300"
               }`}>
@@ -415,22 +425,22 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
                     <span className={isDarkMode ? "text-white" : "text-slate-900"}>Deep Underwater Fish Detection via Focal Modulated Channel Attention in YOLO</span>
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                       isDarkMode ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30" : "bg-emerald-100 text-emerald-800"
-                    }`}>Accepted</span>
+                    }`}>1st Author, ICASA 2026 (London)</span>
                   </div>
                   <div className={`ml-4 mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
-                    • First Author | <span className="font-semibold text-sky-600">ICASA Conference 2025</span> | Funded by MoES, Govt. of India
+                    • First Author | <span className="font-semibold text-sky-600">ICASA Conference 2026</span> | Funded by MoES, Govt. of India
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between items-baseline font-bold">
-                    <span className={isDarkMode ? "text-white" : "text-slate-900"}>ANIMA: YOLOv8-Based Framework for Object Detection &amp; Compression in Satellite Imagery</span>
+                    <span className={isDarkMode ? "text-white" : "text-slate-900"}>ANIMA: YOLOv8-Based Framework for Object Detection &amp; Compression</span>
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                       isDarkMode ? "bg-sky-500/20 text-sky-300 border border-sky-400/30" : "bg-blue-100 text-blue-800"
-                    }`}>Published</span>
+                    }`}>2nd Author</span>
                   </div>
                   <div className={`ml-4 mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
-                    • Second Author | <span className="font-semibold text-sky-600">IEEE Xplore, IEEE Pune Section</span> | doi:10.1109/...11379260
+                    • Second Author | <span className="font-semibold text-sky-600">IEEE Xplore</span>
                   </div>
                 </div>
               </div>
