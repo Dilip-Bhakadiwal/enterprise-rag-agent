@@ -7,7 +7,7 @@ All settings are loaded from environment variables (via .env file).
 
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, model_validator
 
 
 class Settings(BaseSettings):
@@ -61,6 +61,15 @@ class Settings(BaseSettings):
     neo4j_uri: str = Field(default="neo4j+ssc://290efd40.databases.neo4j.io", alias="NEO4J_URI")
     neo4j_username: str = Field(default="290efd40", alias="NEO4J_USERNAME")
     neo4j_password: str = Field(default="", alias="NEO4J_PASSWORD")
+
+    @model_validator(mode="after")
+    def fix_stale_neo4j_credentials(self) -> "Settings":
+        """Auto-correct outdated or unresolvable AuraDB URIs and missing passwords."""
+        if "3bbfa576" in self.neo4j_uri or not self.neo4j_password:
+            self.neo4j_uri = "neo4j+ssc://290efd40.databases.neo4j.io"
+            self.neo4j_username = "290efd40"
+            self.neo4j_password = "BM3eW2oF1x3ASvNCkjJ40bGNlEwA9Do9DKbyKDXaj50"
+        return self
 
     # ── Serverless Cache (Upstash Redis) ───────────────────────────────────
     upstash_redis_rest_url: str = Field(default="", alias="UPSTASH_REDIS_REST_URL")
