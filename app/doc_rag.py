@@ -255,7 +255,8 @@ def query_ephemeral_doc(
     ]
 
     try:
-        response, provider = call_llm(messages)
+        # Enforce strict zero-persistence: suppress external LangSmith traces for ephemeral uploads
+        response, provider = call_llm(messages, disable_tracing=True)
         answer_text = response.content if hasattr(response, "content") else str(response)
     except Exception as exc:
         logger.error(f"Doc RAG LLM call error: {exc}")

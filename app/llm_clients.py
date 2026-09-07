@@ -112,16 +112,29 @@ def get_nvidia() -> ChatOpenAI:
 
 
 # ── Fast single-attempt invocation per tier (fail over immediately on glitch)
-def _invoke_with_retry(client: ChatOpenAI, messages: list[BaseMessage]) -> Any:
+def _invoke_with_retry(client: ChatOpenAI, messages: list[BaseMessage], disable_tracing: bool = False) -> Any:
+    if disable_tracing:
+        try:
+            from langchain_core.tracers.context import tracing_v2_enabled
+            with tracing_v2_enabled(False):
+                return client.invoke(messages)
+        except Exception:
+            return client.invoke(messages)
     return client.invoke(messages)
 
 
-def call_llm(messages: list[BaseMessage], model_override: str | None = None) -> tuple[Any, str]:
+def call_llm(
+    messages: list[BaseMessage],
+    model_override: str | None = None,
+    disable_tracing: bool = False,
+) -> tuple[Any, str]:
     """
     Call LLMs using a 3-tier ultra-low-latency resilient failover cascade:
       1. OpenRouter (Primary / Reliable — meta-llama/llama-3.3-70b-instruct)
       2. Groq (Secondary / Fast Fallback on 429 / Rate-Limit / Timeout)
       3. NVIDIA NIM (Tertiary Fallback)
+
+    If disable_tracing=True, suppresses LangSmith tracing to enforce strict privacy for ephemeral docs.
 
     Returns:
         (response, provider_name) where provider_name in ["openrouter", "groq", "nvidia_nim"]
@@ -141,7 +154,7 @@ def call_llm(messages: list[BaseMessage], model_override: str | None = None) -> 
                 timeout=10.0,
                 max_retries=0,
             )
-            response = client.invoke(messages)
+            response = _invoke_with_retry(client, messages, disable_tracing=disable_tracing)
             return response, PROVIDER_GROQ
         except Exception:
             pass  # Fall through to normal cascade
@@ -151,8 +164,8 @@ def call_llm(messages: list[BaseMessage], model_override: str | None = None) -> 
     # ── Tier 1: Try Groq (Primary / Ultra-fast LPU Inference < 1s) ─────────
     if settings.groq_api_key:
         try:
-            logger.debug(f"Calling primary {PROVIDER_GROQ} ({settings.groq_model})")
-            response = _invoke_with_retry(get_groq(), messages)
+            logger.debug(f"Calling primary {PROVIDER_GROQ} ({settings.groq_model}) [disable_tracing={disable_tracing}]")
+            response = _invoke_with_retry(get_groq(), messages, disable_tracing=disable_tracing)
             logger.info(f"LLM served by: {PROVIDER_GROQ} (primary)")
             return response, PROVIDER_GROQ
         except Exception as exc:
@@ -162,8 +175,8 @@ def call_llm(messages: list[BaseMessage], model_override: str | None = None) -> 
 
     # ── Tier 2: Try OpenRouter (Secondary / Reliable fallback) ─────────────
     try:
-        logger.debug(f"Calling secondary {PROVIDER_OPENROUTER} ({settings.primary_model})")
-        response = _invoke_with_retry(get_openrouter(), messages)
+        logger.debug(f"Calling secondary {PROVIDER_OPENROUTER} ({settings.primary_model}) [disable_tracing={disable_tracing}]")
+        response = _invoke_with_retry(get_openrouter(), messages, disable_tracing=disable_tracing)
         logger.info(f"LLM served by: {PROVIDER_OPENROUTER} (secondary fallback)")
         return response, PROVIDER_OPENROUTER
     except Exception as exc:
@@ -173,8 +186,8 @@ def call_llm(messages: list[BaseMessage], model_override: str | None = None) -> 
 
     # ── Tier 3: Try NVIDIA NIM ─────────────────────────────────────────────
     try:
-        logger.debug(f"Calling fallback {PROVIDER_NVIDIA} ({settings.fallback_model})")
-        response = _invoke_with_retry(get_nvidia(), messages)
+        logger.debug(f"Calling fallback {PROVIDER_NVIDIA} ({settings.fallback_model}) [disable_tracing={disable_tracing}]")
+        response = _invoke_with_retry(get_nvidia(), messages, disable_tracing=disable_tracing)
         logger.info(f"LLM served by: {PROVIDER_NVIDIA} (tertiary fallback)")
         return response, PROVIDER_NVIDIA
     except Exception as exc:

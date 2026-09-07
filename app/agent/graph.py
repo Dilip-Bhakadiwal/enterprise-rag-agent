@@ -611,5 +611,11 @@ def ask(query: str, chat_history: list[dict] | None = None) -> dict:
         "suggestions": result.get("suggestions", []),
         "telemetry": result.get("telemetry", {}),
     }
+    # Dual-Key Caching: store under both conversational key (raw + history)
+    # AND under the canonical condensed query so subsequent direct queries hit cache!
     set_cached_rag_response(clean_query, result_payload, ttl_seconds=3600, history=history)
+    condensed_q = result.get("query")
+    if condensed_q and condensed_q.strip().lower() != clean_query.lower():
+        set_cached_rag_response(condensed_q, result_payload, ttl_seconds=3600, history=None)
+        logger.debug(f"[Cache] Dual-key cached for standalone condensed query: '{condensed_q[:50]}'")
     return result_payload

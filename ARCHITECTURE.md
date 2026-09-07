@@ -66,7 +66,7 @@ class AgentState(TypedDict):
 ```mermaid
 flowchart TD
     Start([User Question]) --> CacheCheck{Upstash Redis<br/>Normalized Hash Cache}
-    CacheCheck -- Cache Hit (<300ms) --> ClientResponse([Stream Response])
+    CacheCheck -- Cache Hit (<300ms) --> ClientResponse([Deliver Direct Response])
     CacheCheck -- Cache Miss --> RouterNode[Node 1: Gated Condenser & Router]
 
     RouterNode -- Intent: Chitchat --> ChitchatSynth[Fast Chitchat Generator] --> PIIFilter
@@ -106,6 +106,7 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
 - Queries are normalized (trimmed, lowercased, punctuation-stripped) and hashed with SHA-256 into a namespaced Redis key (`rag:ans_v3:<hash>`).
 - If an identical or equivalent query has already been verified, the response is delivered in `<300ms`.
 - **Negative Cache Guard**: Responses with 0 sources or ungrounded fallback notices are strictly prevented from being cached to eliminate stale failure loops.
+- **Dual-Key Caching for Follow-Ups**: When multi-turn query condensation rewrites an anaphoric follow-up (e.g., *"What about his second job?"* $\rightarrow$ *"What was Dilip's second job as AI Engineer?"*), the verified answer is dual-written under both the conversational key `(raw_query, history)` and the canonical standalone key `(condensed_query)`. Subsequent follow-ups in the conversation AND future direct standalone queries both hit cache instantly.
 
 ### Stage 2: Gated Multi-Turn Query Condensation & Routing (`router_node`)
 - **Gated Condensation**: If `chat_history` contains prior turns and the query contains anaphora (`it`, `its`, `this`, `that`, `he`, `she`, `which`, `second`, etc.) or is under 6 words, a fast Groq call rewrites the ambiguous follow-up into a standalone search query.
@@ -138,8 +139,8 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
   1. *Answer exclusively based on the provided context facts.*
   2. *Add inline bracketed citations `【1】`, `【2】` corresponding directly to the sources.*
   3. *If facts are missing, acknowledge boundary limits without hallucinating.*
-- Evaluates real-time telemetry:
-  - **Faithfulness Score**: Quantifies the percentage of claims directly backed by context (typically `97.0% - 99.5%`).
+- Computes inline telemetry for the UI HUD:
+  - **Faithfulness Score (Model-Self-Assessed Heuristic)**: Dynamically checks fact-to-context token overlap to estimate factual grounding on the fly for HUD display. *(Note: This is an inline telemetry heuristic for runtime observability; for rigorous multi-judge benchmark metrics, see the offline RAGAS harness in §10).*
   - **Context Precision**: Ratio of relevant retrieved sentences used in the final answer.
   - **Hallucination Risk Rating**: Categorized as `Ultra-Low (<1%)`, `Very Low (<3%)`, or `Medium`.
 
@@ -239,6 +240,8 @@ In addition to knowledge base retrieval, Nexora AI features an in-memory **Ephem
    - A layer-1 regex scanner detects and neutralizes override patterns (`"ignore previous instructions"`, `"disregard rules"`) before they reach the model.
 4. **Automatic Lifecycle Wiping**:
    - Ephemeral sessions automatically expire after 30 minutes of inactivity or immediately via the `/api/doc-rag/clear` endpoint.
+5. **Trace-Level Privacy Isolation (LangSmith Tracing Suppressed)**:
+   - To guarantee that zero parsed document data or user uploads are ever shipped to external SaaS observability, all LLM calls for ephemeral document sessions pass `disable_tracing=True` via LangChain's `tracing_v2_enabled(False)` context manager. This strictly blocks prompts, parsed PDF excerpts, and document tokens from being sent to LangSmith cloud logs.
 
 ---
 
@@ -304,16 +307,18 @@ Every response provides full factual transparency:
 
 ## 10. Evaluation Framework: RAGAS & Benchmark Datasets
 
-The repository includes a dedicated evaluation suite in the `eval/` directory:
+The repository includes a dedicated evaluation harness in the `eval/` directory:
 
-### 10.1 Evaluation Components
-- **`eval/run_eval.py`**: Evaluation runner implementing the **RAGAS framework** (`answer_correctness`, `context_recall`) with exponential backoff and rate-limit throttles.
-- **`eval/test_questions.json`**: 15 structured multi-hop questions derived from the **EnterpriseRAG-Bench** corpus, complete with ground-truth reference answers and expected document IDs.
-- **`eval/graphrag_bench_questions.json`**: 20 complex entity-relationship questions derived from the **GraphRAG-Bench** benchmark.
-- **`eval/graphrag_bench_results.json`**: 122KB archive of scored benchmark runs across novel and clinical entities.
+### 10.1 Evaluation Components & Provenance
+- **`eval/run_eval.py`**: Automated evaluation runner implementing the **RAGAS framework** (`answer_correctness`, `context_recall`) using LLM-as-a-judge with exponential backoff and rate-limit throttles.
+- **`eval/test_questions.json`**: 15 structured multi-hop questions derived from the **EnterpriseRAG-Bench** corpus. **Ground Truth Provenance**: Reference answers and target document IDs are curated directly from benchmark source documents (GitHub PRs, Linear engineering specs, Fireflies meeting transcripts), ensuring evaluation references are external and not circular self-generated model outputs.
+- **`eval/graphrag_bench_questions.json`**: 20 factual entity-relationship probe questions mapped to clinical dermatology and historical literature corpora. Reference ground truths are extracted from verified medical/literary source passages.
+- **`eval/graphrag_bench_results.json`**: 122KB archive of scored benchmark runs across novel and clinical entities providing our initial architectural baseline.
 
-### 10.2 Continuous Integration & Testing
-- Automated test scripts (`tests/test_dilip_resume_live.py`, `tests/test_dilip_resume_queries.py`) validate end-to-end retrieval correctness, groundedness, and citation integrity prior to production deployment.
+### 10.2 Continuous Integration & Testing Policy
+- **Automated CI Gate (`.github/workflows/deploy.yml`)**: Every push and PR automatically executes TypeScript typechecking, React 19 production builds, and Python 3.11 syntax/import validation.
+- **Offline vs. CI Eval Execution**: Full RAGAS evaluation runs 35 questions requiring ~70-100 sequential LLM calls. In free-tier cloud environments with a 30 RPM rate ceiling on Groq/OpenRouter, triggering full multi-hop eval runs on every git push risks hitting API rate limits. Consequently, comprehensive RAGAS runs are executed offline or scheduled as nightly CI regression gates with deliberate rate throttling.
+- **Pre-Deployment Smoke Tests**: Scripts (`tests/test_dilip_resume_live.py`, `tests/test_dilip_resume_queries.py`) validate end-to-end retrieval correctness, groundedness, and citation integrity prior to production deployment.
 
 ---
 
