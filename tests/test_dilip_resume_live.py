@@ -18,7 +18,7 @@ import requests
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-PDF_PATH = r"C:\Users\EXNOX\Downloads\dilip_resume_DsU.pdf"
+PDF_PATH = r"C:\Users\EXNOX\Downloads\DILIP_resume.pdf"
 SESSION_ID = "live_dilip_resume_evaluation_session"
 
 def main():
@@ -31,7 +31,7 @@ def main():
     with open(PDF_PATH, "rb") as f:
         pdf_bytes = f.read()
 
-    files = {"file": ("dilip_resume_DsU.pdf", pdf_bytes, "application/pdf")}
+    files = {"file": ("DILIP_resume.pdf", pdf_bytes, "application/pdf")}
     data = {"session_id": SESSION_ID}
 
     print("\n[Step 1] Uploading and Parsing PDF via LlamaParse AI...")

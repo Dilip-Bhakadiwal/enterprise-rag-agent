@@ -11,14 +11,14 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
 SESSION_ID = "dilip_resume_deep_eval"
-PDF_PATH = r"C:\Users\EXNOX\Downloads\dilip_resume_DsU.pdf"
+PDF_PATH = r"C:\Users\EXNOX\Downloads\DILIP_resume.pdf"
 
 with open(PDF_PATH, "rb") as f:
     pdf_bytes = f.read()
 
 res_p = requests.post(
     "http://127.0.0.1:8000/api/doc-rag/parse",
-    files={"file": ("dilip_resume_DsU.pdf", pdf_bytes, "application/pdf")},
+    files={"file": ("DILIP_resume.pdf", pdf_bytes, "application/pdf")},
     data={"session_id": SESSION_ID}
 )
 
