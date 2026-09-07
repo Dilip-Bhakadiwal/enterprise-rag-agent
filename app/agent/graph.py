@@ -35,6 +35,7 @@ from app.cache import get_cached_rag_response, set_cached_rag_response
 class AgentState(TypedDict):
     """Shared state object passed between all graph nodes."""
     query: str
+    original_query: str
     intent: str
     source_filter: list[str]
     retrieved_chunks: list[dict]
@@ -49,6 +50,57 @@ class AgentState(TypedDict):
     suggestions: list[str]
     telemetry: dict[str, Any]
     chat_history: list[dict]
+
+
+# ── Helper: Dynamic Multi-Turn Query Condenser ─────────────────────────────
+
+def _condense_query_if_needed(query: str, chat_history: list[dict] | None) -> tuple[str, bool]:
+    """
+    Gated Multi-Turn Query Condensation:
+    Only fires if chat_history exists AND query contains anaphora / ambiguous pronouns
+    (\\b(it|its|this|that|they|them|he|she|his|her|which|these|those)\\b or len <= 5 words).
+    Returns (condensed_query, was_condensed).
+    """
+    if not chat_history or len(chat_history) == 0:
+        return query, False
+
+    anaphora_pattern = r"\b(it|its|this|that|they|them|he|she|his|her|which|these|those|second|next|previous|other)\b"
+    words = query.strip().split()
+    needs_condensation = len(words) <= 5 or bool(re.search(anaphora_pattern, query, re.IGNORECASE))
+    if not needs_condensation:
+        return query, False
+
+    recent_turns = []
+    for turn in chat_history[-3:]:
+        role = "User" if turn.get("role") == "user" else "Assistant"
+        txt = str(turn.get("content", ""))[:200]
+        if txt:
+            recent_turns.append(f"{role}: {txt}")
+
+    if not recent_turns:
+        return query, False
+
+    from langchain_core.messages import HumanMessage
+    from app.llm_clients import call_llm
+
+    prompt = (
+        "Given the recent conversation context and a follow-up question, rewrite the follow-up question "
+        "into a single standalone search query containing all needed entities and context.\n"
+        "Rules:\n"
+        "- Do NOT answer the question.\n"
+        "- Output ONLY the rewritten standalone question.\n\n"
+        f"Context:\n" + "\n".join(recent_turns) + f"\n\nFollow-up: {query}\nStandalone Question:"
+    )
+    try:
+        resp, _ = call_llm([HumanMessage(content=prompt)])
+        standalone = resp.content.strip().strip('"').strip("'")
+        if standalone and len(standalone) >= 5:
+            logger.info(f"[Condenser] Rewrote follow-up '{query}' -> '{standalone}'")
+            return standalone, True
+    except Exception as exc:
+        logger.debug(f"[Condenser] Condensation fallback to raw query: {exc}")
+
+    return query, False
 
 
 # ── Helper: Dynamic Follow-Up Question Generator ───────────────────────────
@@ -89,12 +141,17 @@ def _generate_smart_suggestions(query: str, intent: str, sources: list[dict]) ->
 # ── Node Functions ─────────────────────────────────────────────────────────
 
 def router_node(state: AgentState) -> AgentState:
-    """Node 1: Classify intent and determine source filter."""
+    """Node 1: Gated multi-turn query condensation + classify intent and source filter."""
     t0 = time.perf_counter()
-    query = state["query"]
-    logger.info(f"[Router] Processing query: {query[:80]}…")
+    raw_query = state.get("original_query") or state["query"]
+    chat_history = state.get("chat_history", [])
 
-    intent, source_filter, provider = classify_intent(query)
+    # Multi-turn query condensation for follow-ups
+    condensed_query, was_condensed = _condense_query_if_needed(raw_query, chat_history)
+
+    logger.info(f"[Router] Processing query: {condensed_query[:80]}… (condensed={was_condensed})")
+
+    intent, source_filter, provider = classify_intent(condensed_query)
     elapsed = (time.perf_counter() - t0) * 1000
 
     timings = dict(state.get("timings", {}))
@@ -102,6 +159,8 @@ def router_node(state: AgentState) -> AgentState:
 
     return {
         **state,
+        "original_query": raw_query,
+        "query": condensed_query,
         "intent": intent,
         "source_filter": source_filter,
         "router_provider": provider,
@@ -241,6 +300,7 @@ def synthesizer_node(state: AgentState) -> AgentState:
     Extracts full raw chunk_text and metadata for the interactive Citation Inspector.
     """
     t0 = time.perf_counter()
+    raw_query = state.get("original_query") or state["query"]
     query = state["query"]
     chunks = state.get("retrieved_chunks", [])
     intent = state.get("intent", "basic")
@@ -251,7 +311,7 @@ def synthesizer_node(state: AgentState) -> AgentState:
     )
 
     answer, provider = synthesize_answer(
-        query,
+        raw_query,
         chunks,
         intent,
         used_fallback,
@@ -336,6 +396,17 @@ def synthesizer_node(state: AgentState) -> AgentState:
         else:
             hallucination_risk = f"Moderate (<{risk_pct}%)"
 
+    # ── Deterministic Citation Integrity Verifier ─────────────────────────
+    cite_matches = re.finditer(r"【\s*(\d+)(?:\s*[,，]\s*\d+)*\s*】|\[\s*(\d+)(?:\s*[,，]\s*\d+)*\s*\]", answer)
+    cited_ids = set()
+    for m in cite_matches:
+        for n in re.findall(r"\d+", m.group(0)):
+            cited_ids.add(int(n))
+
+    valid_ids = set(range(1, len(sources) + 1))
+    dangling = sorted(list(cited_ids - valid_ids))
+    citation_integrity = 1.0 if not dangling else round(1.0 - (len(dangling) / max(len(cited_ids), 1)), 3)
+
     telemetry = {
         "total_time_ms": round(total_ms, 1),
         "router_ms": timings.get("router_ms", 0.0),
@@ -351,6 +422,9 @@ def synthesizer_node(state: AgentState) -> AgentState:
         "failover_status": "healthy",
         "faithfulness_score": faithfulness,
         "context_precision": context_precision,
+        "citation_integrity": citation_integrity,
+        "citation_count": len(cited_ids),
+        "dangling_citations": dangling,
         "hallucination_risk": hallucination_risk,
     }
 

@@ -1,6 +1,6 @@
 # 🏛️ Nexora AI — System Architecture & Engineering Deep-Dive
 
-Welcome to the definitive architectural specification and technical manual for **Nexora AI** (Enterprise GraphRAG Platform). This document details the engineering design, agentic orchestration, hybrid retrieval mechanisms, self-correcting evaluation loops, zero-cost cloud topology, and frontend visualization engine.
+Welcome to the definitive architectural specification and technical manual for **Nexora AI** (Enterprise GraphRAG Platform). This document details the engineering design, agentic orchestration, hybrid retrieval mechanisms, self-correcting evaluation loops, zero-cost cloud topology, frontend visualization engine, and production scale roadmap.
 
 ---
 
@@ -8,13 +8,15 @@ Welcome to the definitive architectural specification and technical manual for *
 1. [Executive Summary & Core Objectives](#1-executive-summary--core-objectives)
 2. [Agent Architecture: Adaptive Self-Corrective LangGraph](#2-agent-architecture-adaptive-self-corrective-langgraph)
 3. [End-to-End RAG Pipeline & Advanced Techniques](#3-end-to-end-rag-pipeline--advanced-techniques)
-4. [Hybrid Retrieval: Neo4j AuraDB + Pinecone Vector Search](#4-hybrid-retrieval-neo4j-auradb--pinecone-vector-search)
-5. [LLM Routing, Multi-Provider Failover & Groq LPU Orchestration](#5-llm-routing-multi-provider-failover--groq-lpu-orchestration)
-6. [Ephemeral Document RAG & Privacy Guardrails](#6-ephemeral-document-rag--privacy-guardrails)
-7. [Zero-Cost Cloud Infrastructure Topology](#7-zero-cost-cloud-infrastructure-topology)
-8. [Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD](#8-frontend-visual-engine-60-fps-canvas-graph--telemetry-hud)
-9. [Verification, Benchmarking & Grounded Accuracy](#9-verification-benchmarking--grounded-accuracy)
-10. [Repository File Structure](#10-repository-file-structure)
+4. [Hybrid Retrieval: Neo4j Full-Text Lucene + Pinecone Vector Search](#4-hybrid-retrieval-neo4j-full-text-lucene--pinecone-vector-search)
+5. [LLM Routing, Multi-Provider Failover & Listwise Reranking](#5-llm-routing-multi-provider-failover--listwise-reranking)
+6. [Ephemeral Document RAG & Layer-1 Security Isolation](#6-ephemeral-document-rag--layer-1-security-isolation)
+7. [Deterministic Citation Verification & Observability](#7-deterministic-citation-verification--observability)
+8. [Zero-Cost Cloud Infrastructure & Quota Ceilings](#8-zero-cost-cloud-infrastructure--quota-ceilings)
+9. [Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD](#9-frontend-visual-engine-60-fps-canvas-graph--telemetry-hud)
+10. [Evaluation Framework: RAGAS & Benchmark Datasets](#10-evaluation-framework-ragas--benchmark-datasets)
+11. [Limitations, Honest Trade-offs & Production Scale Path](#11-limitations-honest-trade-offs--production-scale-path)
+12. [Repository File Structure](#12-repository-file-structure)
 
 ---
 
@@ -25,10 +27,10 @@ Enterprise Retrieval-Augmented Generation (RAG) systems often suffer from three 
 2. **Hallucination & Ungrounded Drift**: Standard RAG pipelines feed context to LLMs without verifying whether retrieved context is actually relevant or if the generated response is strictly faithful to facts.
 3. **High Latency & Expensive Cloud Costs**: Production RAG stacks frequently rely on costly GPU instances and paid proprietary APIs ($0.02 - $0.05 per query), resulting in thousands of dollars in monthly infrastructure overhead.
 
-**Nexora AI solves all three challenges**:
-- **GraphRAG Convergence**: Blends Cypher-based knowledge graph traversals (Neo4j AuraDB) with high-density vector search (Pinecone) via Reciprocal Rank Fusion.
+**Nexora AI addresses these challenges as a high-performance demonstration system**:
+- **GraphRAG Convergence**: Blends Lucene full-text and Cypher knowledge graph traversals (Neo4j AuraDB) with high-density vector search (Pinecone) via Reciprocal Rank Fusion.
 - **Self-Corrective State Machine**: Uses a LangGraph cyclic agent that grades retrieved documents, rewrites and re-routes flawed queries, and computes strict faithfulness scoring before emission.
-- **100% Free-Tier Serverless Infrastructure**: Engineered from the ground up to operate completely free of cost across production cloud services with sub-second inference.
+- **100% Free-Tier Serverless Infrastructure**: Engineered to operate completely free of cost across production cloud services with sub-second cached delivery and resilient failovers.
 
 ---
 
@@ -41,7 +43,8 @@ The agent's state is preserved and mutated across all graph nodes:
 
 ```python
 class AgentState(TypedDict):
-    query: str                  # Original raw user query
+    query: str                  # Active search query (condensed if follow-up)
+    original_query: str         # Raw user prompt preserved for synthesizer
     intent: str                 # 'graph', 'domain', 'chitchat', 'general'
     source_filter: list[str]    # Filter tags (e.g. ['neo4j', 'pinecone'])
     retrieved_chunks: list[dict]# Raw chunks retrieved from hybrid sources
@@ -62,21 +65,21 @@ class AgentState(TypedDict):
 
 ```mermaid
 flowchart TD
-    Start([User Question]) --> CacheCheck{Upstash Redis<br/>Semantic Cache?}
-    CacheCheck -- Cache Hit (<50ms) --> ClientResponse([Stream Response])
-    CacheCheck -- Cache Miss --> RouterNode[Node 1: Intent Router]
+    Start([User Question]) --> CacheCheck{Upstash Redis<br/>Normalized Hash Cache}
+    CacheCheck -- Cache Hit (<300ms) --> ClientResponse([Stream Response])
+    CacheCheck -- Cache Miss --> RouterNode[Node 1: Gated Condenser & Router]
 
     RouterNode -- Intent: Chitchat --> ChitchatSynth[Fast Chitchat Generator] --> PIIFilter
     RouterNode -- Intent: Domain / Graph --> DecomposerNode[Node 2: Multi-Hop Decomposer]
 
     DecomposerNode --> ParallelRetrieval{Parallel Hybrid Retrieval}
-    ParallelRetrieval --> Neo4jRetrieval[Neo4j AuraDB<br/>Graph Traversal]
-    ParallelRetrieval --> PineconeRetrieval[Pinecone<br/>Vector Search]
+    ParallelRetrieval --> Neo4jRetrieval[Neo4j AuraDB<br/>Lucene Full-Text + Cypher]
+    ParallelRetrieval --> PineconeRetrieval[Pinecone<br/>Dense Vector Search]
 
     Neo4jRetrieval --> RRF[Reciprocal Rank Fusion & Deduplication]
     PineconeRetrieval --> RRF
 
-    RRF --> GraderNode[Node 3: Document Relevance Grader]
+    RRF --> GraderNode[Node 3: Listwise LLM Reranker & Grader]
 
     GraderNode -- All Docs Irrelevant & Retries < 2 --> RewriterNode[Node 4: Query Reformulation]
     RewriterNode --> DecomposerNode
@@ -84,7 +87,8 @@ flowchart TD
     GraderNode -- Valid Chunks Available --> SynthesizerNode[Node 5: Grounded Synthesizer]
     GraderNode -- Retries Exceeded --> FallbackNode[General AI Notice + Synthesis]
 
-    SynthesizerNode --> PIIFilter[PII Redaction Guardrail]
+    SynthesizerNode --> CitationVerifier[Deterministic Citation Verifier]
+    CitationVerifier --> PIIFilter[PII Redaction Guardrail]
     FallbackNode --> PIIFilter
     ChitchatSynth --> PIIFilter
 
@@ -98,21 +102,22 @@ flowchart TD
 
 The complete request lifecycle follows a disciplined 8-stage sequence:
 
-### Stage 1: Smart Redis Caching (Upstash REST API)
-- Queries are normalized, lower-cased, and hashed into a namespaced Redis key (`rag:ans_v3:<hash>`).
-- If an exact or semantically identical query has already been verified, the response is delivered in `<60ms`.
+### Stage 1: Exact-Match Normalized Hash Caching (Upstash Redis)
+- Queries are normalized (trimmed, lowercased, punctuation-stripped) and hashed with SHA-256 into a namespaced Redis key (`rag:ans_v3:<hash>`).
+- If an identical or equivalent query has already been verified, the response is delivered in `<300ms`.
 - **Negative Cache Guard**: Responses with 0 sources or ungrounded fallback notices are strictly prevented from being cached to eliminate stale failure loops.
 
-### Stage 2: Intent Classification & Routing (`router_node`)
-- **Fast-Path Regex Classifier**: Instantly detects greetings, chitchat (`hi`, `hello`, `thank you`), and out-of-domain conversational queries in `<1ms`, preventing unnecessary LLM and vector database calls.
-- **Semantic Intent Classifier**: Queries that need knowledge lookup are classified into `domain` (hybrid vector + graph) or `graph` (deep entity traversal).
+### Stage 2: Gated Multi-Turn Query Condensation & Routing (`router_node`)
+- **Gated Condensation**: If `chat_history` contains prior turns and the query contains anaphora (`it`, `its`, `this`, `that`, `he`, `she`, `which`, `second`, etc.) or is under 6 words, a fast Groq call rewrites the ambiguous follow-up into a standalone search query.
+- **Separation of Search and Synthesis**: The standalone query is used for retrieval and caching, while the user's raw query is preserved for the synthesizer so tone and phrasing remain natural.
+- **Fast-Path Regex Classifier**: Instantly detects greetings, chitchat (`hi`, `hello`, `thank you`), and out-of-domain conversational queries in `<1ms`.
 
 ### Stage 3: Multi-Hop Decomposer (`decomposer_node`)
 - For complex multi-facet questions (e.g., comparing two historical locations or analyzing compound clinical indicators), the decomposer breaks the query down into 2 to 3 atomic sub-queries.
 - Sub-queries are retrieved concurrently, ensuring zero information loss on comparative prompts.
 
 ### Stage 4: Parallel Hybrid Retrieval (`retriever_node`)
-- Concurrently triggers **Neo4j Cypher Traversals** and **Pinecone Dense Similarity Search** using Python `concurrent.futures.ThreadPoolExecutor`.
+- Concurrently triggers **Neo4j AuraDB Cypher Traversals** and **Pinecone Dense Similarity Search** using Python `concurrent.futures.ThreadPoolExecutor`.
 - Both streams return structured candidate chunks enriched with metadata (`title`, `doc_id`, `score`, `is_graph`, `triples`).
 
 ### Stage 5: Reciprocal Rank Fusion (RRF) & Deduplication
@@ -121,9 +126,9 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
   $$RRF\_Score(d) = \sum_{m \in M} \frac{1}{60 + \text{rank}_m(d)}$$
 - Eliminates duplicate text passages across overlapping graph entities and document fragments.
 
-### Stage 6: Self-Correction Loop (`grader_node` & `rewriter_node`)
-- An LLM grader inspects each retrieved candidate chunk against the user's intent.
-- Chunks that are off-topic or noisy are pruned.
+### Stage 6: Listwise LLM Reranking & Self-Correction (`grader_node` & `rewriter_node`)
+- Rather than running heavy local neural cross-encoders (which exceed 512MB RAM), the grader passes candidate chunks in a single batched prompt to Groq, acting as a **zero-RAM listwise reranker**.
+- Chunks that are off-topic or noisy are pruned, and surviving chunks are sorted by model-evaluated relevance.
 - If no retrieved chunk meets the relevance threshold, the state machine invokes the `rewriter_node`:
   - Analyzes the initial query and retrieval shortfall.
   - Reformulates the query with alternate keywords and re-executes the retrieval pipeline (limited to 2 retry iterations to bound execution time).
@@ -138,16 +143,13 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
   - **Context Precision**: Ratio of relevant retrieved sentences used in the final answer.
   - **Hallucination Risk Rating**: Categorized as `Ultra-Low (<1%)`, `Very Low (<3%)`, or `Medium`.
 
-### Stage 8: Active PII Redaction Guardrails
-- Scans outbound answers for sensitive entities:
-  - Social Security Numbers (SSNs)
-  - API keys (`sk-`, `gsk_`, `pcsk_`, etc.)
-  - Email addresses & private phone numbers
-- Replaces matches with cryptographic token masks (`[REDACTED_SSN]`, `[REDACTED_KEY]`) before streaming to the client.
+### Stage 8: Deterministic Citation Verification & PII Redaction
+- **Citation Integrity Check**: Verifies via regex that every bracketed citation `【N】` in the answer maps to a valid retrieved source $1 \le N \le len(sources)$, calculating `citation_integrity` and flagging any dangling citations.
+- **PII Guardrail**: Scans outbound answers for sensitive entities (SSNs, API keys, private emails) and masks them with cryptographic token markers before streaming to the client.
 
 ---
 
-## 4. Hybrid Retrieval: Neo4j AuraDB + Pinecone Vector Search
+## 4. Hybrid Retrieval: Neo4j Full-Text Lucene + Pinecone Vector Search
 
 ```
                                  ┌─────────────────────────┐
@@ -161,8 +163,8 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
          │  (GraphRAG Engine)      │                     │   (Vector DB Engine)    │
          └────────────┬────────────┘                     └────────────┬────────────┘
                       │                                               │
-             Cypher Traversals                                1024-dim Embeddings
-           Multi-Hop Relations                                Cosine Top-K (k=10)
+           Lucene Fuzzy Index (~)                             1024-dim Embeddings
+           Multi-Hop Traversals                               Cosine Top-K (k=10)
            Entity Connectivity                                Dense Semantic Match
                       │                                               │
                       └───────────────────────┬───────────────────────┘
@@ -173,151 +175,202 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
                                  └────────────┬────────────┘
                                               ▼
                                  ┌─────────────────────────┐
+                                 │ Listwise LLM Reranker   │
+                                 │  (Batched Relevance)    │
+                                 └────────────┬────────────┘
+                                              ▼
+                                 ┌─────────────────────────┐
                                  │  Top Verified Context   │
                                  └─────────────────────────┘
 ```
 
-### 4.1 Neo4j AuraDB (Graph Traversal)
-- **Node Schemas**: `MedicalTopic`, `Document`, `Entity`, `Location`, `Fact`.
-- **Relationships**: `[:HAS_FACT]`, `[:RELATES_TO]`, `[:SIMILAR_TO]`, `[:LOCATED_IN]`.
-- **Cypher Traversal Pattern**:
-  - Dynamically extracts recognized entities from the query.
-  - Traverses 1-hop and 2-hop neighborhoods:
-    ```cypher
-    MATCH (n:Entity)-[r]-(m:Entity)
-    WHERE toLower(n.name) CONTAINS toLower($keyword)
-    RETURN n.name AS source, type(r) AS relation, m.name AS target, m.description AS details
-    LIMIT 25
-    ```
-- Transforms graph triples into structured narrative context strings that provide relational reasoning to the LLM.
+### 4.1 Neo4j AuraDB: Full-Text Lucene Index & Traversal
+- **Index**: Full-text schema index `entity_name_ft` on `(e:Entity) ON EACH [e.name]`.
+- **Query Pattern**:
+  ```cypher
+  CALL db.index.fulltext.queryNodes("entity_name_ft", $term) YIELD node, score
+  MATCH (node)-[r:RELATED_TO]-(m:Entity)
+  OPTIONAL MATCH (node)-[:MENTIONED_IN]->(c:Corpus)
+  RETURN node.name AS subject, type(r) AS relation, m.name AS target, c.name AS corpus, score
+  ORDER BY score DESC
+  LIMIT 15
+  ```
+- **Fuzzy Matching (`~`)**: Appends Lucene fuzzy operators to search tokens, enabling tolerance against typos, singular/plural mismatches, and inflectional variants.
+- **Fallback**: Automatically falls back to substring `CONTAINS` scanning if fulltext indexing is temporarily rebuilding.
 
 ### 4.2 Pinecone Serverless (Dense Vector Search)
 - **Embedding Model**: `openai/text-embedding-3-small` (1024 dimensions via OpenRouter).
 - **Metric**: Cosine Similarity.
 - **Index**: `enterprise-rag-demo` hosted on `aws/us-east-1`.
-- Chunks text into 500-token windows with 50-token semantic overlap to maintain unbroken thought transitions across paragraph boundaries.
+- Chunks text into 500-token windows with 50-token semantic overlap to maintain unbroken context across paragraph boundaries.
 
 ---
 
-## 5. LLM Routing, Multi-Provider Failover & Groq LPU Orchestration
+## 5. LLM Routing, Multi-Provider Failover & Listwise Reranking
 
-To maintain sub-second latency and zero subscription cost, Nexora AI utilizes an active multi-tiered LLM routing architecture:
+To balance sub-second responsiveness with zero subscription cost, Nexora AI utilizes an active multi-tiered LLM routing architecture:
 
-| Tier | Provider | Model Identifier | Role | Typical Latency | Cost |
+| Tier | Provider | Model Identifier | Role | Cold Latency | Cost |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Tier 1 (Primary)** | **Groq LPU** | `openai/gpt-oss-20b` | Main synthesis, fast routing & document grading | **~350ms – 900ms** | **$0.00 (Free)** |
+| **Tier 1 (Primary)** | **Groq LPU** | `openai/gpt-oss-20b` | Main synthesis, fast routing & listwise reranking | **~350ms – 900ms** | **$0.00 (Free)** |
 | **Tier 2 (Fallback)** | **OpenRouter** | `meta-llama/llama-3.3-70b-instruct` | Complex multi-hop logic & embedding generation | **~1.8s – 3.2s** | **$0.00 (Free)** |
 | **Tier 3 (Safety Net)**| **NVIDIA NIM** | `meta/llama-3.2-11b-vision-instruct` | High-availability redundant fallback | **~1.2s – 2.5s** | **$0.00 (Free)** |
 
-### Dynamic Failover Circuit Breaker (`app/llm_clients.py`)
-If Groq encounters rate limiting (`HTTP 429`) or provider degradation (`HTTP 5xx`), the `call_llm()` orchestrator automatically catches the exception, logs the event to telemetry, and re-routes the prompt to Tier 2 (OpenRouter) within `<50ms` without crashing the user session.
+### Listwise LLM Reranker vs. Heavy Neural Rerankers
+Standard production pipelines often deploy `bge-reranker-large` via PyTorch. However, PyTorch + model weights consume >1.5GB of RAM, exceeding Render's 512MB container limit. 
+
+Nexora AI solves this by formatting the top candidate chunks into a structured batch prompt sent to Groq. The model evaluates mutual relevance and emits `{"ranked_relevant_ids": [2, 1]}`, functioning as an effective **listwise cross-encoder reranker** in ~350ms with 0MB additional memory overhead.
 
 ---
 
-## 6. Ephemeral Document RAG & Privacy Guardrails
+## 6. Ephemeral Document RAG & Layer-1 Security Isolation
 
-In addition to enterprise knowledge base retrieval, Nexora AI features a real-time **Ephemeral Document RAG engine** for ad-hoc file inspection (e.g., resumes, medical reports, financial PDFs).
+In addition to knowledge base retrieval, Nexora AI features an in-memory **Ephemeral Document RAG engine** for ad-hoc file inspection (e.g., resumes, medical reports, financial PDFs).
 
 ### Key Architectural Characteristics:
 1. **LlamaParse AI Multimodal Parsing**:
-   - Accurately converts complex multi-column PDFs, tables, and headers into Markdown text.
+   - Converts complex multi-column PDFs, tables, and headers into Markdown text.
 2. **RAM-Only Ephemeral Vector Store**:
-   - Document embeddings are generated and stored exclusively in a volatile in-memory index keyed by `session_id`.
-   - **Zero Persistence**: No document content or parsed embeddings are written to persistent disk or uploaded to external vector databases.
-3. **Automatic Lifecycle Wiping**:
-   - Ephemeral sessions are automatically destroyed upon session completion or through the `/api/doc-rag/clear` endpoint, ensuring compliance with strict enterprise data privacy standards.
+   - Document chunks and lexical indices are stored exclusively in volatile RAM keyed by `session_id`.
+   - **Zero Persistence**: No document content is written to disk, Neo4j, Pinecone, or Redis.
+3. **Structural Isolation & Layer-1 Heuristic Injection Defense**:
+   - Document excerpts are wrapped in strict `<untrusted_document_context>` XML tags.
+   - The system prompt enforces an explicit instruction hierarchy: instructions found inside `<untrusted_document_context>` are treated strictly as passive data.
+   - A layer-1 regex scanner detects and neutralizes override patterns (`"ignore previous instructions"`, `"disregard rules"`) before they reach the model.
+4. **Automatic Lifecycle Wiping**:
+   - Ephemeral sessions automatically expire after 30 minutes of inactivity or immediately via the `/api/doc-rag/clear` endpoint.
 
 ---
 
-## 7. Zero-Cost Cloud Infrastructure Topology
+## 7. Deterministic Citation Verification & Observability
 
-Nexora AI is 100% cloud-hosted without incurring any compute, database, or API charges. The system leverages generous developer and free-tier allotments configured to prevent unexpected billing:
+To prevent hallucinations where models generate fake bracketed markers, Nexora AI validates citations programmatically:
 
-```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                                RENDER CLOUD                               │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │ Single Unified Docker Container (Port 10000 / 0.0.0.0)             │  │
-│  │                                                                     │  │
-│  │  ┌────────────────────────┐         ┌────────────────────────────┐  │  │
-│  │  │  React 18 + Vite       │         │  FastAPI Backend           │  │  │
-│  │  │  (Static SPA Bundle)   │ ──────> │  (Uvicorn ASGI Server)     │  │  │
-│  │  └────────────────────────┘         └──────────────┬─────────────┘  │  │
-│  └────────────────────────────────────────────────────┼────────────────┘  │
-└───────────────────────────────────────────────────────┼───────────────────┘
-                                                        │
-        ┌───────────────────┬───────────────────┬───────┴───────────┬───────────────────┐
-        ▼                   ▼                   ▼                   ▼                   ▼
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│  Groq Cloud   │   │  Neo4j Aura   │   │   Pinecone    │   │ Upstash Redis │   │   LangSmith   │
-│   (Free LPU)  │   │   (Free DB)   │   │ (Free Vector) │   │ (Free Redis)  │   │  (Free Tracing│
-│ Sub-sec LLM   │   │ 200k Nodes    │   │ 100k Vectors  │   │ Serverless    │   │ Observability │
-│ 30 req/min    │   │ Cypher Graph  │   │ Serverless    │   │ 10k cmd/day   │   │ 5k req/month  │
-└───────────────┘   └───────────────┘   └───────────────┘   └───────────────┘   └───────────────┘
+```python
+CITE_RE = re.compile(r"【\s*(\d+)(?:\s*[,，]\s*\d+)*\s*】|\[\s*(\d+)(?:\s*[,，]\s*\d+)*\s*\]")
+
+# Extract all numeric citation IDs from the answer
+cited = {int(n) for m in CITE_RE.finditer(answer) for n in re.findall(r"\d+", m.group())}
+valid = set(range(1, len(sources) + 1))
+dangling = sorted(list(cited - valid))
+
+citation_integrity = 1.0 if not dangling else round(1.0 - len(dangling) / max(len(cited), 1), 3)
 ```
 
-### Free Tier Specifications & Allocation Management:
-- **Compute (Render)**: 512MB RAM free web service running a lightweight multi-stage Docker image (Node 20 build stage $\rightarrow$ Python 3.11 slim runtime).
-- **FastAPI Keepalive Worker (`/api/keepalive`)**: Prevents Render free containers from sleeping during periods of inactivity and safely pings Neo4j AuraDB every 30 minutes to preserve connection pools.
-- **Neo4j AuraDB Free Instance**: Accommodates up to 200,000 nodes and 400,000 relationships.
-- **Pinecone Serverless**: 100,000 dense vectors on AWS `us-east-1` with 2GB storage.
-- **Upstash Redis Serverless**: 10,000 daily REST commands for sub-millisecond response caching.
-- **LangSmith Tracing**: 5,000 free monthly execution traces capturing latency, prompt tokens, and evaluation metrics.
+- **Telemetric Transparency**: The UI HUD reports `citation_integrity` (e.g., `1.0` = 100% verified, `0.67` = dangling markers present) alongside faithfulness scores.
+- **Zero Extra Cost**: Executed purely in Python without consuming LLM generation tokens or adding latency.
 
 ---
 
-## 8. Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD
+## 8. Zero-Cost Cloud Infrastructure & Quota Ceilings
 
-The frontend is a single-page application built with **React 18, TypeScript, and Vite**, featuring a responsive dark-mode glassmorphic aesthetic.
+Nexora AI is 100% cloud-hosted without subscription fees. The table below outlines the free-tier service limits and practical operational capacity:
 
-### 8.1 High-Performance Canvas Graph Visualizer (`KnowledgeGraphCanvas.tsx`)
-Rather than utilizing heavy DOM-based SVG libraries (e.g., standard D3) that bottleneck beyond a few hundred elements, Nexora AI features a custom **HTML5 2D Canvas Engine**:
-- **Balanced Subgraph Caching**: Fetches curated multi-hub clusters (Cancer Subtypes, Genomic Mutations, Therapeutic Interventions, Historical Geography) limited to ~300 nodes for optimal visualization.
-- **Spatial Grid Hit-Testing**: Mouse move and hover lookups operate in $O(1)$ constant time via spatial grid indexing instead of $O(N)$ linear scans.
-- **Level of Detail (LOD) Rendering**: Text labels dynamically adjust opacity and render scale depending on camera zoom levels, maintaining smooth 60 FPS performance during panning and zooming.
-- **Physics Simulation (Euler Integration)**: Smooth spring-force layout with velocity dampening brings the knowledge graph to life.
+| Component | Free Tier Allotment | Realistic Capacity | Inherent Trade-offs / Mitigations |
+| :--- | :--- | :--- | :--- |
+| **Compute (Render)** | 512MB RAM, 1 container | 1 web instance | Spins down after 15m idle; keepalive worker pings `/api/keepalive` |
+| **LLM (Groq Cloud)** | 30 requests / minute | ~5–8 full queries / min | Batched grading + RRF reduces calls per query from 7 to ~3 |
+| **Graph DB (Neo4j Aura)** | 200,000 nodes, 400k rels | Up to 200k entities | **Pauses after 72h idle**; restored via `scripts/ingest_corpus_to_neo4j.py` |
+| **Vector DB (Pinecone)** | 100,000 vectors (1 index) | 100k chunks | Serverless AWS `us-east-1`, 2GB storage cap |
+| **Cache (Upstash Redis)** | 10,000 commands / day | ~3,000 queries / day | REST API stateless calls; negative caching prevents pollution |
+| **Parser (LlamaParse)** | 1,000 pages / day | 100+ documents / day | Direct text parser fallback for Markdown and plain text |
+| **Observability (LangSmith)**| 5,000 traces / month | ~1,000 deep traces / mo | Optional debugging hook |
 
-### 8.2 Real-Time Telemetry HUD
-Every query response renders a comprehensive audit payload in the UI:
-- **Grounded Faithfulness %**: Instant visual indicator of factual adherence.
-- **Context Precision**: Ratio of relevant retrieved documents utilized in synthesis.
-- **Sub-Second Latency Breakdown**: Visual waterfall displaying time spent across the Router, Decomposer, Retriever, Grader, and Synthesizer nodes.
-- **Token Economics (FinOps)**: Real-time calculation of prompt tokens, completion tokens, and estimated cost savings.
-
----
-
-## 9. Verification, Benchmarking & Grounded Accuracy
-
-Nexora AI is benchmarked against rigorous evaluation suites across domain knowledge, multi-hop reasoning, and clinical facts:
-
-### Benchmark Evaluation Metrics:
-- **King Arthur & Tintagel Reasoning**: Explores historical relationships between Uther Pendragon, Igraine, and Tintagel Castle $\rightarrow$ **98.4% Groundedness, 0.98 Precision**.
-- **Mont St. Michel vs. St. Michael's Mount**: Compares architectural and geographical features across Normandy and Cornwall $\rightarrow$ **97.4% Groundedness, 0.97 Precision**.
-- **Basal Cell Carcinoma (BCC) Clinical Workup**: Retrieves risk factors (UV radiation, PTCH1 mutations) and diagnostic biopsy protocols $\rightarrow$ **99.1% Groundedness, 0.99 Precision**.
-- **Resume & Career Profile Verification**: Ingests and answers deep technical queries from `DILIP_resume.pdf` $\rightarrow$ **98.3% Groundedness, 0.99 Precision, 880ms latency**.
+### Realistic Latency Expectations:
+- **Cached Queries (Upstash Hit)**: `<300ms` (pure Redis REST fetch).
+- **Cold Uncached Agentic Queries**: **3.0s – 7.5s** (Intent routing + query decomposition + parallel Neo4j/Pinecone retrieval + listwise LLM reranking + synthesis).
 
 ---
 
-## 10. Repository File Structure
+## 9. Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD
+
+Built with **React 18, TypeScript, and Vite**, the frontend uses an interactive dark glassmorphic design.
+
+### 9.1 High-Performance Canvas Graph Visualizer (`KnowledgeGraphCanvas.tsx`)
+Rather than utilizing DOM-heavy SVG graphs that stutter beyond 200 elements, Nexora AI uses a custom **HTML5 2D Canvas Engine**:
+- **Balanced Subgraph Caching**: Curates multi-hub clusters (Cancer Subtypes, Genomic Mutations, Historical Geography) limited to ~300 nodes for responsive rendering.
+- **Spatial Grid Hit-Testing**: Mouse hover and drag operations run in $O(1)$ constant time via spatial grid indexing instead of $O(N)$ linear scans.
+- **Level of Detail (LOD) Rendering**: Text labels scale and fade based on camera zoom, maintaining a consistent 60 FPS during pan and zoom gestures.
+- **Euler Spring Simulation**: Natural spring-force physics layout with velocity dampening.
+
+### 9.2 Telemetry HUD
+Every response provides full factual transparency:
+- **Grounded Faithfulness %**: Factual adherence score based on semantic context overlap.
+- **Citation Integrity Score**: Verified mapping of bracketed citations to actual source documents.
+- **Latency Breakdown**: Millisecond waterfall across Router, Decomposer, Retriever, Grader, and Synthesizer nodes.
+- **FinOps Economics**: Calculation of prompt tokens, completion tokens, and estimated cost savings.
+
+---
+
+## 10. Evaluation Framework: RAGAS & Benchmark Datasets
+
+The repository includes a dedicated evaluation suite in the `eval/` directory:
+
+### 10.1 Evaluation Components
+- **`eval/run_eval.py`**: Evaluation runner implementing the **RAGAS framework** (`answer_correctness`, `context_recall`) with exponential backoff and rate-limit throttles.
+- **`eval/test_questions.json`**: 15 structured multi-hop questions derived from the **EnterpriseRAG-Bench** corpus, complete with ground-truth reference answers and expected document IDs.
+- **`eval/graphrag_bench_questions.json`**: 20 complex entity-relationship questions derived from the **GraphRAG-Bench** benchmark.
+- **`eval/graphrag_bench_results.json`**: 122KB archive of scored benchmark runs across novel and clinical entities.
+
+### 10.2 Continuous Integration & Testing
+- Automated test scripts (`tests/test_dilip_resume_live.py`, `tests/test_dilip_resume_queries.py`) validate end-to-end retrieval correctness, groundedness, and citation integrity prior to production deployment.
+
+---
+
+## 11. Limitations, Honest Trade-offs & Production Scale Path
+
+To maintain transparency for engineering reviewers, this section outlines the system's operational boundaries as a free-tier MVP/demonstrator versus an enterprise-scale deployment:
+
+### 11.1 Current Architectural Limitations
+1. **Single-Node In-Memory Storage**: Ephemeral Document RAG stores document vectors in process RAM. Scaling to multiple container replicas requires migrating session vectors to an external cache (e.g., Redis Vector Store or dedicated Qdrant instance).
+2. **Free-Tier Inactivity Sleeping**:
+   - **Render Web Service**: Spins down after 15 minutes of inactivity (first wake-up takes ~50 seconds).
+   - **Neo4j AuraDB Free**: Pauses after 72 hours of idle time and deletes instances after 90 days.
+   - *Mitigation*: The automated keepalive endpoint (`/api/keepalive`) pings services periodically, and `scripts/ingest_corpus_to_neo4j.py` allows full graph reconstruction in under 3 minutes.
+3. **No Multi-Tenant RBAC / Document ACLs**: The current API supports API-key authorization (`X-API-Key`), but lacks role-based access control and document-level permissions.
+4. **Layer-1 Prompt Injection Scope**: The heuristic scanner neutralizes common instruction override patterns, but does not replace dedicated adversarial boundary models (e.g., Llama Guard or NeMo Guardrails).
+
+### 11.2 Production Scale Roadmap (Enterprise Migration)
+
+```
+Free Demonstrator (Current)           Enterprise Production Target
+───────────────────────────────       ───────────────────────────────
+Render Single 512MB Container   ───►  Kubernetes Cluster (EKS / GKE)
+Groq Free Tier (30 RPM)         ───►  Dedicated vLLM / TensorRT-LLM Cluster
+Neo4j Aura Free (200k nodes)    ───►  Neo4j Enterprise / Amazon Neptune (HA Cluster)
+Pinecone Serverless Free        ───►  Pinecone Enterprise / Qdrant Distributed
+RAM Ephemeral Sessions          ───►  Redis Cluster + Session Vector Store
+API-Key Header Check            ───►  OAuth2 / OIDC + Document-Level RBAC / ABAC
+Heuristic Injection Filter      ───►  Llama Guard / NeMo Guardrails Boundary Defense
+```
+
+---
+
+## 12. Repository File Structure
 
 ```
 enterprise-rag-agent/
 ├── app/
 │   ├── agent/
 │   │   ├── decomposer.py          # Multi-hop query decomposition
-│   │   ├── grader.py              # LLM-based document relevance grader
-│   │   ├── graph.py               # Main LangGraph cyclic state machine
-│   │   ├── graph_retriever.py     # Neo4j Cypher traversal & entity resolver
-│   │   ├── retriever.py           # Pinecone vector similarity retriever
+│   │   ├── grader.py              # Listwise LLM reranker & relevance grader
+│   │   ├── graph.py               # Main LangGraph cyclic state machine (condenser & verifier)
+│   │   ├── graph_retriever.py     # Neo4j Lucene fulltext traversal & entity resolver
+│   │   ├── retriever.py           # Pinecone dense vector similarity retriever
 │   │   ├── rewriter.py            # Self-corrective query reformulation
 │   │   ├── router.py              # Fast-path regex & intent classifier
 │   │   └── synthesizer.py         # Grounded synthesizer with citations
-│   ├── cache.py                   # Upstash Redis serverless caching layer
+│   ├── cache.py                   # Upstash Redis exact-match hash caching layer
 │   ├── config.py                  # Pydantic settings & credential sanitizer
 │   ├── doc_parser.py              # LlamaParse PDF extraction engine
-│   ├── doc_rag.py                 # In-memory ephemeral document RAG
+│   ├── doc_rag.py                 # Ephemeral document RAG with layer-1 injection defense
 │   ├── llm_clients.py             # Groq LPU, OpenRouter & NVIDIA client orchestrator
 │   └── main.py                    # FastAPI application & static server
+├── eval/
+│   ├── graphrag_bench_questions.json # 20 GraphRAG-Bench evaluation questions
+│   ├── graphrag_bench_results.json   # 122KB archive of scored benchmark runs
+│   ├── run_eval.py                   # RAGAS evaluation harness (answer_correctness, context_recall)
+│   └── test_questions.json           # 15 EnterpriseRAG-Bench multi-hop questions with ground truths
 ├── react-frontend/
 │   ├── src/
 │   │   ├── components/
@@ -330,16 +383,19 @@ enterprise-rag-agent/
 │   │   └── Dilip_resume.pdf              # Verified production resume asset
 │   └── package.json
 ├── scripts/
-│   ├── ingest_resume_pdf.py       # Ingests PDF into dense vector space
-│   ├── reingest_resume.py         # Pinecone semantic chunking & upsert tool
-│   └── verify_all_systems.py      # Comprehensive end-to-end integration test
+│   ├── ingest_all_datasets_to_neo4j.py # Batch ingestion of brand & category graph
+│   ├── ingest_corpus_to_neo4j.py      # Batch ingestion of literature & clinical knowledge graph
+│   ├── ingest_sales_graph.py          # E-commerce graph schema & entity ingestion
+│   ├── ingest_resume_pdf.py           # Ingests PDF into dense vector space
+│   ├── reingest_resume.py             # Pinecone semantic chunking & upsert tool
+│   └── verify_all_systems.py          # Comprehensive end-to-end integration test
 ├── tests/
-│   ├── test_dilip_resume_live.py  # Live document RAG pipeline test
-│   └── test_dilip_resume_queries.py # Multi-hop query benchmarking test
-├── Dockerfile                     # Multi-stage production container
-├── render.yaml                    # Render Cloud deployment blueprint
-├── requirements.txt               # Locked backend dependencies
-└── ARCHITECTURE.md                # System Architecture & Technical Manual (This file)
+│   ├── test_dilip_resume_live.py      # Live document RAG pipeline test
+│   └── test_dilip_resume_queries.py   # Multi-hop query benchmarking test
+├── Dockerfile                         # Multi-stage production container
+├── render.yaml                        # Render Cloud deployment blueprint
+├── requirements.txt                   # Locked backend dependencies
+└── ARCHITECTURE.md                    # System Architecture & Technical Manual (This file)
 ```
 
 ---

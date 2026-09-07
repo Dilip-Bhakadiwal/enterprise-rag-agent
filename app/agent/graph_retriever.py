@@ -37,6 +37,12 @@ def get_graph_driver() -> Driver | None:
             )
             _neo4j_driver.verify_connectivity()
             logger.info("Neo4j AuraDB Graph Driver connected successfully.")
+            # Ensure fulltext index exists for high-performance Lucene fuzzy entity matching
+            try:
+                with _neo4j_driver.session() as _sess:
+                    _sess.run("CREATE FULLTEXT INDEX entity_name_ft IF NOT EXISTS FOR (e:Entity) ON EACH [e.name]")
+            except Exception as _idx_exc:
+                logger.debug(f"Fulltext index initialization check: {_idx_exc}")
         except Exception as exc:
             logger.warning(f"Neo4j driver initialization fallback (AuraDB may be paused): {exc}")
             _neo4j_driver = None
@@ -104,7 +110,29 @@ def get_medical_topic_graph_context(topic_name: str, query: str = "", limit: int
 
 
 def get_entity_knowledge_graph_context(entity_name: str) -> list[dict[str, Any]]:
-    """Traverse bidirectional multi-hop relationships for literature and named entities."""
+    """
+    Traverse bidirectional multi-hop relationships for literature and named entities.
+    Prioritizes Lucene fulltext index ('entity_name_ft') with fuzzy token matching (~),
+    with seamless fallback to substring CONTAINS scanning.
+    """
+    clean_term = re.sub(r"[^a-zA-Z0-9\s]", " ", entity_name).strip()
+    if clean_term:
+        words = [w for w in clean_term.split() if len(w) >= 3]
+        if words:
+            lucene_query = " ".join(f"{w}~" for w in words)
+            ft_cypher = """
+            CALL db.index.fulltext.queryNodes("entity_name_ft", $term) YIELD node, score
+            MATCH (node)-[r:RELATED_TO]-(m:Entity)
+            OPTIONAL MATCH (node)-[:MENTIONED_IN]->(c:Corpus)
+            RETURN node.name AS subject, r.relation AS relation, m.name AS target, c.name AS corpus, score
+            ORDER BY score DESC
+            LIMIT 15
+            """
+            ft_results = query_neo4j_graph(ft_cypher, {"term": lucene_query})
+            if ft_results:
+                return ft_results
+
+    # Fallback to standard substring match if fulltext index returns 0 results
     cypher = """
     MATCH (e:Entity)
     WHERE toLower(e.name) CONTAINS toLower($name)
