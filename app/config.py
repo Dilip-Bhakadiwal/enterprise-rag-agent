@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     # ── Neo4j AuraDB (Knowledge Graph) ─────────────────────────────────────
     neo4j_uri: str = Field(default="neo4j+ssc://290efd40.databases.neo4j.io", alias="NEO4J_URI")
     neo4j_username: str = Field(default="290efd40", alias="NEO4J_USERNAME")
-    neo4j_password: str = Field(..., alias="NEO4J_PASSWORD")
+    neo4j_password: str = Field(default="", alias="NEO4J_PASSWORD")
 
     # ── Serverless Cache (Upstash Redis) ───────────────────────────────────
     upstash_redis_rest_url: str = Field(default="", alias="UPSTASH_REDIS_REST_URL")
@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     max_docs: int = Field(default=20000, alias="MAX_DOCS")
 
     # ── Ephemeral Document RAG & LlamaParse ────────────────────────────────
-    llamaparse_api_key: str = Field(..., alias="LLAMAPARSE_API_KEY")
+    llamaparse_api_key: str = Field(default="", alias="LLAMAPARSE_API_KEY")
     max_doc_pages: int = Field(default=5, alias="MAX_DOC_PAGES")
     max_doc_size_bytes: int = Field(default=10485760, alias="MAX_DOC_SIZE_BYTES")  # 10 MB
 

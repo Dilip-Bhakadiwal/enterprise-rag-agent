@@ -21,14 +21,17 @@ from app.config import settings
 import re as _re
 
 # Prefix namespaces
-_ANSWER_PREFIX = "rag:ans:"
+_ANSWER_PREFIX = "rag:ans_v3:"
 _EMBED_PREFIX = "rag:emb2048:"
 
 _NEGATIVE_PATTERNS = [
-    r"not (?:found|specified|mentioned|available|stated)",
+    r"not (?:found|specified|mentioned|available|stated|covered)",
     r"no (?:information|details|data|records)",
     r"does not contain",
     r"cannot (?:find|locate|determine)",
+    r"not covered in our verified enterprise database",
+    r"general ai knowledge",
+    r"notice:",
 ]
 
 
@@ -110,8 +113,9 @@ def set_cached_rag_response(query: str, data: dict[str, Any], ttl_seconds: int =
         return False
 
     ans_str = data.get("answer", "")
-    # Never cache negative or empty responses
-    if not ans_str or _is_negative_response(ans_str):
+    sources = data.get("sources", [])
+    # Never cache negative, empty, or ungrounded responses
+    if not ans_str or not sources or _is_negative_response(ans_str):
         return False
 
     key = _ANSWER_PREFIX + _hash_key(query, history)
