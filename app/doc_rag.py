@@ -188,6 +188,9 @@ def query_ephemeral_doc(
         m = re.search(r"\d+", cid) if cid else None
         return int(m.group()) if m else item[0].get("_idx", fallback_idx)
 
+    broad_signals = {"summarize", "summary", "overview", "all", "everything", "entire", "complete", "describe"}
+    is_broad_query = any(w in query.lower() for w in broad_signals)
+
     if len(chunks) <= 25:
         context_chunks = sorted(
             scored_chunks,
@@ -260,12 +263,11 @@ def query_ephemeral_doc(
     completion_tokens = len(answer_text) // 4
     total_tokens = prompt_tokens + completion_tokens
 
-    # Dynamic suggestions for doc follow-up
-    doc_suggestions = [
-        f"What are the key technical skills and expertise in {filename}?",
-        f"Summarize the major projects and achievements in {filename}.",
-        f"What educational background and credentials are listed in {filename}?"
-    ]
+    # Dynamic suggestions for doc follow-up derived from document headings
+    headings = list(dict.fromkeys(c.get("heading", "").replace("#", "").strip() for c in chunks if c.get("heading")))
+    doc_suggestions = [f"What details are under '{h}'?" for h in headings[:3] if len(h) > 3]
+    if not doc_suggestions:
+        doc_suggestions = [f"Summarize the key points in {filename}."]
 
     return {
         "answer": answer_text,

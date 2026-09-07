@@ -9,11 +9,30 @@ const API_BASE_URL =
   ((import.meta as any).env?.VITE_API_BASE_URL as string) || "";
 
 // ── Persistent Module-Level Cache & Eager Background Prefetch ───────────────
+const SESSION_KEY = "nexora_kg_curated_v2";
 let _cachedGraphData: { nodes: GraphNode[]; links: GraphLink[] } | null = null;
 let _isPrefetching = false;
 
+// Try to hydrate cache synchronously from sessionStorage
+if (typeof window !== "undefined") {
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (stored) {
+      _cachedGraphData = JSON.parse(stored);
+    }
+  } catch {}
+}
+
 const fetchGraphDataOnDemand = async () => {
   if (_cachedGraphData) return _cachedGraphData;
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (stored) {
+      _cachedGraphData = JSON.parse(stored);
+      return _cachedGraphData;
+    }
+  } catch {}
+
   if (_isPrefetching) return null;
   _isPrefetching = true;
   try {
@@ -25,6 +44,9 @@ const fetchGraphDataOnDemand = async () => {
         nodes: data.nodes,
         links: data.links || [],
       };
+      try {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(_cachedGraphData));
+      } catch {}
       return _cachedGraphData;
     }
   } catch (err) {

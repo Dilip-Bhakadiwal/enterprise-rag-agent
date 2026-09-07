@@ -18,17 +18,39 @@ from loguru import logger
 
 from app.config import settings
 
+import re as _re
+
 # Prefix namespaces
 _ANSWER_PREFIX = "rag:ans:"
-_EMBED_PREFIX = "rag:emb:"
+_EMBED_PREFIX = "rag:emb2048:"
+
+_NEGATIVE_PATTERNS = [
+    r"not (?:found|specified|mentioned|available|stated)",
+    r"no (?:information|details|data|records)",
+    r"does not contain",
+    r"cannot (?:find|locate|determine)",
+]
+
+
+def _is_negative_response(answer: str) -> bool:
+    ans_lower = answer.lower()
+    return any(_re.search(p, ans_lower) for p in _NEGATIVE_PATTERNS)
 
 
 def _hash_key(text: str, history: list[dict] | None = None) -> str:
     """Normalize and hash text and history to produce a deterministic, safe Redis key."""
     norm = " ".join(text.strip().lower().split())
     if history:
-        hist_str = "|".join([f"{msg.get('role', '')}:{msg.get('content', '')}" for msg in history])
-        norm += "||" + hist_str
+        tokens = set(_re.findall(r"\b\w+\b", norm))
+        is_dependent = bool(tokens & {"it", "he", "she", "they", "him", "her", "his", "their", "them", "this", "that", "these", "those", "above", "earlier"})
+        if is_dependent:
+            last_user_msg = ""
+            for msg in reversed(history):
+                if msg.get("role") == "user":
+                    last_user_msg = msg.get("content", "")
+                    break
+            if last_user_msg:
+                norm += "||" + last_user_msg.strip().lower()
     return hashlib.sha256(norm.encode("utf-8")).hexdigest()[:32]
 
 
@@ -58,9 +80,9 @@ def get_cached_rag_response(query: str, history: list[dict] | None = None) -> di
             raw_val = resp.json().get("result")
             if raw_val:
                 cached_data = json.loads(raw_val)
-                ans_str = cached_data.get("answer", "").lower()
-                # Bypass negative cache hits (e.g. "does not contain details", "not explicitly stated") so live Graph/Vector retrieval runs
-                if any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any", "not explicitly stated", "not specified", "is not stated"]):
+                ans_str = cached_data.get("answer", "")
+                # Bypass negative cache hits so live Graph/Vector retrieval runs
+                if _is_negative_response(ans_str):
                     logger.info(f"🔄 [Upstash Redis] Bypassing stale negative cache for: \"{query[:50]}...\"")
                     try:
                         del_url = f"{settings.upstash_redis_rest_url.rstrip('/')}/del/{key}"
@@ -87,9 +109,9 @@ def set_cached_rag_response(query: str, data: dict[str, Any], ttl_seconds: int =
     if not is_redis_configured():
         return False
 
-    ans_str = data.get("answer", "").lower()
+    ans_str = data.get("answer", "")
     # Never cache negative or empty responses
-    if not ans_str or any(neg in ans_str for neg in ["does not contain", "no details", "not contain any", "cannot find any"]):
+    if not ans_str or _is_negative_response(ans_str):
         return False
 
     key = _ANSWER_PREFIX + _hash_key(query, history)
@@ -138,7 +160,9 @@ def get_cached_embedding(text: str) -> list[float] | None:
         if resp.status_code == 200:
             raw_val = resp.json().get("result")
             if raw_val:
-                return json.loads(raw_val)
+                emb = json.loads(raw_val)
+                if isinstance(emb, list) and len(emb) == settings.embedding_dimension:
+                    return emb
     except Exception:
         pass
     return None

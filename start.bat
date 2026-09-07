@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title Enterprise RAG App — Starting...
 color 0A
 
@@ -8,28 +9,29 @@ echo   Enterprise RAG App — Starting All Services
 echo  ============================================
 echo.
 
+:: ── Step 0: Kill any stale processes on port 8000 ─────────────────────────
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING"') do taskkill /F /PID %%a >nul 2>&1
+
 :: ── Step 1: Build the React frontend ──────────────────────────────────────
-echo  [1/3] Building React frontend...
-cd react-frontend
-call npm run build >nul 2>&1
-if %errorlevel% neq 0 (
-  echo  [ERROR] React build failed. Run: cd react-frontend ^&^& npm install
-  pause
-  exit /b 1
+echo  [1/3] Checking React frontend build...
+if not exist "react-frontend\dist\index.html" (
+  echo  Building React frontend for the first time...
+  cd /d "%~dp0react-frontend"
+  call npm run build
+  cd /d "%~dp0"
 )
-cd ..
-echo  [1/3] React build DONE.
+echo  [1/3] React frontend ready.
 echo.
 
 :: ── Step 2: Start FastAPI backend in a new window ─────────────────────────
 echo  [2/3] Starting FastAPI backend on http://localhost:8000 ...
 set "PY_EXE="
 if exist "C:\Users\EXNOX\Desktop\project\venv\Scripts\python.exe" set "PY_EXE=C:\Users\EXNOX\Desktop\project\venv\Scripts\python.exe"
-if "%PY_EXE%"=="" if exist ".\denv\Scripts\python.exe" set "PY_EXE=.\denv\Scripts\python.exe"
-if "%PY_EXE%"=="" if exist ".\venv\Scripts\python.exe" set "PY_EXE=.\venv\Scripts\python.exe"
+if "%PY_EXE%"=="" if exist "%~dp0denv\Scripts\python.exe" set "PY_EXE=%~dp0denv\Scripts\python.exe"
+if "%PY_EXE%"=="" if exist "%~dp0venv\Scripts\python.exe" set "PY_EXE=%~dp0venv\Scripts\python.exe"
 if "%PY_EXE%"=="" set "PY_EXE=python"
 
-start "FastAPI Backend" cmd /k "title FastAPI Backend && color 0B && "%PY_EXE%" -m uvicorn app.main:app --reload --port 8000"
+start "FastAPI Backend" cmd /k ""%PY_EXE%" -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
 timeout /t 3 /nobreak >nul
 
 :: ── Step 3: Open browser ───────────────────────────────────────────────────

@@ -23,19 +23,6 @@ from collections import Counter
 from functools import lru_cache
 
 import httpx
-
-# Ensure CUDA and cuDNN DLL paths are loaded for GPU acceleration
-_cuda_bin = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin"
-_cudnn_bin = r"C:\Program Files\NVIDIA\CUDNN\v9.24\bin\12.9\x64"
-
-for _p in [_cuda_bin, _cudnn_bin]:
-    if os.path.exists(_p):
-        os.environ["PATH"] = _p + ";" + os.environ.get("PATH", "")
-        try:
-            os.add_dll_directory(_p)
-        except Exception:
-            pass
-
 from loguru import logger
 from pinecone import Pinecone
 
@@ -44,22 +31,6 @@ from app.cache import get_cached_embedding, set_cached_embedding
 
 # ── BGE query prefix ───────────────────────────────────────────────────────
 _QUERY_PREFIX = "query: "
-
-
-@lru_cache(maxsize=1)
-def _get_embedding_model():
-    """Singleton FastEmbed model (loaded lazily if available)."""
-    try:
-        from fastembed import TextEmbedding
-        model_name = settings.embedding_model
-        logger.info(f"Loading FastEmbed model: {model_name}")
-        return TextEmbedding(
-            model_name=model_name,
-            providers=["CPUExecutionProvider"]
-        )
-    except Exception as e:
-        logger.warning(f"fastembed loading failed ({e}) — using zero vector fallback.")
-        return None
 
 
 @lru_cache(maxsize=1)
@@ -100,34 +71,35 @@ def _embed_queries(queries: list[str]) -> list[list[float]]:
         logger.debug(f"⚡ [Upstash Redis] All {len(queries)} embeddings served from cache!")
         return [r for r in results if r is not None]
 
-    # 3. Compute missing embeddings using OpenRouter (openai/text-embedding-3-small, 1024-dim)
+    # 3. Compute missing embeddings using NVIDIA NIM (nvidia/nemotron-3-embed-1b, 2048-dim)
     new_embeddings = []
     try:
-        url = "https://openrouter.ai/api/v1/embeddings"
+        url = "https://integrate.api.nvidia.com/v1/embeddings"
         headers = {
-            "Authorization": f"Bearer {settings.openrouter_api_key}",
+            "Authorization": f"Bearer {settings.nvidia_api_key}",
             "Content-Type": "application/json",
         }
         payload = {
             "input": missing_queries,
-            "model": "openai/text-embedding-3-small",
-            "dimensions": 1024,
+            "model": "nvidia/nemotron-3-embed-1b",
+            "input_type": "query",
         }
-        resp = httpx.post(url, headers=headers, json=payload, timeout=5.0)
+        resp = httpx.post(url, headers=headers, json=payload, timeout=8.0)
         if resp.status_code == 200:
             data = resp.json().get("data", [])
+            data.sort(key=lambda x: x["index"])
             new_embeddings = [item["embedding"] for item in data]
         else:
-            logger.warning(f"OpenRouter embedding returned HTTP {resp.status_code}: {resp.text}")
-            new_embeddings = [[0.0] * 1024 for _ in missing_queries]
+            logger.warning(f"NVIDIA embedding returned HTTP {resp.status_code}: {resp.text}")
+            new_embeddings = [[0.0] * 2048 for _ in missing_queries]
     except Exception as e:
-        logger.warning(f"⚠️ [Embedding Failover] OpenRouter embedding failed ({e}). Using zero vector fallback.")
-        new_embeddings = [[0.0] * 1024 for _ in missing_queries]
+        logger.warning(f"⚠️ [Embedding Failover] NVIDIA embedding failed ({e}). Using zero vector fallback.")
+        new_embeddings = [[0.0] * 2048 for _ in missing_queries]
 
     # 4. Cache new embeddings in Upstash Redis and fill results array
     for orig_idx, q_text, emb in zip(missing_indices, missing_queries, new_embeddings):
         results[orig_idx] = emb
-        set_cached_embedding(q_text, emb, ttl_seconds=86400)
+        set_cached_embedding(q_text, emb, ttl_seconds=604800)
 
     return [r for r in results if r is not None]
 

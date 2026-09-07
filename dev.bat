@@ -21,12 +21,12 @@ if "%PY_EXE%"=="" if exist "%~dp0denv\Scripts\python.exe" set "PY_EXE=%~dp0denv\
 if "%PY_EXE%"=="" if exist "%~dp0venv\Scripts\python.exe" set "PY_EXE=%~dp0venv\Scripts\python.exe"
 if "%PY_EXE%"=="" set "PY_EXE=python"
 
-start "FastAPI Backend" cmd /k "title FastAPI Backend && color 0B && "%PY_EXE%" -m uvicorn app.main:app --no-reload --port 8000"
+start "FastAPI Backend" cmd /k ""%PY_EXE%" -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 timeout /t 2 /nobreak >nul
 
 :: ── Step 2: Start Vite Dev Server with Live Reload ─────────
 echo  [2/3] Starting Vite Frontend with Instant Live Reload...
-start "Vite Frontend (HMR)" cmd /k "title Vite Frontend (Live Reload) && color 0E && cd /d %~dp0react-frontend && npm run dev"
+start "Vite Frontend (HMR)" cmd /k "cd /d "%~dp0react-frontend" && npm run dev"
 timeout /t 3 /nobreak >nul
 
 :: ── Step 3: Open live dev frontend in browser ──────────────

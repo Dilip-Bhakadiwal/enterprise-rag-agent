@@ -1,60 +1,51 @@
-import json
+"""app/agent/grader.py — Batch grading + semantic score bypass."""
+import json, re
 from loguru import logger
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.llm_clients import call_llm
 
-GRADER_PROMPT = """You are a strict relevance grader assessing whether a retrieved document actually contains information that directly addresses, answers, or provides factual evidence for the user's specific question.
+GRADER_BATCH_PROMPT = """You are a strict relevance grader.
+Given a question and documents, identify which directly answer the question.
+Do NOT mark relevant based on incidental word overlap.
+Output ONLY valid JSON: {"relevant_ids": [1, 3]}"""
 
-Grading Criteria:
-1. Grade "yes" if the document contains facts, definitions, data, or context that genuinely helps answer the user's question.
-2. Grade "no" if the document is from an unrelated domain or topic, even if it happens to mention isolated common words (for example: if the question asks about the color of the sun, and the document discusses UV radiation causes of skin cancer, grade "no" because it does not answer what color the sun is).
-3. Do NOT mark a document as relevant based solely on incidental or accidental word overlap.
+def grade_documents(query: str, chunks: list[dict]) -> list[dict]:
+    if not chunks:
+        return []
 
-Output strictly valid JSON with a single key "score" set to "yes" or "no":
-{"score": "yes"} or {"score": "no"}
-"""
+    # Graph facts from Neo4j are ALWAYS relevant (targeted Cypher)
+    graph_chunks = [c for c in chunks if c.get("is_graph", False)]
+    vector_chunks = [c for c in chunks if not c.get("is_graph", False)][:5]
 
-def grade_chunk(query: str, chunk_text: str) -> bool:
-    """Grade a single chunk for relevance against the query."""
+    # BYPASS: High retrieval scores = skip LLM entirely (0ms, 0 API calls)
+    high_conf = [c for c in vector_chunks
+                 if c.get("combined_score", c.get("semantic_score", 0)) > 0.82]
+    if len(high_conf) >= max(1, len(vector_chunks) // 2):
+        logger.info(f"[Grader] BYPASS: {len(high_conf)} chunks via score")
+        return graph_chunks + high_conf
+
+    # BATCH: Grade ALL in ONE LLM call (not 5 sequential)
+    if not vector_chunks:
+        return graph_chunks
+
+    docs_text = "\n\n".join(
+        f"[{i}] {c.get('chunk_text', c.get('text', ''))[:800]}"
+        for i, c in enumerate(vector_chunks, 1)
+    )
     messages = [
-        SystemMessage(content=GRADER_PROMPT),
-        HumanMessage(content=f"Question: {query}\n\nDocument: {chunk_text}\n\nDecision JSON:"),
+        SystemMessage(content=GRADER_BATCH_PROMPT),
+        HumanMessage(content=f"Question: {query}\n\nDocuments:\n{docs_text}")
     ]
     try:
         response, provider = call_llm(messages)
         content = response.content.strip()
-        # Clean up in case the model added markdown blocks
-        if content.startswith("```json"):
-            content = content[7:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
-        
+        if content.startswith("```"):
+            content = re.sub(r"^```(?:json)?|```$", "", content, flags=re.MULTILINE).strip()
         parsed = json.loads(content)
-        return parsed.get("score", "no").lower() == "yes"
+        ids = parsed.get("relevant_ids", [])
+        relevant = [vector_chunks[i-1] for i in ids if 0 < i <= len(vector_chunks)]
+        logger.info(f"[Grader] Batch: {len(relevant)}/{len(vector_chunks)} via {provider}")
+        return graph_chunks + relevant
     except Exception as e:
-        logger.warning(f"Failed to parse grader response: {e}, checking text directly")
-        c_lower = content.lower() if 'content' in locals() else ""
-        if '"score": "yes"' in c_lower or '"score":"yes"' in c_lower or 'yes' in c_lower:
-            return True
-        return False  # Strict default if parsing fails
-
-def grade_documents(query: str, chunks: list[dict]) -> list[dict]:
-    """Score all chunks and return only the relevant ones."""
-    if not chunks:
-        return []
-        
-    relevant_chunks = []
-    for i, chunk in enumerate(chunks):
-        # Chunks store content under "chunk_text"; fall back to "text" for safety
-        text = chunk.get("chunk_text", chunk.get("text", ""))
-        # Quick fallback if text is empty — accept chunk and move on
-        if not text:
-            relevant_chunks.append(chunk)
-            continue
-            
-        is_relevant = grade_chunk(query, text)
-        if is_relevant:
-            relevant_chunks.append(chunk)
-            
-    return relevant_chunks
+        logger.warning(f"Batch grading failed: {e}")
+        return chunks

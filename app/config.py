@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         alias="PRIMARY_MODEL",
     )
     groq_model: str = Field(
-        default="openai/gpt-oss-120b",
+        default="openai/gpt-oss-20b",
         alias="GROQ_MODEL",
     )
     fallback_model: str = Field(
@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     # ── Neo4j AuraDB (Knowledge Graph) ─────────────────────────────────────
     neo4j_uri: str = Field(default="neo4j+ssc://290efd40.databases.neo4j.io", alias="NEO4J_URI")
     neo4j_username: str = Field(default="290efd40", alias="NEO4J_USERNAME")
-    neo4j_password: str = Field(default="BM3eW2oF1x3ASvNCkjJ40bGNlEwA9Do9DKbyKDXaj50", alias="NEO4J_PASSWORD")
+    neo4j_password: str = Field(..., alias="NEO4J_PASSWORD")
 
     # ── Serverless Cache (Upstash Redis) ───────────────────────────────────
     upstash_redis_rest_url: str = Field(default="", alias="UPSTASH_REDIS_REST_URL")
@@ -76,8 +76,8 @@ class Settings(BaseSettings):
     )
 
     # ── Ingestion ──────────────────────────────────────────────────────────
-    embedding_provider: str = Field(default="fastembed", alias="EMBEDDING_PROVIDER")
-    nvidia_embedding_model: str = Field(default="nvidia/nv-embedqa-e5-v5", alias="NVIDIA_EMBEDDING_MODEL")
+    embedding_provider: str = Field(default="nvidia", alias="EMBEDDING_PROVIDER")
+    nvidia_embedding_model: str = Field(default="nvidia/nemotron-3-embed-1b", alias="NVIDIA_EMBEDDING_MODEL")
 
     chunk_size: int = Field(default=500, alias="CHUNK_SIZE")
     chunk_overlap: int = Field(default=50, alias="CHUNK_OVERLAP")
@@ -85,10 +85,7 @@ class Settings(BaseSettings):
     max_docs: int = Field(default=20000, alias="MAX_DOCS")
 
     # ── Ephemeral Document RAG & LlamaParse ────────────────────────────────
-    llamaparse_api_key: str = Field(
-        default="llx-G0U7i5DFvrtQT9q1of8aDPdyz5OlnnsRVWnpDVLZZCJ6kOPw",
-        alias="LLAMAPARSE_API_KEY",
-    )
+    llamaparse_api_key: str = Field(..., alias="LLAMAPARSE_API_KEY")
     max_doc_pages: int = Field(default=5, alias="MAX_DOC_PAGES")
     max_doc_size_bytes: int = Field(default=10485760, alias="MAX_DOC_SIZE_BYTES")  # 10 MB
 
@@ -124,12 +121,12 @@ class Settings(BaseSettings):
         """Embedding model name based on provider."""
         if self.embedding_provider == "nvidia":
             return self.nvidia_embedding_model
-        return "BAAI/bge-large-en-v1.5"
+        return "nvidia/nemotron-3-embed-1b"
 
     @property
     def embedding_dimension(self) -> int:
-        """Dimension of embeddings (both bge-large and nv-embedqa-e5-v5 use 1024)."""
-        return 1024
+        """Dimension of embeddings (nvidia/nemotron-3-embed-1b uses 2048)."""
+        return 2048
 
     @property
     def top_k_retrieve(self) -> int:

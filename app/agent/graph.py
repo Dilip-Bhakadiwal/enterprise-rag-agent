@@ -54,106 +54,36 @@ class AgentState(TypedDict):
 # ── Helper: Dynamic Follow-Up Question Generator ───────────────────────────
 
 def _generate_smart_suggestions(query: str, intent: str, sources: list[dict]) -> list[str]:
-    """Generates 3 contextual follow-up suggestions dynamically filtered against the current query."""
+    """Generates follow-up suggestions dynamically from Neo4j graph facts."""
+    from app.agent.graph_retriever import query_neo4j_graph
     q_lower = query.lower()
-    source_ids = [s.get("doc_id", "") for s in sources]
-    has_graph_source = any(s.get("is_graph") for s in sources)
-    
-    # If conversational chitchat or out-of-database query, suggest top enterprise discovery questions
-    if intent == "chitchat" or len(sources) == 0:
-        return [
-            "What published research did Dilip work on with MoES funding?",
-            "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
-            "Within the account of St. Michael's Mount, who married Princess Frederica of Hanover?",
-        ]
-
-    # Portfolio / Dilip AI Engineering
-    is_portfolio = (any("portfolio" in sid for sid in source_ids) or any(
-        k in q_lower for k in ["dilip", "m.tech", "btech", "research", "nexora", "fpga", "jetson", "ieee", "moes"]
-    )) and not has_graph_source
-
-    if is_portfolio:
-        if any(k in q_lower for k in ["research", "ieee", "moes", "icasa", "publication", "paper"]):
-            candidates = [
-                "What dataset and accuracy did the Focal-CBAM Fish-YOLO model achieve?",
-                "How was the YOLOv8 model deployed on the Xilinx FPGA accelerator?",
-                "What is Dilip's M.Tech specialization from DIAT Pune?",
-                "What are Dilip's core architectures in LangGraph, FastAPI, and Neo4j?",
-            ]
-        elif any(k in q_lower for k in ["edge", "fpga", "jetson", "xilinx", "quantization"]):
-            candidates = [
-                "What is the FPS benchmark difference between Xilinx FPGA and Jetson Orin?",
-                "How does INT8 post-training quantization preserve object detection mAP?",
-                "How does the local LLaMA 1B model generate scene captions on edge?",
-                "What dataset and accuracy did the Focal-CBAM Fish-YOLO model achieve?",
-            ]
-        else:
-            candidates = [
-                "What published research did Dilip work on with MoES funding?",
-                "How does Nexora AI fuse Neo4j Knowledge Graph with Pinecone Serverless?",
-                "What is Dilip's M.Tech specialization from DIAT Pune?",
-                "What 3-Tier failover strategy is implemented across LLM providers?",
-            ]
-
-    # Clinical Oncology & Dermatology (GraphRAG-Bench)
-    elif any(k in q_lower for k in ["cancer", "carcinoma", "bcc", "cscc", "melanoma", "adrenal", "tumor", "tumors", "biopsy", "surgery", "mohs", "skin", "lesion", "oncology", "dermatology"]) or any("medical" in sid for sid in source_ids):
-        if "adrenal" in q_lower:
-            candidates = [
-                "What are the surgical indications and laparoscopic adrenalectomy criteria for adrenal adenomas?",
-                "What imaging modalities (CT, MRI, PET) differentiate benign adenoma from ACC?",
-                "What are the common clinical signs of excess cortisol in Cushing syndrome?",
-                "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
-                "What clinical guidelines govern Mohs surgery and margin excision for skin cancer?",
-            ]
-        elif any(k in q_lower for k in ["bcc", "basal"]):
-            candidates = [
-                "What clinical guidelines govern Mohs surgery and margin excision for skin cancer?",
-                "What are the key prognostic differences between Basal Cell Carcinoma and Squamous Cell Carcinoma?",
-                "What follow-up schedule is recommended after surgical excision of high-risk BCC?",
-                "What are the diagnostic evaluation steps and hormone tests for Adrenal Tumors?",
-            ]
-        else:
-            candidates = [
-                "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
-                "What are the diagnostic evaluation steps and hormone tests for Adrenal Tumors?",
-                "What clinical guidelines govern Mohs surgery and margin excision for skin cancer?",
-                "What are the key prognostic differences between Basal Cell Carcinoma and Squamous Cell Carcinoma?",
-            ]
-
-    # Literature & Multi-Hop Entity Triples (GraphRAG-Bench)
-    elif any(k in q_lower for k in ["novel", "literature", "book", "author", "character", "triples", "cornwall", "erica vagans", "narrative", "frederica", "mount", "hanover", "pawel"]) or any("entity" in sid or "novel" in sid for sid in source_ids):
-        candidates = [
-            "Within the account of St. Michael's Mount, who married Princess Frederica of Hanover?",
-            "In 'An Unsentimental Journey through Cornwall', what is the plant Erica vagans commonly called?",
-            "What are the key relationships connected to the novel characters in the GraphRAG-Bench corpus?",
-            "How did Princess Frederica of Hanover connect to Queen Victoria in historical chronicles?",
-        ]
-
-    else:
-        candidates = [
-            "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
-            "Within the account of St. Michael's Mount, who married Princess Frederica of Hanover?",
-            "What published research did Dilip work on with MoES funding?",
-        ]
-
-    # Dynamic deduplication and filtering: NEVER suggest the query currently being asked
-    q_words = set(re.findall(r"\w{3,}", q_lower))
-    filtered_suggestions: list[str] = []
-    for cand in candidates:
-        cand_lower = cand.lower()
-        if cand.strip().lower() == query.strip().lower():
-            continue
-        c_words = set(re.findall(r"\w{3,}", cand_lower))
-        if q_words and c_words:
-            overlap = len(q_words & c_words) / max(len(c_words), 1)
-            # If >=60% word overlap with current question, skip it
-            if overlap >= 0.60:
-                continue
-        filtered_suggestions.append(cand)
-        if len(filtered_suggestions) >= 3:
+    if intent == "chitchat" or not sources:
+        topics = query_neo4j_graph(
+            "MATCH (t:MedicalTopic)-[:HAS_FACT]->(f) RETURN t.name AS n, count(f) AS c ORDER BY c DESC LIMIT 3"
+        )
+        return [f"What are the key facts about {t['n']}?" for t in topics][:3] or \
+               ["What topics are available in the knowledge graph?"]
+    suggestions = []
+    for src in sources:
+        if src.get("is_graph"):
+            topic_match = re.search(r"\*\*Topic\*\*:\s*(.+?)[\n\r]", src.get("chunk_text", ""))
+            if topic_match:
+                related = query_neo4j_graph(
+                    """MATCH (t:MedicalTopic)-[:HAS_FACT]->(f)
+                       WHERE toLower(t.name) CONTAINS toLower($topic)
+                       AND NOT toLower(f.question) CONTAINS toLower($q)
+                       RETURN f.question AS question LIMIT 2""",
+                    {"topic": topic_match.group(1).strip(), "q": q_lower[:30]}
+                )
+                suggestions += [r["question"] for r in related if r.get("question")]
+    seen, filtered = set(), []
+    for s in suggestions:
+        if s.lower() not in seen and s.lower() != q_lower:
+            seen.add(s.lower())
+            filtered.append(s)
+        if len(filtered) >= 3:
             break
-
-    return filtered_suggestions
+    return filtered or ["What other topics are in the knowledge graph?"]
 
 
 # ── Node Functions ─────────────────────────────────────────────────────────
@@ -223,10 +153,13 @@ def retriever_node(state: AgentState) -> AgentState:
             if used_fallback:
                 any_fallback = True
             
-    # Deduplicate chunks immediately by doc_id
-    seen_ids = set()
+    # Deduplicate chunks immediately by doc_id (prioritize Graph Facts over Vector Chunks)
+    graph_chunks = [c for c in all_chunks if c.get("is_graph")]
+    vector_chunks = [c for c in all_chunks if not c.get("is_graph")]
+
     deduped_chunks = []
-    for c in all_chunks:
+    seen_ids = set()
+    for c in graph_chunks + vector_chunks:  # Process graph facts FIRST
         cid = c.get("doc_id", c.get("id", hash(c.get("text", ""))))
         if cid not in seen_ids:
             seen_ids.add(cid)
@@ -493,84 +426,32 @@ import re
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.llm_clients import call_llm
 
-_DIRECT_CHAT_PROMPT = """\
-You are an intelligent, friendly, and helpful Nexora AI Copilot.
-Answer the user's greeting or conversational question warmly, clearly, and concisely.
-Introduce yourself as the Nexora AI Copilot equipped with:
-- Neo4j AuraDB Knowledge Graph (GraphRAG-Bench clinical oncology guidelines and multi-hop literature relations)
-- Pinecone Serverless Vector Search (deep learning research, systems architecture, and portfolio documents)
-- Ephemeral Document Intelligence (upload and query private PDFs, Markdown, and JSON files)
-- Upstash Serverless Redis caching (instant sub-second responses)
-Offer to help the user explore any clinical guideline, literature connection, technical research question, or document query.
-"""
-
-_STARTER_SUGGESTIONS = [
-    "What are the primary risk factors and diagnostic tests for Basal Cell Carcinoma?",
-    "Within the account of St. Michael's Mount, who married Princess Frederica of Hanover?",
-    "What published research did Dilip work on with MoES funding?",
-]
-
-
 def _is_conversational_query(query: str) -> bool:
-    """
-    Identifies pure conversational greetings, polite chitchat, or bot introduction queries
-    (e.g., 'hi', 'hello', 'hey', 'how are you', 'who are you', 'thanks', 'bye').
-    
-    Any query seeking specific facts, entities, literature, medical knowledge, or code
-    is routed to the Full Hybrid GraphRAG pipeline.
-    """
+    """Structural chitchat and greeting detection. Zero domain keywords."""
     q_clean = re.sub(r"[^\w\s]", " ", query.strip().lower())
     tokens = [t for t in q_clean.split() if t]
     if not tokens:
         return True
-
-    # 1. Substantive domain keywords that MUST always go to RAG even if greeting words are present
-    substantive_signals = {
-        # Medicine / Clinical
-        "cancer", "carcinoma", "bcc", "cscc", "melanoma", "adrenal", "tumor", "tumors",
-        "biopsy", "radiation", "chemotherapy", "surgery", "mohs", "skin", "lesion", "lesions",
-        "symptom", "symptoms", "treatment", "oncology", "dermatology", "nccn", "guideline", "guidelines",
-        "syndrome", "adenoma", "hormone", "hormones", "risk", "diagnostic", "diagnosis",
-        # Literature / Entities
-        "novel", "literature", "book", "books", "author", "character", "triples", "cornwall",
-        "erica", "vagans", "narrative", "chapter", "excerpt", "frederica", "hanover", "mount",
-        "michael", "michaels", "pawel", "queen", "aubyn", "aubyns", "married",
-        # Systems / Dilip
-        "dilip", "bhakadiwal", "diat", "pune", "mtech", "btech", "focal", "cbam", "fish", "yolo",
-        "fpga", "xilinx", "ieee", "marketpulse", "redwood", "moes", "icasa", "gpu", "jetson",
-        "jira", "github", "confluence", "sop", "sla", "policy", "pull", "pr", "ticket", "deployment",
-        "graph", "neo4j", "pinecone", "cypher", "dataset", "corpus"
-    }
-    if any(tok in substantive_signals for tok in tokens):
-        return False
-
-    # 2. If it contains a question starter, check if all targets are conversational
-    question_starters = {"what", "who", "where", "when", "why", "which", "explain", "describe", "define"}
-    conversational_targets = {"you", "your", "name", "nexora", "ai", "copilot", "assistant", "up", "going", "doing", "this", "it"}
-    has_q_starter = any(tok in question_starters for tok in tokens)
-    if has_q_starter:
-        non_q_tokens = [t for t in tokens if t not in question_starters]
-        if all(t in conversational_targets or t in {"is", "are", "can", "do", "hello", "hi", "hey", "tell"} for t in non_q_tokens):
+    q_words = {"what", "who", "where", "when", "why", "which", "how", "explain", "describe", "is", "are", "can", "does"}
+    has_q = any(t in q_words for t in tokens)
+    if len(tokens) <= 2 and not has_q:
+        return True
+    greetings = {"hi", "hello", "hey", "hola", "howdy", "greetings", "yo", "sup"}
+    if tokens[0] in greetings and len(tokens) <= 4 and not has_q:
+        return True
+    self_ref = {"you", "your", "yourself", "nexora", "copilot", "assistant", "bot", "ai", "name"}
+    if has_q and len(tokens) <= 8:
+        non_q = [t for t in tokens if t not in q_words]
+        if all(t in self_ref or t in {"is", "are", "can", "do", "about", "tell", "me", "the", "a", "doing", "how", "it"} for t in non_q):
             return True
-        return False
-
-    # 3. Conversational vocabulary check (greetings, polite chit-chat, status checks)
-    conversational_words = {
-        "hi", "hello", "hey", "hola", "howdy", "greetings", "yo", "sup",
-        "good", "morning", "afternoon", "evening", "night", "day",
-        "how", "are", "you", "doing", "going", "today", "there",
-        "fine", "well", "great", "nice", "cool", "awesome",
-        "ok", "okay", "alright", "sure",
-        "who", "what", "is", "your", "name", "nexora", "copilot", "assistant", "ai",
-        "can", "do", "help", "me", "please",
-        "thanks", "thank", "thx", "welcome", "much", "very", "a", "lot", "so",
-        "bye", "goodbye", "see", "ya", "later", "cya",
-    }
-    return all(tok in conversational_words for tok in tokens)
+    closings = {"thanks", "thank", "thx", "bye", "goodbye", "cya", "see", "later", "take", "care", "welcome"}
+    if all(t in closings or t in {"you", "a", "lot", "so", "much", "my", "friend"} for t in tokens):
+        return True
+    return False
 
 
 def ask(query: str, chat_history: list[dict] | None = None) -> dict:
-    """Run Smart Router: Instant Upstash Redis Cache -> Direct LLM -> Full Hybrid GraphRAG."""
+    """Run Smart Router: Instant Upstash Redis Cache -> Direct Response -> Full Hybrid GraphRAG."""
     clean_query = query.strip()
     history = chat_history or []
     
@@ -585,50 +466,13 @@ def ask(query: str, chat_history: list[dict] | None = None) -> dict:
         t0 = time.perf_counter()
         q_lower = clean_query.lower()
 
-        # Immediate instant response for standard greetings without calling remote 70B LLM
-        if any(q_lower.startswith(g) for g in ["hi", "hello", "hey", "howdy", "good morning", "good afternoon", "good evening"]):
-            answer_text = (
-                "👋 **Hello! I'm Nexora AI Copilot.**\n\n"
-                "I am your Enterprise GraphRAG Assistant powered by hybrid Neo4j knowledge graphs, Pinecone vector search, and LangGraph agentic reasoning.\n\n"
-                "Here are a few topics you can ask me about:\n"
-                "- **Dilip's AI Engineering & Research**: MoES-funded *Focal-CBAM Fish-YOLO*, Xilinx FPGA deployment, AlignAI, and publications.\n"
-                "- **Clinical Oncology Intelligence**: Basal Cell Carcinoma (BCC), Squamous Cell Carcinoma (CSCC), and Adrenal Tumor guidelines.\n"
-                "- **Multi-Hop Literature Knowledge Graph**: Entity relationships from classical literature and accounts of St. Michael's Mount."
-            )
-            provider = "copilot_fast"
-        elif any(k in q_lower for k in ["how are you", "how's it going", "how are things", "how do you do"]):
-            answer_text = (
-                "👋 **I'm doing great, thank you for asking!**\n\n"
-                "All enterprise services (Neo4j AuraDB, Pinecone Vector Index, Upstash Redis Cache) are active and running at peak performance. How can I assist your research or knowledge retrieval today?"
-            )
-            provider = "copilot_fast"
-        elif any(k in q_lower for k in ["who are you", "what are you", "what is your name", "tell me about yourself"]):
-            answer_text = (
-                "🤖 **I am Nexora AI Copilot**, an advanced multi-agent GraphRAG enterprise search system developed by **Dilip Bhakadiwal**.\n\n"
-                "I combine structured Cypher knowledge graph traversals, dense vector retrieval, and corrective CRAG reasoning to provide fully grounded answers with mathematical provenance."
-            )
-            provider = "copilot_fast"
-        elif any(k in q_lower for k in ["thank", "thanks", "thx"]):
-            answer_text = "You're very welcome! Let me know if you have any more questions about the knowledge base or portfolio research."
-            provider = "copilot_fast"
+        if any(q_lower.startswith(g) for g in ["hi", "hello", "hey", "howdy", "good"]):
+            answer_text = "👋 **Hello! I'm Nexora AI Copilot.** Ask me anything about the knowledge base."
+        elif "thank" in q_lower:
+            answer_text = "You're welcome! Feel free to ask anything else."
         else:
-            # Build direct messages with recent conversation context if present
-            messages = [SystemMessage(content=_DIRECT_CHAT_PROMPT)]
-            if history:
-                for turn in history[-2:]:
-                    r = "User" if turn.get("role") == "user" else "Assistant"
-                    c = str(turn.get("content", "")).strip()[:180]
-                    if c:
-                        messages.append(HumanMessage(content=f"[{r}]: {c}"))
-            messages.append(HumanMessage(content=clean_query))
-
-            try:
-                response, provider = call_llm(messages)
-                answer_text = response.content if hasattr(response, "content") else str(response)
-            except Exception as exc:
-                logger.error(f"Direct LLM call error: {exc}")
-                answer_text = "Hello! I am your Nexora AI Copilot. How can I help you today?"
-                provider = "groq"
+            answer_text = "👋 Hi! I'm Nexora AI Copilot. How can I help you today?"
+        provider = "copilot_fast"
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
         prompt_tokens = len(clean_query) // 4 + 30
@@ -642,7 +486,7 @@ def ask(query: str, chat_history: list[dict] | None = None) -> dict:
             "intent": "conversational",
             "provider_used": provider,
             "used_fallback": False,
-            "suggestions": _STARTER_SUGGESTIONS,
+            "suggestions": _generate_smart_suggestions(clean_query, "chitchat", []),
             "telemetry": {
                 "total_time_ms": round(elapsed_ms, 1),
                 "router_ms": 1.0,

@@ -116,7 +116,7 @@ def _invoke_with_retry(client: ChatOpenAI, messages: list[BaseMessage]) -> Any:
     return client.invoke(messages)
 
 
-def call_llm(messages: list[BaseMessage]) -> tuple[Any, str]:
+def call_llm(messages: list[BaseMessage], model_override: str | None = None) -> tuple[Any, str]:
     """
     Call LLMs using a 3-tier ultra-low-latency resilient failover cascade:
       1. OpenRouter (Primary / Reliable — meta-llama/llama-3.3-70b-instruct)
@@ -129,32 +129,47 @@ def call_llm(messages: list[BaseMessage]) -> tuple[Any, str]:
     Raises:
         RuntimeError: if all 3 providers fail
     """
+    # If model_override is set, use that specific provider directly
+    if model_override and model_override.startswith("groq/") and settings.groq_api_key:
+        try:
+            model_name = model_override.split("/", 1)[1]
+            client = ChatOpenAI(
+                model=model_name,
+                api_key=settings.groq_api_key,
+                base_url=settings.groq_base_url,
+                temperature=0.1,
+                timeout=10.0,
+                max_retries=0,
+            )
+            response = client.invoke(messages)
+            return response, PROVIDER_GROQ
+        except Exception:
+            pass  # Fall through to normal cascade
+
     errors: list[str] = []
 
-    # ── Tier 1: Try OpenRouter (Primary — reliable, fast) ───────────────────
-    try:
-        logger.debug(f"Calling primary {PROVIDER_OPENROUTER} ({settings.primary_model})")
-        response = _invoke_with_retry(get_openrouter(), messages)
-        logger.info(f"LLM served by: {PROVIDER_OPENROUTER} (primary)")
-        return response, PROVIDER_OPENROUTER
-    except Exception as exc:
-        err_msg = f"OpenRouter failed ({exc!r})"
-        logger.warning(f"{err_msg} — failing over to Groq...")
-        errors.append(err_msg)
-
-    # ── Tier 2: Try Groq (Secondary / Fast LPU fallback) ───────────────────
+    # ── Tier 1: Try Groq (Primary / Ultra-fast LPU Inference < 1s) ─────────
     if settings.groq_api_key:
         try:
-            logger.debug(f"Calling secondary {PROVIDER_GROQ} ({settings.groq_model})")
+            logger.debug(f"Calling primary {PROVIDER_GROQ} ({settings.groq_model})")
             response = _invoke_with_retry(get_groq(), messages)
-            logger.info(f"LLM served by: {PROVIDER_GROQ} (secondary fallback)")
+            logger.info(f"LLM served by: {PROVIDER_GROQ} (primary)")
             return response, PROVIDER_GROQ
         except Exception as exc:
             err_msg = f"Groq failed ({exc!r})"
-            logger.warning(f"{err_msg} — failing over to NVIDIA NIM...")
+            logger.warning(f"{err_msg} — failing over to OpenRouter...")
             errors.append(err_msg)
-    else:
-        logger.debug("Groq API key not configured — skipping Tier 2")
+
+    # ── Tier 2: Try OpenRouter (Secondary / Reliable fallback) ─────────────
+    try:
+        logger.debug(f"Calling secondary {PROVIDER_OPENROUTER} ({settings.primary_model})")
+        response = _invoke_with_retry(get_openrouter(), messages)
+        logger.info(f"LLM served by: {PROVIDER_OPENROUTER} (secondary fallback)")
+        return response, PROVIDER_OPENROUTER
+    except Exception as exc:
+        err_msg = f"OpenRouter failed ({exc!r})"
+        logger.warning(f"{err_msg} — failing over to NVIDIA NIM...")
+        errors.append(err_msg)
 
     # ── Tier 3: Try NVIDIA NIM ─────────────────────────────────────────────
     try:

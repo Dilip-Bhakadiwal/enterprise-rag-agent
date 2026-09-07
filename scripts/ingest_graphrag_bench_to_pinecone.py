@@ -37,15 +37,26 @@ CORPUS_DIR = DATASET_DIR / "corpus"
 QUESTIONS_DIR = DATASET_DIR / "questions"
 
 INDEX_NAME = settings.pinecone_index_name
-EMBED_MODEL = settings.nvidia_embedding_model
-EMBED_DIM = 1024
+EMBED_MODEL = "nvidia/nemotron-3-embed-1b"
+EMBED_DIM = 2048
 
 
 def get_pinecone_index(pc: Pinecone):
-    """Ensure Pinecone index exists and return handle."""
-    existing = [idx.name for idx in pc.list_indexes()]
-    if INDEX_NAME not in existing:
-        print(f"✨ Creating Pinecone Index '{INDEX_NAME}' (dim={EMBED_DIM})...")
+    """Ensure Pinecone index exists with dimension=2048 and return handle."""
+    indexes = {idx.name: idx for idx in pc.list_indexes()}
+    if INDEX_NAME in indexes:
+        existing_dim = indexes[INDEX_NAME].dimension
+        if existing_dim != EMBED_DIM:
+            print(f"⚠️ Existing index '{INDEX_NAME}' has dimension={existing_dim}, but we need dimension={EMBED_DIM}!")
+            print(f"🗑️ Deleting outdated {existing_dim}-dim index '{INDEX_NAME}'...")
+            pc.delete_index(INDEX_NAME)
+            while INDEX_NAME in [idx.name for idx in pc.list_indexes()]:
+                print("  ⏳ Waiting for old index deletion...")
+                time.sleep(2)
+            print("  ✅ Old index deleted successfully.")
+
+    if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
+        print(f"✨ Creating new Pinecone Index '{INDEX_NAME}' (dimension={EMBED_DIM}, metric=cosine)...")
         pc.create_index(
             name=INDEX_NAME,
             dimension=EMBED_DIM,
@@ -53,21 +64,23 @@ def get_pinecone_index(pc: Pinecone):
             spec=ServerlessSpec(cloud=settings.pinecone_cloud, region=settings.pinecone_region),
         )
         while not pc.describe_index(INDEX_NAME).status["ready"]:
+            print("  ⏳ Waiting for new 2048-dim index to be ready...")
             time.sleep(2)
+        print("  ✅ New 2048-dim index is READY!")
     return pc.Index(INDEX_NAME)
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
-    """Embed batch of texts using OpenRouter openai/text-embedding-3-small (1024 dimensions)."""
-    url = "https://openrouter.ai/api/v1/embeddings"
+    """Embed batch of texts using NVIDIA Hosted Endpoint nvidia/nemotron-3-embed-1b (2048 dimensions)."""
+    url = "https://integrate.api.nvidia.com/v1/embeddings"
     headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "Authorization": f"Bearer {settings.nvidia_api_key}",
         "Content-Type": "application/json",
     }
     payload = {
         "input": texts,
-        "model": "openai/text-embedding-3-small",
-        "dimensions": 1024,
+        "model": "nvidia/nemotron-3-embed-1b",
+        "input_type": "passage",
     }
 
     for attempt in range(5):
@@ -76,18 +89,19 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
                 resp = client.post(url, headers=headers, json=payload)
                 if resp.status_code == 200:
                     data = resp.json()["data"]
+                    data.sort(key=lambda x: x["index"])
                     return [item["embedding"] for item in data]
                 elif resp.status_code == 429:
-                    print(f"  ⏳ Rate limited (429), waiting 3s (attempt {attempt+1}/5)...")
-                    time.sleep(3)
+                    print(f"  ⏳ NVIDIA Rate limited (429), waiting 4s (attempt {attempt+1}/5)...")
+                    time.sleep(4)
                 else:
-                    print(f"  ⚠️ OpenRouter returned HTTP {resp.status_code}: {resp.text}")
+                    print(f"  ⚠️ NVIDIA returned HTTP {resp.status_code}: {resp.text}")
                     time.sleep(2)
         except Exception as exc:
-            print(f"  ⚠️ Error embedding batch: {exc}")
+            print(f"  ⚠️ Error embedding batch via NVIDIA: {exc}")
             time.sleep(2)
 
-    raise RuntimeError("Failed to embed batch from OpenRouter after 5 attempts.")
+    raise RuntimeError("Failed to embed batch from NVIDIA NIM after 5 attempts.")
 
 
 def build_graphrag_bench_chunks() -> list[dict]:

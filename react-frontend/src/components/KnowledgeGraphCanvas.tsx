@@ -26,6 +26,56 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return res;
 };
 
+// ── PRE-RENDERED NEON GLOW SPRITES (2x supersampling for ultra-crisp zoom) ──
+const SPRITE_CACHE = new Map<string, HTMLCanvasElement>();
+const getNodeSprite = (color: string, radius: number, state: 'idle' | 'hub' | 'active'): HTMLCanvasElement => {
+  const key = `${color}|${radius.toFixed(1)}|${state}`;
+  const hit = SPRITE_CACHE.get(key);
+  if (hit) return hit;
+
+  const pad = Math.ceil(radius * 2.1);
+  const s = document.createElement('canvas');
+  s.width = pad * 4;
+  s.height = pad * 4; // 2x supersample
+  const c = s.getContext('2d');
+  if (!c) return s;
+  c.scale(2, 2);
+  const cx = pad, cy = pad;
+
+  // 1. Soft radial neon glow
+  const g = c.createRadialGradient(cx, cy, radius * 0.35, cx, cy, pad);
+  g.addColorStop(0, hexToRgba(color, state === 'idle' ? 0.30 : 0.55));
+  g.addColorStop(1, hexToRgba(color, 0));
+  c.fillStyle = g;
+  c.beginPath();
+  c.arc(cx, cy, pad, 0, Math.PI * 2);
+  c.fill();
+
+  // 2. Hollow obsidian core + crisp ring
+  c.beginPath();
+  c.arc(cx, cy, radius, 0, Math.PI * 2);
+  c.fillStyle = 'rgba(3, 7, 18, 0.88)';
+  c.fill();
+  c.strokeStyle = state === 'active' ? '#38bdf8' : color;
+  c.lineWidth = state === 'active' ? 2.2 : (state === 'hub' ? 1.8 : 1.3);
+  c.stroke();
+
+  // 3. Hub inner ring + aperture
+  if (state === 'hub') {
+    c.beginPath();
+    c.arc(cx, cy, radius * 0.52, 0, Math.PI * 2);
+    c.strokeStyle = hexToRgba(color, 0.42);
+    c.lineWidth = 1.0;
+    c.stroke();
+    c.beginPath();
+    c.arc(cx, cy, 1.5, 0, Math.PI * 2);
+    c.fillStyle = '#ffffff';
+    c.fill();
+  }
+  SPRITE_CACHE.set(key, s);
+  return s;
+};
+
 // ── REFINED KNOWLEDGE DOMAINS (Linear / Cosmograph Minimal Precision) ───────
 export interface KnowledgeDomain {
   id: string;
@@ -162,6 +212,58 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
   const pulsesRef = useRef<SimulatedPulse[]>([]);
   const domainTotalsRef = useRef<Record<string, number>>({});
   const bgStarsRef = useRef<BackgroundStar[]>([]);
+  const degreeRef = useRef<Map<string, number>>(new Map());
+
+  // ── SPATIAL GRID HIT-TESTING (O(1) Uniform Grid) ─────────────────────────
+  const GRID_CELL = 80;
+  const gridRef = useRef<Map<string, SimulatedNode[]>>(new Map());
+
+  const rebuildGrid = useCallback(() => {
+    const g = new Map<string, SimulatedNode[]>();
+    for (const n of simNodesRef.current) {
+      const key = `${Math.floor(n.baseX / GRID_CELL)},${Math.floor(n.baseY / GRID_CELL)}`;
+      let bucket = g.get(key);
+      if (!bucket) {
+        bucket = [];
+        g.set(key, bucket);
+      }
+      bucket.push(n);
+    }
+    gridRef.current = g;
+  }, []);
+
+  // ── DOMAIN CONVEX NEBULA HULLS (Monotone-Chain Path2D) ───────────────────
+  const hullPathsRef = useRef<Map<string, Path2D>>(new Map());
+
+  const buildHulls = useCallback(() => {
+    const paths = new Map<string, Path2D>();
+    (Object.keys(KNOWLEDGE_DOMAINS) as string[]).forEach((domId) => {
+      const pts = simNodesRef.current
+        .filter((n) => getDomainForCategory(n.category || 'dilip_ai').id === domId)
+        .map((n) => ({ x: n.baseX, y: n.baseY }))
+        .sort((a, b) => a.x - b.x);
+      if (pts.length < 3) return;
+      const cross = (o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }) =>
+        (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+      const lower: { x: number; y: number }[] = [];
+      const upper: { x: number; y: number }[] = [];
+      for (const p of pts) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+        lower.push(p);
+      }
+      for (let i = pts.length - 1; i >= 0; i--) {
+        const p = pts[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+        upper.push(p);
+      }
+      const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+      const path = new Path2D();
+      hull.forEach((p, i) => (i === 0 ? path.moveTo(p.x, p.y) : path.lineTo(p.x, p.y)));
+      path.closePath();
+      paths.set(domId, path);
+    });
+    hullPathsRef.current = paths;
+  }, []);
 
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
@@ -216,6 +318,7 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       degreeMap.set(s, (degreeMap.get(s) || 0) + 1);
       degreeMap.set(t, (degreeMap.get(t) || 0) + 1);
     });
+    degreeRef.current = degreeMap;
 
     const domainBuckets: Record<string, GraphNode[]> = {
       dilip_ai: [],
@@ -236,42 +339,12 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       corpus: domainBuckets.corpus.length || 21,
     };
 
-    // Filter to top clean landmark nodes (~75 total nodes)
+    // Include ALL curated nodes across all 4 domains
     const curatedNodes: GraphNode[] = [];
-
-    // 1. Dilip AI Platform
     curatedNodes.push(...domainBuckets.dilip_ai);
-
-    // 2. Medical Topic nodes + top 16 clean clinical concepts
-    const medTopics = domainBuckets.medical.filter((n) => n.subcategory === 'MedicalTopic' || n.hierarchyLevel === 1 || n.hierarchyLevel === 2);
-    const medLeaves = domainBuckets.medical
-      .filter((n) => !medTopics.includes(n))
-      .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0))
-      .slice(0, 16);
-    curatedNodes.push(...medTopics, ...medLeaves);
-
-    // 3. Literature entities
-    const litNodes = domainBuckets.literature
-      .sort((a, b) => {
-        const aChunk = a.label.startsWith('Novel-');
-        const bChunk = b.label.startsWith('Novel-');
-        if (aChunk !== bChunk) return aChunk ? 1 : -1;
-        return (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0);
-      })
-      .slice(0, 20);
-    curatedNodes.push(...litNodes);
-
-    // 4. Corpus nodes
-    const corpusNodes = domainBuckets.corpus.slice(0, 9);
-    curatedNodes.push(...corpusNodes);
-
-    // Selected node guarantee
-    if (selectedIdRef.current) {
-      const sel = nodeList.find((n) => n.id === selectedIdRef.current);
-      if (sel && !curatedNodes.some((n) => n.id === sel.id)) {
-        curatedNodes.push(sel);
-      }
-    }
+    curatedNodes.push(...domainBuckets.medical);
+    curatedNodes.push(...domainBuckets.literature);
+    curatedNodes.push(...domainBuckets.corpus);
 
     // Build simulated nodes with collision-free organic clustering
     const simList: SimulatedNode[] = [];
@@ -308,25 +381,24 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       const N = satellites.length;
       satellites.forEach((sat, i) => {
         const isTopic = sat.hierarchyLevel === 2 || sat.subcategory === 'MedicalTopic';
-        const rad = isTopic ? 12 : Math.max(5.5, Math.min(8.0, 5.0 + (degreeMap.get(sat.id) || 1) * 0.4));
+        const rad = isTopic ? 12 : Math.max(5.0, Math.min(8.5, 4.5 + (degreeMap.get(sat.id) || 1) * 0.35));
 
         let theta: number;
         let baseDist: number;
 
         if (domId === 'corpus') {
           // FOR CORPUS: Disperse strictly into downward/sideways fan (y >= dom.y)
-          // to guarantee 100% zero overlap with the "GRAPHRAG CORPUS" heading above it!
           const normalizedI = N > 1 ? i / (N - 1) : 0.5;
-          theta = Math.PI * 0.15 + normalizedI * Math.PI * 0.70; // 27° to 153° (downwards)
-          baseDist = 48 + (i % 3) * 22 + Math.floor(i / 3) * 35;
+          theta = Math.PI * 0.10 + normalizedI * Math.PI * 0.80; // 18° to 162° (downwards)
+          baseDist = 55 + (i % 4) * 28 + Math.floor(i / 4) * 36;
         } else {
           // Organic golden-spiral for other domains
           const goldenAngle = 2.3999632;
           theta = i * goldenAngle + (i % 4) * 0.18;
           const normalizedRank = (i + 1) / (N + 1);
           baseDist = isTopic
-            ? 50 + (i % 3) * 16
-            : 68 + Math.pow(normalizedRank, 0.65) * 135;
+            ? 55 + (i % 3) * 20
+            : 70 + Math.pow(normalizedRank, 0.58) * (N > 50 ? 230 : 150);
         }
 
         const bx = dom.x + Math.cos(theta) * baseDist;
@@ -505,7 +577,9 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
       });
     });
     pulsesRef.current = pulses;
-  }, [nodes, links, computeOrganicConstellation]);
+    rebuildGrid();
+    buildHulls();
+  }, [nodes, links, computeOrganicConstellation, rebuildGrid, buildHulls]);
 
   // ── COORDINATE CONVERSION ────────────────────────────────────────────────
   const screenToWorld = useCallback((sx: number, sy: number) => {
@@ -513,20 +587,32 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
     return { x: (sx - x) / k, y: (sy - y) / k };
   }, []);
 
+  // ── SPATIAL GRID HIT-TESTING (O(1) Uniform Grid, Zero mousemove lag) ─────
   const findNodeUnderCursor = useCallback((sx: number, sy: number): SimulatedNode | null => {
     const w = screenToWorld(sx, sy);
-    const arr = simNodesRef.current;
-    for (let i = arr.length - 1; i >= 0; i--) {
-      const n = arr[i];
-      if (n.x === undefined || n.y === undefined) continue;
-      const dx = w.x - n.x;
-      const dy = w.y - n.y;
-      const hitRadius = Math.max(n.radius + 8, 16);
-      if (dx * dx + dy * dy <= hitRadius * hitRadius) {
-        return n;
+    const cx = Math.floor(w.x / GRID_CELL);
+    const cy = Math.floor(w.y / GRID_CELL);
+    let best: SimulatedNode | null = null;
+    let bestD = Infinity;
+
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const bucket = gridRef.current.get(`${cx + dx},${cy + dy}`);
+        if (!bucket) continue;
+        for (let i = 0; i < bucket.length; i++) {
+          const n = bucket[i];
+          const nx = n.x ?? n.baseX;
+          const ny = n.y ?? n.baseY;
+          const d = (nx - w.x) ** 2 + (ny - w.y) ** 2;
+          const hr = Math.max(n.radius + 8, 16);
+          if (d <= hr * hr && d < bestD) {
+            best = n;
+            bestD = d;
+          }
+        }
       }
     }
-    return null;
+    return best;
   }, [screenToWorld]);
 
   // ── MAIN DRAW LOOP (Capped at 30 FPS for Resource Conservation) ──────────
@@ -673,6 +759,19 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
         ctx.restore();
       });
 
+      // ── 3.5 DOMAIN CONVEX NEBULA HULLS (Translucent Atmospheric Zones) ───
+      hullPathsRef.current.forEach((path, domId) => {
+        const dom = KNOWLEDGE_DOMAINS[domId];
+        const col = dom?.color || '#38bdf8';
+        ctx.fillStyle = hexToRgba(col, 0.045);
+        ctx.fill(path);
+        ctx.strokeStyle = hexToRgba(col, 0.16);
+        ctx.lineWidth = 1.0;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke(path);
+        ctx.setLineDash([]);
+      });
+
       // ── 4. CLEAN DELICATE LINKS & CURVED SYNAPTIC SPLINES ─────────────────
       const activeLinks = activeLinksRef.current;
 
@@ -779,61 +878,68 @@ export const KnowledgeGraphCanvas: React.FC<KnowledgeGraphCanvasProps> = ({
         }
       }
 
-      // ── 6. HOLLOW RINGS (TRUE EMPTY CIRCLES - USER DEMAND) ────────────────
+      // ── 6. NODES: PRE-RENDERED SPRITE BLITTING + LOD POINT-CLOUD ──────────
+      const pointBatches = new Map<string, number[]>();
       for (let i = 0; i < allSimNodes.length; i++) {
         const n = allSimNodes[i];
-        const nx = n.x, ny = n.y;
-        if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
+        if (n.x < minX || n.x > maxX || n.y < minY || n.y > maxY) continue;
 
-        const isAct = n.id === activeId;
-        const isConn = connSet?.has(n.id) || false;
-        const isHub = n.hierarchyLevel === 1 || n.isParentNode;
-        const rad = n.currentRadius;
-
-        const strokeColor = isAct ? '#38bdf8' : (isConn ? '#ffffff' : (n.color || '#10b981'));
-
-        // EMPTY CIRCLE: Dark translucent void center + crisp perimeter stroke
-        ctx.beginPath();
-        ctx.arc(nx, ny, rad, 0, Math.PI * 2);
-        ctx.fillStyle = isAct ? 'rgba(56, 189, 248, 0.15)' : 'rgba(3, 7, 18, 0.82)';
-        ctx.fill();
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = isAct ? 2.2 : (isHub ? 1.8 : 1.3);
-        ctx.stroke();
-
-        // Hubs have a concentric inner thin ring (also empty/hollow!)
-        if (isHub) {
-          ctx.beginPath();
-          ctx.arc(nx, ny, rad * 0.52, 0, Math.PI * 2);
-          ctx.strokeStyle = hexToRgba(strokeColor, 0.40);
-          ctx.lineWidth = 1.0;
-          ctx.stroke();
-
-          // Delicate 1.5px center focus aperture
-          ctx.beginPath();
-          ctx.arc(nx, ny, 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
+        // LOD: node smaller than ~2.2px on screen → batched point, zero sprites
+        if (n.currentRadius * k < 2.2 && n.id !== activeId) {
+          const col = n.color || '#10b981';
+          let bucket = pointBatches.get(col);
+          if (!bucket) {
+            bucket = [];
+            pointBatches.set(col, bucket);
+          }
+          bucket.push(n.x, n.y);
+          continue;
         }
+
+        const state = n.id === activeId ? 'active' : (n.hierarchyLevel === 1 || n.isParentNode ? 'hub' : 'idle');
+        const spr = getNodeSprite(
+          connSet?.has(n.id) ? '#ffffff' : (n.color || '#10b981'),
+          n.currentRadius,
+          state
+        );
+        const half = spr.width / 4; // undo 2x supersample
+        ctx.drawImage(spr, n.x - half, n.y - half, half * 2, half * 2);
       }
 
-      // ── 7. PERMANENT LABELS: STRICTLY ONLY THE 4 ROOT HUBS (NO OVERLAPS!) ─
+      // Flush LOD points in ONE path per color
+      pointBatches.forEach((pts, col) => {
+        ctx.fillStyle = hexToRgba(col, 0.85);
+        ctx.beginPath();
+        for (let i = 0; i < pts.length; i += 2) {
+          ctx.rect(pts[i] - 1.1, pts[i + 1] - 1.1, 2.2, 2.2);
+        }
+        ctx.fill();
+      });
+
+      // ── 7. PERMANENT & LOD LABELS (HUBS ALWAYS + HIGH-DEGREE WHEN ZOOMED) ─
       ctx.save();
-      ctx.font = '600 11px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
 
       for (let i = 0; i < allSimNodes.length; i++) {
         const n = allSimNodes[i];
-        if (n.hierarchyLevel !== 1 && !n.isParentNode) continue;
-        const nx = n.x, ny = n.y;
-        if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
+        const isHub = n.hierarchyLevel === 1 || n.isParentNode;
+        const isSubHub = n.hierarchyLevel === 2 || n.subcategory === 'MedicalTopic';
+        
+        // Show labels strictly for:
+        // 1. Root hubs (always)
+        // 2. Sub-hubs when slightly zoomed in (k > 0.85)
+        // 3. Active hovered/selected node (always)
+        // Leaf nodes stay visually clean as glowing stars, revealed on hover
+        if (!isHub && !(k > 0.85 && isSubHub) && n.id !== activeId) continue;
+        if (n.x < minX || n.x > maxX || n.y < minY || n.y > maxY) continue;
 
-        const rad = n.currentRadius;
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-        ctx.shadowBlur = 4;
-        ctx.fillStyle = '#f1f5f9';
-        ctx.fillText(n.label, nx, ny + rad + 8);
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 5;
+        ctx.fillStyle = n.id === activeId ? '#38bdf8' : (isHub ? '#f1f5f9' : '#94a3b8');
+        ctx.font = isHub ? '600 11px Inter, system-ui, sans-serif' : '500 9.5px Inter, system-ui, sans-serif';
+        ctx.fillText(n.label, n.x, n.y + n.currentRadius + 8);
+        ctx.shadowBlur = 0;
       }
       ctx.restore();
 

@@ -1,11 +1,10 @@
 services:
   - type: web
-    name: enterprise-rag-portfolio
-    runtime: docker
-    plan: free
-    region: oregon
+    name: enterprise-rag-agent
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
-    autoDeploy: true
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false
@@ -15,12 +14,6 @@ services:
         sync: false
       - key: PINECONE_API_KEY
         sync: false
-      - key: PINECONE_INDEX_NAME
-        value: enterprise-rag-demo
-      - key: PINECONE_CLOUD
-        value: aws
-      - key: PINECONE_REGION
-        value: us-east-1
       - key: NEO4J_URI
         sync: false
       - key: NEO4J_USERNAME
@@ -33,19 +26,5 @@ services:
         sync: false
       - key: LLAMAPARSE_API_KEY
         sync: false
-      - key: MAX_DOC_PAGES
-        value: 5
-      - key: MAX_DOC_SIZE_BYTES
-        value: 10485760
-      - key: PRIMARY_MODEL
-        value: meta-llama/llama-3.3-70b-instruct
-      - key: GROQ_MODEL
-        value: openai/gpt-oss-120b
-      - key: FALLBACK_MODEL
-        value: nvidia/llama-3.3-nemotron-super-49b-v1
-      - key: APP_PORT
-        value: 10000
-      - key: APP_HOST
-        value: 0.0.0.0
-      - key: LOG_LEVEL
-        value: INFO
+      - key: ENVIRONMENT
+        value: production

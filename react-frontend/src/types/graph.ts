@@ -44,6 +44,7 @@ export interface GraphNode {
   metrics: Record<string, string | number>;
   attributes: Record<string, string>;
   tags: string[];
+  degree?: number;
   iconType: 'ai' | 'apple' | 'samsung' | 'store' | 'region' | 'warranty' | 'paper' | 'chip';
   // Orbital celestial animation coordinates
   x?: number;

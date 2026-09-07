@@ -1,4 +1,5 @@
 import json
+import re
 from loguru import logger
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.llm_clients import call_llm
@@ -22,6 +23,23 @@ Output: ["Who is the CEO?", "What is the Slack channel for IT support?"]
 
 def decompose_query(query: str) -> list[str]:
     """Break a complex query down into multiple sub-queries."""
+    q_lower = query.lower()
+    multi_signals = [
+        r"\b(?:what|who|where|when|why|how)\b.+\band\b.+\b(?:what|who|where|when|why|how)\b",
+        r"\?\s*.+\?",  # Multiple question marks
+        r"\balso\b",
+        r"\badditionally\b",
+        r"\bfurthermore\b",
+    ]
+    q_words = {"what", "who", "where", "when", "why", "which", "how"}
+    q_word_count = sum(1 for w in q_lower.split() if w in q_words)
+    has_multi = (any(re.search(p, q_lower) for p in multi_signals)
+                 or q_word_count > 2 or query.count("?") > 1)
+
+    if not has_multi:
+        logger.info("[Decomposer] Single-part (0ms, 0 API calls)")
+        return [query.strip()]
+
     messages = [
         SystemMessage(content=DECOMPOSER_PROMPT),
         HumanMessage(content=f"Input: \"{query}\"\nOutput:"),
