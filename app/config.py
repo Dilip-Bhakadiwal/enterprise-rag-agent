@@ -64,11 +64,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def fix_stale_neo4j_credentials(self) -> "Settings":
-        """Auto-correct outdated or unresolvable AuraDB URIs and missing passwords."""
-        if "3bbfa576" in self.neo4j_uri or not self.neo4j_password:
+        """Auto-correct outdated or unresolvable AuraDB URIs."""
+        if "3bbfa576" in self.neo4j_uri:
             self.neo4j_uri = "neo4j+ssc://290efd40.databases.neo4j.io"
             self.neo4j_username = "290efd40"
-            self.neo4j_password = "BM3eW2oF1x3ASvNCkjJ40bGNlEwA9Do9DKbyKDXaj50"
         return self
 
     # ── Serverless Cache (Upstash Redis) ───────────────────────────────────

@@ -79,8 +79,8 @@ async def health_check():
 
 ```python
 # CHANGE FROM:
-neo4j_password: str = Field(default="BM3eW2oF1x3ASvNCkjJ40bGNlEwA9Do9DKbyKDXaj50", alias="NEO4J_PASSWORD")
-llamaparse_api_key: str = Field(default="llx-G0U7i5DFvrtQT9q1of8aDPdyz5OlnnsRVWnpDVLZZCJ6kOPw", alias="LLAMAPARSE_API_KEY")
+neo4j_password: str = Field(default="<your_neo4j_password>", alias="NEO4J_PASSWORD")
+llamaparse_api_key: str = Field(default="<your_llamaparse_api_key>", alias="LLAMAPARSE_API_KEY")
 
 # CHANGE TO:
 neo4j_password: str = Field(..., alias="NEO4J_PASSWORD")
