@@ -12,11 +12,12 @@ Welcome to the definitive architectural specification and technical manual for *
 5. [LLM Routing, Multi-Provider Failover & Listwise Reranking](#5-llm-routing-multi-provider-failover--listwise-reranking)
 6. [Ephemeral Document RAG & Layer-1 Security Isolation](#6-ephemeral-document-rag--layer-1-security-isolation)
 7. [Deterministic Citation Verification & Observability](#7-deterministic-citation-verification--observability)
-8. [Zero-Cost Cloud Infrastructure & Quota Ceilings](#8-zero-cost-cloud-infrastructure--quota-ceilings)
-9. [Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD](#9-frontend-visual-engine-60-fps-canvas-graph--telemetry-hud)
-10. [Evaluation Framework: RAGAS & Benchmark Datasets](#10-evaluation-framework-ragas--benchmark-datasets)
-11. [Limitations, Honest Trade-offs & Production Scale Path](#11-limitations-honest-trade-offs--production-scale-path)
-12. [Repository File Structure](#12-repository-file-structure)
+8. [Security Architecture: API Boundary, Secret Isolation & Defense-in-Depth](#8-security-architecture-api-boundary-secret-isolation--defense-in-depth)
+9. [Zero-Cost Cloud Infrastructure & Quota Ceilings](#9-zero-cost-cloud-infrastructure--quota-ceilings)
+10. [Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD](#10-frontend-visual-engine-60-fps-canvas-graph--telemetry-hud)
+11. [Evaluation Framework: RAGAS & Benchmark Datasets](#11-evaluation-framework-ragas--benchmark-datasets)
+12. [Limitations, Honest Trade-offs & Production Scale Path](#12-limitations-honest-trade-offs--production-scale-path)
+13. [Repository File Structure](#13-repository-file-structure)
 
 ---
 
@@ -140,7 +141,7 @@ The complete request lifecycle follows a disciplined 8-stage sequence:
   2. *Add inline bracketed citations `【1】`, `【2】` corresponding directly to the sources.*
   3. *If facts are missing, acknowledge boundary limits without hallucinating.*
 - Computes inline telemetry for the UI HUD:
-  - **Faithfulness Score (Model-Self-Assessed Heuristic)**: Dynamically checks fact-to-context token overlap to estimate factual grounding on the fly for HUD display. *(Note: This is an inline telemetry heuristic for runtime observability; for rigorous multi-judge benchmark metrics, see the offline RAGAS harness in §10).*
+  - **Faithfulness Score (Model-Self-Assessed Heuristic)**: Dynamically checks fact-to-context token overlap to estimate factual grounding on the fly for HUD display. *(Note: This is an inline telemetry heuristic for runtime observability; for rigorous multi-judge benchmark metrics, see the offline RAGAS harness in §11).*
   - **Context Precision**: Ratio of relevant retrieved sentences used in the final answer.
   - **Hallucination Risk Rating**: Categorized as `Ultra-Low (<1%)`, `Very Low (<3%)`, or `Medium`.
 
@@ -265,7 +266,41 @@ citation_integrity = 1.0 if not dangling else round(1.0 - len(dangling) / max(le
 
 ---
 
-## 8. Zero-Cost Cloud Infrastructure & Quota Ceilings
+## 8. Security Architecture: API Boundary, Secret Isolation & Defense-in-Depth
+
+Enterprise AI deployments require a disciplined threat model. Nexora AI implements defense-in-depth across the network edge, API boundaries, prompt ingestion, and cloud integrations:
+
+### 8.1 Client-Server Secret Isolation (Network Tab Threat Model)
+A frequent concern in web applications is whether inspecting the browser's **Developer Tools (F12) → Network Tab** exposes backend secrets or credentials:
+- **Zero Frontend Secrets**: The React frontend bundle contains **zero vendor API keys**. Secrets such as `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `PINECONE_API_KEY`, `NEO4J_PASSWORD`, `UPSTASH_REDIS_REST_TOKEN`, and `LANGSMITH_API_KEY` are stored exclusively in the backend server's runtime environment (Render secrets).
+- **Server-to-Server Brokering**: The browser communicates only with relative endpoints (`POST /ask`, `POST /api/doc-rag/parse`, `GET /api/graph/data`) using standard application payloads (`{question, chat_history}`). The FastAPI backend orchestrates all third-party database and LLM queries server-to-server over encrypted HTTPS/TLS.
+- **Inspect / Network Tab Exposure**: A user or security auditor inspecting network traffic observes only their own submitted question, the rendered markdown answer, and runtime latency telemetry. No internal infrastructure tokens, connection strings, or system prompt instructions are ever leaked over the wire.
+
+### 8.2 In-Memory Sliding-Window Rate Limiting
+To prevent denial-of-wallet attacks, automated bot scraping, and quota exhaustion on free-tier LLM providers:
+- **Sliding-Window Algorithm**: Tracks client request timestamps in memory over a rolling 60-second window (`_RATE_LIMIT_WINDOW = 60.0s`).
+- **Quota Ceiling**: Limits incoming traffic to a maximum of **25 requests per minute** per client IP. Requests exceeding this threshold immediately receive an HTTP `429 Too Many Requests` status.
+- **Anti-Spoofing IP Resolution**: Extracts client identity via `_get_real_client_ip(req)`. When hosted behind reverse proxies (e.g., Render, Cloudflare), it parses the leftmost IP in the `X-Forwarded-For` header chain to block client IP spoofing via appended header injection.
+
+### 8.3 Inbound PII Sanitization Guardrail
+Queries are scrubbed for personally identifiable information (PII) before reaching any language model or vector store:
+- **Zero-Latency Regex Pipeline**: Sanitizes emails, phone numbers, Social Security Numbers (SSNs), credit card numbers, and API keys into typed tokens (e.g., `[EMAIL_REDACTED]`, `[PHONE_REDACTED]`).
+- **Pre-LLM & Pre-Cache Execution**: Sanitization occurs synchronously in `<1ms`, ensuring that sensitive user data is never sent to external LLMs, never stored in Upstash Redis cache keys, and never saved in ephemeral session RAM.
+
+### 8.4 Prompt Injection & Adversarial Boundary Defense
+To defend against jailbreaking and unauthorized instruction overrides:
+- **Heuristic Regex Scanning**: Detects common prompt override patterns (e.g., `"ignore previous instructions"`, `"system prompt leak"`, `"disregard all rules"`) in incoming queries.
+- **Neutralization & Logging**: Sanitizes malicious phrases and logs security events with client IP metadata for auditability.
+- **Structural XML Sandboxing**: In Document RAG, all untrusted uploaded text is strictly sandboxed inside `<untrusted_document_context>` XML tags with explicit instruction hierarchies forbidding executable interpretations.
+
+### 8.5 Production Reconnaissance Suppression & CORS
+- **Automatic OpenAPI Docs Disablement**: In `app/main.py`, Swagger UI (`/api/docs`) and ReDoc (`/api/redoc`) endpoints are dynamically set to `None` when `ENVIRONMENT=production`, preventing automated scanner reconnaissance and API schema scraping.
+- **CORS Origin Enforcement**: In development, CORS allows open testing; in production, CORS is strictly locked to `settings.cors_allowed_origin`, rejecting unauthorized cross-site requests.
+- **Input Size Hardening**: Request schemas enforce a 2,000-character ceiling on query strings to prevent token-flooding and memory exhaustion attacks.
+
+---
+
+## 9. Zero-Cost Cloud Infrastructure & Quota Ceilings
 
 Nexora AI is 100% cloud-hosted without subscription fees. The table below outlines the free-tier service limits and practical operational capacity:
 
@@ -285,18 +320,18 @@ Nexora AI is 100% cloud-hosted without subscription fees. The table below outlin
 
 ---
 
-## 9. Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD
+## 10. Frontend Visual Engine: 60 FPS Canvas Graph & Telemetry HUD
 
 Built with **React 18, TypeScript, and Vite**, the frontend uses an interactive dark glassmorphic design.
 
-### 9.1 High-Performance Canvas Graph Visualizer (`KnowledgeGraphCanvas.tsx`)
+### 10.1 High-Performance Canvas Graph Visualizer (`KnowledgeGraphCanvas.tsx`)
 Rather than utilizing DOM-heavy SVG graphs that stutter beyond 200 elements, Nexora AI uses a custom **HTML5 2D Canvas Engine**:
 - **Balanced Subgraph Caching**: Curates multi-hub clusters (Cancer Subtypes, Genomic Mutations, Historical Geography) limited to ~300 nodes for responsive rendering.
 - **Spatial Grid Hit-Testing**: Mouse hover and drag operations run in $O(1)$ constant time via spatial grid indexing instead of $O(N)$ linear scans.
 - **Level of Detail (LOD) Rendering**: Text labels scale and fade based on camera zoom, maintaining a consistent 60 FPS during pan and zoom gestures.
 - **Euler Spring Simulation**: Natural spring-force physics layout with velocity dampening.
 
-### 9.2 Telemetry HUD
+### 10.2 Telemetry HUD
 Every response provides full factual transparency:
 - **Grounded Faithfulness %**: Factual adherence score based on semantic context overlap.
 - **Citation Integrity Score**: Verified mapping of bracketed citations to actual source documents.
@@ -305,28 +340,28 @@ Every response provides full factual transparency:
 
 ---
 
-## 10. Evaluation Framework: RAGAS & Benchmark Datasets
+## 11. Evaluation Framework: RAGAS & Benchmark Datasets
 
 The repository includes a dedicated evaluation harness in the `eval/` directory:
 
-### 10.1 Evaluation Components & Provenance
+### 11.1 Evaluation Components & Provenance
 - **`eval/run_eval.py`**: Automated evaluation runner implementing the **RAGAS framework** (`answer_correctness`, `context_recall`) using LLM-as-a-judge with exponential backoff and rate-limit throttles.
 - **`eval/test_questions.json`**: 15 structured multi-hop questions derived from the **EnterpriseRAG-Bench** corpus. **Ground Truth Provenance**: Reference answers and target document IDs are curated directly from benchmark source documents (GitHub PRs, Linear engineering specs, Fireflies meeting transcripts), ensuring evaluation references are external and not circular self-generated model outputs.
 - **`eval/graphrag_bench_questions.json`**: 20 factual entity-relationship probe questions mapped to clinical dermatology and historical literature corpora. Reference ground truths are extracted from verified medical/literary source passages.
 - **`eval/graphrag_bench_results.json`**: 122KB archive of scored benchmark runs across novel and clinical entities providing our initial architectural baseline.
 
-### 10.2 Continuous Integration & Testing Policy
+### 11.2 Continuous Integration & Testing Policy
 - **Automated CI Gate (`.github/workflows/deploy.yml`)**: Every push and PR automatically executes TypeScript typechecking, React 19 production builds, and Python 3.11 syntax/import validation.
 - **Offline vs. CI Eval Execution**: Full RAGAS evaluation runs 35 questions requiring ~70-100 sequential LLM calls. In free-tier cloud environments with a 30 RPM rate ceiling on Groq/OpenRouter, triggering full multi-hop eval runs on every git push risks hitting API rate limits. Consequently, comprehensive RAGAS runs are executed offline or scheduled as nightly CI regression gates with deliberate rate throttling.
 - **Pre-Deployment Smoke Tests**: Scripts (`tests/test_dilip_resume_live.py`, `tests/test_dilip_resume_queries.py`) validate end-to-end retrieval correctness, groundedness, and citation integrity prior to production deployment.
 
 ---
 
-## 11. Limitations, Honest Trade-offs & Production Scale Path
+## 12. Limitations, Honest Trade-offs & Production Scale Path
 
 To maintain transparency for engineering reviewers, this section outlines the system's operational boundaries as a free-tier MVP/demonstrator versus an enterprise-scale deployment:
 
-### 11.1 Current Architectural Limitations
+### 12.1 Current Architectural Limitations
 1. **Single-Node In-Memory Storage**: Ephemeral Document RAG stores document vectors in process RAM. Scaling to multiple container replicas requires migrating session vectors to an external cache (e.g., Redis Vector Store or dedicated Qdrant instance).
 2. **Free-Tier Inactivity Sleeping**:
    - **Render Web Service**: Spins down after 15 minutes of inactivity (first wake-up takes ~50 seconds).
@@ -335,7 +370,7 @@ To maintain transparency for engineering reviewers, this section outlines the sy
 3. **No Multi-Tenant RBAC / Document ACLs**: The current API supports API-key authorization (`X-API-Key`), but lacks role-based access control and document-level permissions.
 4. **Layer-1 Prompt Injection Scope**: The heuristic scanner neutralizes common instruction override patterns, but does not replace dedicated adversarial boundary models (e.g., Llama Guard or NeMo Guardrails).
 
-### 11.2 Production Scale Roadmap (Enterprise Migration)
+### 12.2 Production Scale Roadmap (Enterprise Migration)
 
 ```
 Free Demonstrator (Current)           Enterprise Production Target
@@ -351,7 +386,7 @@ Heuristic Injection Filter      ───►  Llama Guard / NeMo Guardrails Boun
 
 ---
 
-## 12. Repository File Structure
+## 13. Repository File Structure
 
 ```
 enterprise-rag-agent/
